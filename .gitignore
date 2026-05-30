@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 venv/
 *.rrd
+report_out/
+weld-experience-engine/report_out/

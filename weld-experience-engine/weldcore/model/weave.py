@@ -24,11 +24,18 @@ def _trapezoid(phase, plateau: float = 0.3):   # 削顶正弦 → 梯形(边缘�
     return np.clip(k*np.sin(phase), -1.0, 1.0)
 
 
+def _figure8(phase):                     # 8字形扩展模板
+    y = np.sin(phase) * np.cos(phase / 2)
+    scale = np.max(np.abs(y)) or 1.0
+    return y / scale
+
+
 # 可生长注册表：新增摆动模板只需在此登记
 WAVEFORMS = {
     WeaveType.CRESCENT: _crescent,
     WeaveType.ZIGZAG: _zigzag,
     WeaveType.TRAPEZOID: _trapezoid,
+    WeaveType.FIGURE8: _figure8,
 }
 
 
