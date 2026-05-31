@@ -42,3 +42,21 @@ def test_evaluate_transfer_marks_large_error_for_review():
     )
 
     assert exp.decision in {TransferDecision.REVIEW, TransferDecision.FAIL}
+
+
+def test_evaluate_transfer_penalizes_truncated_trajectory():
+    task = straight_flat_task(source_length_mm=100.0, target_length_mm=150.0)
+    sample = generate_straight_flat_dataset(task).samples[0]
+    package = package_from_sample(sample, "pkg-001")
+    transferred = apply_transfer(package, task.target_condition)
+    transferred.samples = transferred.samples[: len(transferred.samples) // 2]
+
+    exp = evaluate_transfer(
+        experiment_id="exp-003",
+        package=package,
+        source_condition=task.source_condition,
+        target_condition=task.target_condition,
+        transferred=transferred,
+    )
+
+    assert exp.decision is not TransferDecision.PASS

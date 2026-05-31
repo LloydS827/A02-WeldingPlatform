@@ -18,9 +18,24 @@ def evaluate_transfer(
     actual = transferred.xyz
     reference = apply_transfer(package, target_condition).xyz
     n = min(len(actual), len(reference))
-    trajectory_rms = float(
-        np.sqrt(np.mean(np.sum((actual[:n] - reference[:n]) ** 2, axis=1)))
-    )
+    if n == 0:
+        trajectory_rms = float("inf")
+    else:
+        prefix_rms = float(
+            np.sqrt(np.mean(np.sum((actual[:n] - reference[:n]) ** 2, axis=1)))
+        )
+        completeness_penalty = 0.0
+        if len(actual) != len(reference):
+            sample_gap_fraction = abs(len(actual) - len(reference)) / max(
+                len(actual), len(reference)
+            )
+            reference_path_length = _path_length(reference)
+            endpoint_gap = float(np.linalg.norm(actual[-1] - reference[-1]))
+            completeness_penalty = max(
+                endpoint_gap,
+                sample_gap_fraction * reference_path_length,
+            )
+        trajectory_rms = float(np.hypot(prefix_rms, completeness_penalty))
 
     metrics = TransferMetrics(
         trajectory_rms_mm=trajectory_rms,
@@ -48,3 +63,9 @@ def _decision(metrics: TransferMetrics) -> TransferDecision:
     if metrics.trajectory_rms_mm <= 3.0:
         return TransferDecision.REVIEW
     return TransferDecision.FAIL
+
+
+def _path_length(xyz: np.ndarray) -> float:
+    if len(xyz) < 2:
+        return 0.0
+    return float(np.sum(np.linalg.norm(np.diff(xyz, axis=0), axis=1)))
