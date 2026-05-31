@@ -86,7 +86,11 @@ def test_transfer_experiment_records_decision_and_metrics():
         source_condition={"length_mm": 100.0},
         target_condition={"length_mm": 150.0},
         skill_package_id="pkg-001",
-        recomposed_trajectory=Trajectory(),
+        recomposed_trajectory=Trajectory.from_arrays(
+            [0.0, 1.0],
+            [[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]],
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+        ),
         metrics=TransferMetrics(
             trajectory_rms_mm=0.4,
             posture_error_deg=1.0,
@@ -99,4 +103,6 @@ def test_transfer_experiment_records_decision_and_metrics():
     )
 
     assert exp.to_dict()["decision"] == "pass"
+    assert exp.to_dict()["recomposed_trajectory"]["samples"][0]["x"] == 10.0
+    assert exp.to_dict()["recomposed_trajectory"]["samples"][0]["rz"] == 3.0
     assert exp.metrics.trajectory_rms_mm == 0.4
