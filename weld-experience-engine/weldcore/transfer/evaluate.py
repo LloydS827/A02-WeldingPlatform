@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from ..metrics.roundtrip import trajectory_rms
 from ..model.experiment import TransferDecision, TransferExperiment, TransferMetrics
 from ..model.skill import WeldCondition, WeldSkillPackage
 from ..model.trajectory import Trajectory
@@ -16,29 +17,21 @@ def evaluate_transfer(
     transferred: Trajectory,
 ) -> TransferExperiment:
     actual = transferred.xyz
-    reference = apply_transfer(package, target_condition).xyz
-    n = min(len(actual), len(reference))
-    if n == 0:
-        trajectory_rms = float("inf")
+    reference = apply_transfer(package, target_condition)
+    reference_xyz = reference.xyz
+    if len(actual) == 0 or len(reference_xyz) == 0:
+        trajectory_error = float("inf")
     else:
-        prefix_rms = float(
-            np.sqrt(np.mean(np.sum((actual[:n] - reference[:n]) ** 2, axis=1)))
+        completeness_penalty = max(
+            float(np.linalg.norm(actual[-1] - reference_xyz[-1])),
+            _time_coverage_gap(transferred, reference) * _path_length(reference_xyz),
         )
-        completeness_penalty = 0.0
-        if len(actual) != len(reference):
-            sample_gap_fraction = abs(len(actual) - len(reference)) / max(
-                len(actual), len(reference)
-            )
-            reference_path_length = _path_length(reference)
-            endpoint_gap = float(np.linalg.norm(actual[-1] - reference[-1]))
-            completeness_penalty = max(
-                endpoint_gap,
-                sample_gap_fraction * reference_path_length,
-            )
-        trajectory_rms = float(np.hypot(prefix_rms, completeness_penalty))
+        trajectory_error = float(
+            np.hypot(trajectory_rms(transferred, reference), completeness_penalty)
+        )
 
     metrics = TransferMetrics(
-        trajectory_rms_mm=trajectory_rms,
+        trajectory_rms_mm=trajectory_error,
         posture_error_deg=0.0,
         weave_amplitude_error_mm=0.0,
         weave_frequency_error_hz=0.0,
@@ -69,3 +62,11 @@ def _path_length(xyz: np.ndarray) -> float:
     if len(xyz) < 2:
         return 0.0
     return float(np.sum(np.linalg.norm(np.diff(xyz, axis=0), axis=1)))
+
+
+def _time_coverage_gap(actual: Trajectory, reference: Trajectory) -> float:
+    reference_duration = reference.t[-1] - reference.t[0]
+    if reference_duration <= 0.0:
+        return 0.0
+    actual_duration = actual.t[-1] - actual.t[0]
+    return float(abs(actual_duration - reference_duration) / reference_duration)
