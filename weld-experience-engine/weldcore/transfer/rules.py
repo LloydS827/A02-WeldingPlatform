@@ -13,6 +13,16 @@ def apply_transfer(package: WeldSkillPackage, target_condition: WeldCondition) -
         raise ValueError("length scale outside applicable range")
     if source_max is not None and target_condition.length_mm > source_max:
         raise ValueError("length scale outside applicable range")
+    source_length = package.applicable_conditions.get("source_length_mm")
+    if source_length is None and source_max is not None:
+        # package_from_sample stores max_length_mm as source_length * 2.0.
+        source_length = source_max / 2.0
+    if (
+        source_length is not None
+        and target_condition.length_mm
+        > float(source_length) * package.transfer_rule.max_length_scale
+    ):
+        raise ValueError("length scale outside applicable range")
 
     width_delta = abs(
         target_condition.groove_width_mm
