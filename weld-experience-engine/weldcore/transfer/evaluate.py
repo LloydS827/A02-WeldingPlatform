@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..metrics.roundtrip import trajectory_rms
 from ..model.experiment import TransferDecision, TransferExperiment, TransferMetrics
 from ..model.skill import WeldCondition, WeldSkillPackage
 from ..model.trajectory import Trajectory
@@ -27,7 +26,10 @@ def evaluate_transfer(
             _time_coverage_gap(transferred, reference) * _path_length(reference_xyz),
         )
         trajectory_error = float(
-            np.hypot(trajectory_rms(transferred, reference), completeness_penalty)
+            np.hypot(
+                _trajectory_rms_for_transfer(transferred, reference),
+                completeness_penalty,
+            )
         )
 
     metrics = TransferMetrics(
@@ -62,6 +64,22 @@ def _path_length(xyz: np.ndarray) -> float:
     if len(xyz) < 2:
         return 0.0
     return float(np.sum(np.linalg.norm(np.diff(xyz, axis=0), axis=1)))
+
+
+def _trajectory_rms_for_transfer(actual: Trajectory, reference: Trajectory) -> float:
+    sample_count = max(len(actual), len(reference))
+    tg = np.linspace(
+        max(actual.t[0], reference.t[0]),
+        min(actual.t[-1], reference.t[-1]),
+        sample_count,
+    )
+    actual_xyz = np.column_stack(
+        [np.interp(tg, actual.t, actual.xyz[:, i]) for i in range(3)]
+    )
+    reference_xyz = np.column_stack(
+        [np.interp(tg, reference.t, reference.xyz[:, i]) for i in range(3)]
+    )
+    return float(np.sqrt(np.mean(np.sum((actual_xyz - reference_xyz) ** 2, axis=1))))
 
 
 def _time_coverage_gap(actual: Trajectory, reference: Trajectory) -> float:

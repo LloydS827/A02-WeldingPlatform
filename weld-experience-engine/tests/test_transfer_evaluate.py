@@ -47,6 +47,25 @@ def test_evaluate_transfer_accepts_complete_trajectory_sampled_at_different_rate
     assert exp.metrics.trajectory_rms_mm < 1.0
 
 
+def test_evaluate_transfer_rejects_severely_sparse_complete_trajectory():
+    task = straight_flat_task(source_length_mm=100.0, target_length_mm=150.0)
+    sample = generate_straight_flat_dataset(task).samples[0]
+    package = package_from_sample(sample, "pkg-001")
+    transferred = apply_transfer(package, task.target_condition)
+    transferred.samples = [transferred.samples[0], transferred.samples[-1]]
+
+    exp = evaluate_transfer(
+        experiment_id="exp-005",
+        package=package,
+        source_condition=task.source_condition,
+        target_condition=task.target_condition,
+        transferred=transferred,
+    )
+
+    assert exp.decision is not TransferDecision.PASS
+    assert exp.metrics.trajectory_rms_mm > 1.0
+
+
 def test_evaluate_transfer_marks_large_error_for_review():
     task = straight_flat_task(source_length_mm=100.0, target_length_mm=150.0)
     sample = generate_straight_flat_dataset(task).samples[0]
