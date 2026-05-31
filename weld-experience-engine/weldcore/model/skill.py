@@ -70,7 +70,7 @@ class SkillSample:
     process_signals: list[ProcessSignal]
     events: list[WeldEvent] = field(default_factory=list)
     quality_observation: QualityObservation | None = None
-    rerun_recording: str | None = None
+    recording_artifact: str | None = None
 
 
 @dataclass

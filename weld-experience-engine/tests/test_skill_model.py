@@ -1,3 +1,5 @@
+import json
+
 from weldcore.model.skill import (
     HumanReview,
     ProcessSignal,
@@ -27,10 +29,15 @@ def test_skill_dataset_carries_source_rights_and_samples():
     sample = SkillSample(
         sample_id="sim-001",
         weld_condition=condition,
-        trajectory=Trajectory(),
+        trajectory=Trajectory.from_arrays(
+            [0.0, 1.0],
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+            [[0.0, 10.0, 20.0], [30.0, 40.0, 50.0]],
+        ),
         process_signals=[
             ProcessSignal(t=0.0, current=180.0, voltage=24.0, wire_feed=6.0)
         ],
+        recording_artifact="recordings/sim-001.rrd",
     )
     dataset = SkillDataset(
         dataset_id="dataset-001",
@@ -45,9 +52,13 @@ def test_skill_dataset_carries_source_rights_and_samples():
     assert data["source_type"] == "simulation"
     assert data["license_and_rights"] == "internal synthetic data"
     assert data["samples"][0]["weld_condition"]["length_mm"] == 100.0
+    assert data["samples"][0]["recording_artifact"] == "recordings/sim-001.rrd"
+    assert data["samples"][0]["trajectory"]["samples"][1]["x"] == 4.0
+    assert data["samples"][0]["trajectory"]["samples"][1]["rz"] == 50.0
+    assert "rerun" not in json.dumps(data, sort_keys=True).lower()
 
 
-def test_weld_skill_package_is_independent_from_rerun():
+def test_weld_skill_package_is_independent_from_visualization_backend():
     package = WeldSkillPackage(
         package_id="pkg-001",
         source_sample_ids=["sim-001"],
