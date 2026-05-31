@@ -60,6 +60,25 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Project Progress Ledger
+
+**Keep `details.md` current for non-technical readers.**
+
+This repository uses root-level `details.md` as the plain-language project progress ledger. Agents must check whether it needs updates whenever work changes the project state.
+
+Update `details.md` when:
+- The project phase or completion judgment changes.
+- Important capabilities are added, removed, completed, or found incomplete.
+- POC, MVP, real-machine data, expert knowledge, Rerun, ManiSkill, reports, IP outputs, or platform capabilities make meaningful progress.
+- Next-step priorities, risks, or delivery plans change.
+- New artifacts become important for reporting, patents, papers, software copyright, or stakeholder review.
+
+When updating it:
+- Write for users, business stakeholders, and non-technical readers.
+- Clearly separate what is already done, what is only being verified, and what still needs follow-up.
+- Do not overstate simulation or software-prototype results as verified real welding quality.
+- If README, design docs, plan docs, or core code changes affect project status, check `details.md` before finishing.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
