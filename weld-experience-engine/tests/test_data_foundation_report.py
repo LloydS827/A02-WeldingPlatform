@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +23,9 @@ FORBIDDEN_ROUTE_TERMS = (
 
 def _json_text(path):
     return path.read_text(encoding="utf-8").lower()
+
+
+ENGINE_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_data_foundation_report_returns_summary_and_writes_outputs(tmp_path):
@@ -122,7 +126,7 @@ def test_data_foundation_report_module_entrypoint_refreshes_temp_docs(tmp_path):
             str(docs_report_dir),
         ],
         check=True,
-        cwd=".",
+        cwd=ENGINE_ROOT,
         text=True,
         capture_output=True,
     )
