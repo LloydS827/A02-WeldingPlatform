@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from .shipbuilding import (
+    ShipbuildingTaskFamily,
+    TaskDisposition,
+    WeldJointType,
+    WeldPosition,
+)
 from .sources import PublicWeldKnowledgeBase, PublicWeldSource, SourceType, UsableFor
 
 
@@ -133,3 +139,127 @@ def load_seed_knowledge_base() -> PublicWeldKnowledgeBase:
         ),
     ]
     return PublicWeldKnowledgeBase(sources)
+
+
+def load_seed_task_families() -> list[ShipbuildingTaskFamily]:
+    return [
+        ShipbuildingTaskFamily(
+            family_id="stiffened-panel-fillet",
+            name="加筋板/纵骨角焊",
+            shipbuilding_context="panel line, small assembly, stiffener-to-plate welding",
+            typical_weld_objects=["stiffener-to-plate", "longitudinal-to-panel", "web-to-panel"],
+            joint_types=[WeldJointType.FILLET, WeldJointType.TEE],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=1,
+            required_fields=["stiffened_panel", "torch_angle", "travel_speed"],
+            assumption_fields=["leg_size_mm", "plate_thickness_mm"],
+            source_ids=[
+                "vendor-kranendonk-panel-welding-gantry",
+                "project-260522-shipbuilding-welding-brain-plan",
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes="First candidate because it is shipbuilding-specific and geometry is tractable.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="panel-butt",
+            name="平面板拼接/简化对接焊",
+            shipbuilding_context="panel line and flat block plate joining",
+            typical_weld_objects=["bottom shell butt", "tank top butt", "deck butt", "side shell butt"],
+            joint_types=[WeldJointType.BUTT],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=2,
+            required_fields=["shipbuilding_context", "groove_geometry"],
+            assumption_fields=["plate_thickness_mm", "root_gap_mm", "travel_speed"],
+            source_ids=[
+                "vendor-kobelco-shipbuilding-welding",
+                "project-260522-shipbuilding-welding-brain-plan",
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes="Candidate, but must be distinguished from generic straight-flat welding.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="micro-panel-web-bulkhead",
+            name="微型面板/腹板/隔板多短焊缝",
+            shipbuilding_context="subassembly welding for web, bulkhead, bracket and small stiffened structures",
+            typical_weld_objects=["web fillet", "bulkhead fillet", "bracket lap", "short seam sequence"],
+            joint_types=[WeldJointType.FILLET, WeldJointType.LAP, WeldJointType.TEE],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=2,
+            required_fields=["shipbuilding_context"],
+            assumption_fields=["weld_seam_list", "sequence_order", "node_transition", "torch_angle_deg"],
+            source_ids=[
+                "case-siemens-hd-hyundai-mipo-autonomous-welding",
+                "project-260522-shipbuilding-welding-brain-plan",
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes="Candidate for multi-seam sequence before confined-space block welding.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="double-bottom-inner-fillet",
+            name="双层底/双壳内部角焊",
+            shipbuilding_context="double bottom, double hull, block cell internal welding",
+            typical_weld_objects=["inner double-hull fillet", "double-bottom inside fillet"],
+            joint_types=[WeldJointType.FILLET],
+            positions=[WeldPosition.HORIZONTAL, WeldPosition.VERTICAL_UP],
+            modeling_difficulty=3,
+            required_fields=["shipbuilding_context", "weld_position", "confined_space_context"],
+            assumption_fields=["pose_segment", "reachability_placeholder"],
+            source_ids=[
+                "vendor-kobelco-shipbuilding-welding",
+                "case-siemens-hd-hyundai-mipo-autonomous-welding",
+            ],
+            disposition=TaskDisposition.PROBE,
+            notes="Strong shipbuilding relevance, but better as a second-round probe.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="vertical-overhead-block-weld",
+            name="立向/仰位船体焊缝",
+            shipbuilding_context="block assembly and erection stage",
+            typical_weld_objects=["side shell vertical butt", "overhead butt", "vertical-up fillet"],
+            joint_types=[WeldJointType.BUTT, WeldJointType.FILLET],
+            positions=[WeldPosition.VERTICAL_UP, WeldPosition.OVERHEAD],
+            modeling_difficulty=4,
+            required_fields=["weld_position"],
+            assumption_fields=["position_specific_parameters", "pose_constraints", "operator_review"],
+            source_ids=[
+                "vendor-kobelco-shipbuilding-welding",
+                "project-260522-shipbuilding-welding-brain-plan",
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes="Defer until easier flat/horizontal scenarios are stable.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="thick-plate-groove-multipass",
+            name="厚板坡口多层多道",
+            shipbuilding_context="block assembly, grand assembly and erection welds",
+            typical_weld_objects=["V groove", "X groove", "K groove", "long thick-plate butt weld"],
+            joint_types=[WeldJointType.GROOVE, WeldJointType.BUTT],
+            positions=[WeldPosition.MULTI_POSITION],
+            modeling_difficulty=4,
+            required_fields=["groove_geometry", "procedure_reference"],
+            assumption_fields=["layer_pass_plan", "interpass_constraints"],
+            source_ids=[
+                "project-260522-shipbuilding-welding-brain-plan",
+                "standard-aws-swps-public-page",
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes="Important roadmap item, not first-batch lightweight simulation.",
+        ),
+        ShipbuildingTaskFamily(
+            family_id="curved-complex-seams",
+            name="曲面与空间复杂焊缝",
+            shipbuilding_context="curved shell plate and complex node welding",
+            typical_weld_objects=["curved seam", "cross node", "bracket intersection"],
+            joint_types=[WeldJointType.COMPLEX],
+            positions=[WeldPosition.MULTI_POSITION],
+            modeling_difficulty=5,
+            required_fields=["shipbuilding_context"],
+            assumption_fields=["curved_centerline", "multi_joint_topology", "cad_reference"],
+            source_ids=[
+                "project-260522-shipbuilding-welding-brain-plan",
+                "case-siemens-hd-hyundai-mipo-autonomous-welding",
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes="Defer because modeling complexity is too high for the current stage, despite high-level source support.",
+        ),
+    ]
