@@ -123,7 +123,7 @@ MVP 的数据模型分三层：原始样本、结构化技能包、迁移评测�
 | `process_signal` | 电流、电压、送丝、速度等时间序列 |
 | `events` | 起弧、收弧、左右停留、人工标注、异常段 |
 | `quality_observation` | 仿真评分、人工确认、焊后结果占位 |
-| `rerun_recording` | 可选的 Rerun 记录文件或回放索引 |
+| `recording_artifact` | 可选的记录文件或回放索引 |
 
 ### 3.3 `WeldSkillPackage`
 

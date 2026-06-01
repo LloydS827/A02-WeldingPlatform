@@ -6,9 +6,12 @@
 
 ## 运行
 
-    pip install -e ".[dev,viz]"
-    pytest -q
-    python -m weldcore.report.generate   # 出图+数据表
+    uv sync --extra dev --extra viz
+    uv run pytest -q
+    uv run python -m weldcore.report.generate   # 出图+数据表
+    uv run python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
+
+如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
 ## 当前 POC 能力
 
@@ -18,6 +21,14 @@
 - `recompose/`：结构化工艺参数重组为连续轨迹；缺少 scipy 时回退到正向合成轨迹。
 - `metrics/`：往返 RMS、参数恢复误差、抗扰动失效边界。
 - `report/`：生成 `report_out/roundtrip.png`、`robustness.png`、`evidence.json`、`robustness.csv`。
+- `sim/` + `transfer/`：轻量仿真样本、WeldSkillPackage 生成、条件迁移、迁移评测。
+- `viz/rerun_bridge.py`：可选 Rerun 回放边界；未安装 `rerun-sdk` 时不会影响测试。
+
+## 技能迁移 MVP
+
+`python -m weldcore.report.mvp_report` 会生成 `mvp_report_out/evidence.json`、`metrics.csv`、`transfer_summary.png`、`ip_notes.md`，用于证明从仿真样本到技能包、再到目标焊接条件迁移评测的最小闭环。
+
+MVP 阶段的边界是：先验证结构化技能迁移机制，不把结果夸大为真实焊接质量结论。ManiSkill 仅作为机器人任务与 demonstration 数据范式的可选 adapter 方向，真机数据后续通过同一套 `SkillDataset` 接入。
 
 ## 评测结论
 

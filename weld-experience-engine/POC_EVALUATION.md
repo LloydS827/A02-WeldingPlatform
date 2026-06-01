@@ -29,8 +29,8 @@
 命令：
 
 ```bash
-pytest -q
-python -m weldcore.report.generate
+uv run pytest -q
+uv run python -m weldcore.report.generate
 ```
 
 报告输出：
