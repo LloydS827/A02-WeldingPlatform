@@ -196,6 +196,9 @@ class DataFoundation:
             issues.append(f"{dataset_id}: duplicate dataset_id")
         for family_id in _duplicate_values([entry.family_id for entry in self.task_evidence]):
             issues.append(f"{family_id}: duplicate family_id")
+        field_coverage_by_name = {
+            row.field_name: row for row in self.field_coverage or []
+        }
         if self.field_coverage is not None:
             for field_name in _duplicate_values([row.field_name for row in self.field_coverage]):
                 issues.append(f"{field_name}: duplicate field_name")
@@ -268,6 +271,16 @@ class DataFoundation:
                     issues.append(f"{entry.family_id}: unknown supporting_dataset_id {dataset_id}")
             if _has_forbidden_term(entry.to_dict()):
                 issues.append(f"{entry.family_id}: forbidden pool-route dependency is out of scope")
+            supporting_source_types = {
+                source_by_id[source_id].source_type
+                for source_id in entry.supporting_source_ids
+                if source_id in source_by_id
+            }
+            for required_source in entry.required_sources:
+                if required_source not in supporting_source_types:
+                    issues.append(
+                        f"{entry.family_id}: required source type {required_source} is not supported"
+                    )
             if entry.ready_for_plan():
                 has_strong_source = any(
                     source_id in source_by_id
@@ -283,6 +296,21 @@ class DataFoundation:
                     issues.append(
                         f"{entry.family_id}: ready task missing required fields {missing_fields}"
                     )
+                for field_name in entry.covered_required_fields:
+                    row = field_coverage_by_name.get(field_name)
+                    if row is None:
+                        issues.append(
+                            f"{entry.family_id}: covered field {field_name} missing from field coverage"
+                        )
+                        continue
+                    supporting_ids = set(entry.supporting_source_ids) | set(
+                        entry.supporting_dataset_ids
+                    )
+                    coverage_ids = set(row.source_ids) | set(row.dataset_ids)
+                    if not supporting_ids & coverage_ids:
+                        issues.append(
+                            f"{entry.family_id}: covered field {field_name} is not supported by task evidence"
+                        )
 
         for row in self.field_coverage or []:
             if not row.field_name or not row.coverage_role or not row.notes:

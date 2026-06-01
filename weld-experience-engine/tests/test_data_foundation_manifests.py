@@ -1,4 +1,7 @@
+from dataclasses import replace
+
 from weldcore.knowledge import (
+    FieldCoverageRow,
     DownloadPolicy,
     PublicAccess,
     ShipbuildingRelevanceLevel,
@@ -49,3 +52,64 @@ def test_data_foundation_manifests_meet_minimum_gate():
         >= 3
     )
     assert foundation.validate().passed
+
+
+def test_ready_task_covered_field_must_exist_in_coverage_matrix():
+    foundation = load_data_foundation()
+    entry = foundation.task_evidence[0]
+    foundation.task_evidence[0] = replace(
+        entry,
+        covered_required_fields=entry.covered_required_fields + ["unlisted_ready_field"],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("unlisted_ready_field" in issue for issue in result.issues)
+
+
+def test_ready_task_covered_field_must_be_supported_by_task_evidence_sources_or_datasets():
+    foundation = load_data_foundation()
+    entry = foundation.task_evidence[0]
+    foundation.task_evidence[0] = replace(
+        entry,
+        covered_required_fields=entry.covered_required_fields + ["current"],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("current" in issue and entry.family_id in issue for issue in result.issues)
+
+
+def test_task_required_source_type_must_be_satisfied_by_supporting_sources():
+    foundation = load_data_foundation()
+    entry = foundation.task_evidence[0]
+    foundation.task_evidence[0] = replace(
+        entry,
+        required_sources=entry.required_sources + ["standard"],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("standard" in issue and entry.family_id in issue for issue in result.issues)
+
+
+def test_field_coverage_row_with_unknown_id_fails_validation():
+    foundation = load_data_foundation()
+    foundation.field_coverage = list(foundation.field_coverage or []) + [
+        FieldCoverageRow(
+            field_name="unknown_source_probe",
+            source_ids=["missing-source-id"],
+            dataset_ids=["missing-dataset-id"],
+            coverage_role="probe",
+            notes="测试未知 id 必须被 gate 拦截。",
+        )
+    ]
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("missing-source-id" in issue for issue in result.issues)
+    assert any("missing-dataset-id" in issue for issue in result.issues)
