@@ -1,0 +1,68 @@
+[
+  {
+    "dataset_id": "dataset-gdxray-weld-xray",
+    "source_id": "dataset-gdxray-weld-xray",
+    "modalities": ["xray_image", "metadata"],
+    "size_note": "Manifest only；完整公开数据不镜像进 git。",
+    "download_policy": "manifest_only",
+    "schema_summary": "焊缝射线图像文件与缺陷类别，适合记录标签词汇和 benchmark 方向。",
+    "quality_label_type": "defect vocabulary",
+    "shipbuilding_fit": "benchmark_only",
+    "use_boundary": "仅用于缺陷词汇和 benchmark 方向；不可用于船舶焊接质量真实验证。"
+  },
+  {
+    "dataset_id": "dataset-zenodo-metal-arc-welding-10017718",
+    "source_id": "dataset-zenodo-metal-arc-welding-10017718",
+    "modalities": ["current_voltage_timeseries", "metadata"],
+    "size_note": "公开数据体量需外部缓存；使用前先登记 schema。",
+    "download_policy": "external_cache_only",
+    "schema_summary": "电弧焊过程测量和元数据，可筛选电流、电压、送丝和标签字段。",
+    "quality_label_type": "process and quality metadata after screening",
+    "shipbuilding_fit": "generic",
+    "use_boundary": "用于过程 schema 和参数字段筛选；不可作为船舶现场验证。"
+  },
+  {
+    "dataset_id": "dataset-zenodo-tandem-gmaw-17951725",
+    "source_id": "dataset-zenodo-tandem-gmaw-17951725",
+    "modalities": ["current_voltage_timeseries", "robot_pose", "scan_3d", "video", "metadata"],
+    "size_note": "多模态公开数据，完整文件只允许外部缓存。",
+    "download_policy": "external_cache_only",
+    "schema_summary": "Tandem-GMAW 过程、机器人、扫描、视频和元数据字段，可作为多模态 schema 参考。",
+    "quality_label_type": "metadata after screening",
+    "shipbuilding_fit": "generic",
+    "use_boundary": "用于 schema 参考和字段规划；不可直接映射为船舶质量证据。"
+  },
+  {
+    "dataset_id": "dataset-riawelc-weld-image",
+    "source_id": "dataset-riawelc-weld-image",
+    "modalities": ["surface_image", "metadata"],
+    "size_note": "公开图像数据，当前只登记 manifest。",
+    "download_policy": "manifest_only",
+    "schema_summary": "焊缝表面图像及分类标签，可用于视觉标签词汇筛选。",
+    "quality_label_type": "surface visual class",
+    "shipbuilding_fit": "benchmark_only",
+    "use_boundary": "用于视觉标签和 benchmark；不可作为船舶焊缝真实质量判定。"
+  },
+  {
+    "dataset_id": "dataset-lohi-weld",
+    "source_id": "dataset-lohi-weld",
+    "modalities": ["surface_image", "metadata"],
+    "size_note": "公开视觉质量数据，完整数据不进入 git。",
+    "download_policy": "manifest_only",
+    "schema_summary": "焊缝视觉质量图像与标签，可用于质量标签词汇和后续映射。",
+    "quality_label_type": "visual quality label",
+    "shipbuilding_fit": "benchmark_only",
+    "use_boundary": "用于视觉质量标签参考；不可替代真实检测和验收。"
+  },
+  {
+    "dataset_id": "dataset-mendeley-gmaw-screening-pool",
+    "source_id": "dataset-mendeley-gmaw-screening-pool",
+    "modalities": ["current_voltage_timeseries", "metadata"],
+    "size_note": "Mendeley 公开候选数据；后续若需要小样本，必须另建 checksum 和裁剪规则。",
+    "download_policy": "sample_cache_later",
+    "schema_summary": "GMAW 候选过程字段和标签定义，进入任务前需人工筛选。",
+    "quality_label_type": "screened metadata later",
+    "shipbuilding_fit": "generic",
+    "use_boundary": "只作为候选数据入口；不可自动进入训练、验证或质量结论。"
+  }
+]

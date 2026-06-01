@@ -1,0 +1,1331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据集与资料底座 Implementation Plan</title>
+  <style>
+    :root { --ink:#1f2933; --muted:#65758b; --line:#d8dee8; --accent:#2563eb; --accent-dark:#1e40af; --code:#101827; --paper:#fff; --soft:#eff6ff; --ok:#0f766e; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#eef4ff 0,#f7f8fb 360px,#f7f8fb 100%); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; line-height:1.72; }
+    .layout { display:grid; grid-template-columns:minmax(230px,310px) minmax(0,960px); gap:32px; max-width:1320px; margin:0 auto; padding:32px 24px 56px; }
+    nav { position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto; padding:20px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.92); box-shadow:0 8px 26px rgba(15,23,42,.06); }
+    nav h2 { margin:0 0 12px; font-size:15px; color:var(--accent-dark); letter-spacing:0; }
+    nav a { display:block; color:#334155; text-decoration:none; font-size:13px; line-height:1.35; padding:7px 0; border-bottom:1px solid #edf1f5; }
+    nav a:hover { color:var(--accent); }
+    nav .toc-l3 { padding-left:12px; color:var(--muted); }
+    main { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:44px 56px 64px; box-shadow:0 18px 48px rgba(15,23,42,.08); }
+    h1 { margin:0 0 18px; color:#102a43; font-size:34px; line-height:1.22; letter-spacing:0; } h2 { margin:42px 0 14px; padding-top:12px; border-top:1px solid var(--line); color:#102a43; font-size:24px; line-height:1.32; letter-spacing:0; } h3 { margin:30px 0 12px; color:var(--accent-dark); font-size:19px; line-height:1.35; letter-spacing:0; } h4 { margin:24px 0 8px; font-size:16px; color:#334155; }
+    p { margin:10px 0 14px; } ul,ol { margin:10px 0 18px 24px; padding:0; } li { margin:6px 0; } blockquote { margin:14px 0 20px; padding:12px 16px; border-left:4px solid var(--accent); background:#f5f9ff; color:#334155; }
+    a { color:var(--accent-dark); text-decoration-thickness:1px; text-underline-offset:3px; } code { padding:2px 5px; border-radius:5px; background:#eaf1ff; color:#17315f; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em; }
+    pre { overflow-x:auto; padding:16px 18px; border-radius:8px; background:var(--code); color:#e5edf7; line-height:1.55; } pre code { padding:0; background:transparent; color:inherit; } hr { border:0; border-top:1px solid var(--line); margin:28px 0; }
+    .table-wrap { overflow-x:auto; margin:18px 0 24px; border:1px solid var(--line); border-radius:8px; } table { width:100%; border-collapse:collapse; min-width:720px; background:#fff; } th,td { padding:10px 12px; border-bottom:1px solid #e7ecf2; vertical-align:top; text-align:left; } th { background:#eef5ff; color:#17315f; font-weight:700; } tr:last-child td { border-bottom:0; }
+    .check { display:flex; gap:10px; align-items:flex-start; margin:8px 0; padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; background:#fbfdff; } .check input { margin-top:5px; accent-color:var(--ok); }
+    @media (max-width:900px) { .layout { display:block; padding:16px; } nav { position:relative; top:0; max-height:none; margin-bottom:16px; } main { padding:28px 22px 40px; } h1 { font-size:26px; } h2 { font-size:21px; } }
+    @media print { body { background:#fff; } .layout { display:block; padding:0; } nav { display:none; } main { border:0; box-shadow:none; padding:0; } a { color:inherit; } }
+  </style>
+</head>
+<body><div class="layout"><nav aria-label="目录"><h2>目录</h2><a class="toc-l2" href="#0-scope-boundary">0. Scope Boundary</a>
+<a class="toc-l2" href="#1-file-structure">1. File Structure</a>
+<a class="toc-l3" href="#data-foundation-docs">Data Foundation Docs</a>
+<a class="toc-l3" href="#python-knowledge-layer">Python Knowledge Layer</a>
+<a class="toc-l3" href="#report">Report</a>
+<a class="toc-l3" href="#tests">Tests</a>
+<a class="toc-l3" href="#documentation">Documentation</a>
+<a class="toc-l2" href="#2-success-criteria">2. Success Criteria</a>
+<a class="toc-l2" href="#task-0-baseline-safety-check">Task 0: Baseline Safety Check</a>
+<a class="toc-l2" href="#task-1-data-foundation-models">Task 1: Data Foundation Models</a>
+<a class="toc-l2" href="#task-2-data-foundation-manifests-and-human-cards">Task 2: Data Foundation Manifests and Human Cards</a>
+<a class="toc-l2" href="#task-3-manifest-loader-and-foundation-gate">Task 3: Manifest Loader and Foundation Gate</a>
+<a class="toc-l2" href="#task-4-data-foundation-report">Task 4: Data Foundation Report</a>
+<a class="toc-l2" href="#task-5-documentation-updates">Task 5: Documentation Updates</a>
+<a class="toc-l2" href="#task-6-final-verification">Task 6: Final Verification</a>
+<a class="toc-l2" href="#execution-handoff">Execution Handoff</a></nav><main><h1 id="数据集与资料底座-implementation-plan">数据集与资料底座 Implementation Plan</h1>
+<blockquote><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</blockquote>
+<p><strong>Goal:</strong> Build a manifest-first data foundation that turns public welding sources, public datasets, field coverage, and shipbuilding task evidence into executable gates and a downstream <code>SyntheticSkillDataset v2</code> planning input.</p>
+<p><strong>Architecture:</strong> Add a small <code>weldcore.knowledge.foundation</code> model layer, manifest loaders under <code>weldcore.knowledge.manifest</code>, and one <code>data_foundation_report</code> command. Human-readable cards live under <code>docs/data-foundation/</code>; machine-readable JSON/CSV manifests are the single source of truth for gates and reports. This plan deliberately stops before generating bulk <code>SyntheticSkillDataset v2</code> samples.</p>
+<p><strong>Tech Stack:</strong> Python 3.10+, dataclasses, enum, json/csv/pathlib, pytest, existing <code>weldcore.report</code> conventions, Markdown/HTML docs.</p>
+<hr>
+<h2 id="0-scope-boundary">0. Scope Boundary</h2>
+<p>Design spec:</p>
+<ul>
+<li><code>docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md</code></li>
+<li>HTML reading copy: <code>docs/superpowers/specs/2026-06-01-数据集与资料底座-design.html</code></li>
+</ul>
+<p>This plan implements the <strong>manifest-first data foundation</strong> for that spec.</p>
+<p>It does:</p>
+<ul>
+<li>Create <code>SourceCard</code>, <code>DatasetCard</code>, <code>FieldCoverageRow</code>, <code>TaskEvidenceEntry</code>, and <code>DataFoundation</code> models.</li>
+<li>Create <code>docs/data-foundation/</code> Markdown cards and JSON/CSV manifests.</li>
+<li>Load manifests into executable Python objects.</li>
+<li>Enforce source, dataset, field coverage, task readiness, and forbidden-field gates.</li>
+<li>Generate <code>data_foundation_report</code> artifacts.</li>
+<li>Generate a downstream <code>SyntheticSkillDataset v2</code> planning input document.</li>
+<li>Update README and <code>details.md</code>.</li>
+</ul>
+<p>It does not:</p>
+<ul>
+<li>Download large public datasets into git.</li>
+<li>Generate bulk <code>SyntheticSkillDataset v2</code> samples.</li>
+<li>Implement robot programs, real-machine adapters, or production UI.</li>
+<li>Add molten-pool, weld-pool, or closed-loop in-process control dependencies.</li>
+</ul>
+<hr>
+<h2 id="1-file-structure">1. File Structure</h2>
+<p>Create or modify these files.</p>
+<h3 id="data-foundation-docs">Data Foundation Docs</h3>
+<ul>
+<li>Create: <code>docs/data-foundation/README.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/shipbuilding-automation.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/process-guides.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/public-datasets.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/standards-and-defect-vocabulary.md</code></li>
+<li>Create: <code>docs/data-foundation/manifests/sources.json</code></li>
+<li>Create: <code>docs/data-foundation/manifests/datasets.json</code></li>
+<li>Create: <code>docs/data-foundation/manifests/field_coverage.csv</code></li>
+<li>Create: <code>docs/data-foundation/manifests/task_evidence_map.json</code></li>
+<li>Create: <code>docs/data-foundation/reports/data_foundation_evidence.md</code></li>
+<li>Create: <code>docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code></li>
+</ul>
+<h3 id="python-knowledge-layer">Python Knowledge Layer</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/foundation.py</code></li>
+<li><code>PublicAccess</code>, <code>ShipbuildingRelevanceLevel</code>, <code>DownloadPolicy</code>, <code>DatasetModality</code>, <code>TaskReadiness</code>.</li>
+<li><code>SourceCard</code>, <code>DatasetCard</code>, <code>FieldCoverageRow</code>, <code>TaskEvidenceEntry</code>, <code>DataFoundation</code>, <code>DataFoundationGateResult</code>.</li>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/manifest.py</code></li>
+<li>Manifest path constants and loaders.</li>
+<li><code>load_data_foundation()</code>.</li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Export new data foundation models and loader.</li>
+</ul>
+<h3 id="report">Report</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/report/data_foundation_report.py</code></li>
+<li>Writes report outputs.</li>
+<li>Blocks when source, dataset, field, task, or forbidden-field gates fail.</li>
+</ul>
+<h3 id="tests">Tests</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/tests/test_data_foundation_models.py</code></li>
+<li>Create: <code>weld-experience-engine/tests/test_data_foundation_manifests.py</code></li>
+<li>Create: <code>weld-experience-engine/tests/test_data_foundation_report.py</code></li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li>Modify: <code>README.md</code></li>
+<li>Modify: <code>details.md</code></li>
+<li>Modify: <code>weld-experience-engine/README.md</code></li>
+</ul>
+<hr>
+<h2 id="2-success-criteria">2. Success Criteria</h2>
+<p>Complete means all of these are true:</p>
+<ul>
+<li><code>docs/data-foundation/</code> exists with readable source-card docs and machine-readable manifests.</li>
+<li>Manifest contains at least 20 total sources.</li>
+<li>Manifest contains at least 15 public sources.</li>
+<li>Manifest contains at least 8 sources with <code>shipbuilding_relevance_level = &quot;strong&quot;</code>.</li>
+<li>Manifest contains at least 6 public datasets, counted by <code>DatasetCard.source_id</code> pointing to a <code>SourceCard</code> with <code>public_access = &quot;public&quot;</code>.</li>
+<li>Every source has <code>usable_for</code>, <code>covered_fields</code>, <code>missing_fields</code>, <code>source_refs</code>, <code>assumptions</code>, <code>public_access</code>, <code>use_boundary</code>, and <code>notes</code>.</li>
+<li><code>notes</code> is not accepted as a substitute for <code>use_boundary</code>.</li>
+<li>Every dataset has <code>modalities</code>, <code>size_note</code>, <code>download_policy</code>, <code>schema_summary</code>, <code>quality_label_type</code>, <code>shipbuilding_fit</code>, and <code>use_boundary</code>.</li>
+<li>Dataset <code>download_policy</code> never asks to download large files into git.</li>
+<li>At least 3 task evidence entries have <code>readiness = &quot;ready_for_synthetic_v2_plan&quot;</code>.</li>
+<li>Task evidence entries reference existing source ids and dataset ids.</li>
+<li>Each ready task has at least one strong shipbuilding source.</li>
+<li>Required task fields are either covered or explicitly listed in <code>assumption_fields</code>.</li>
+<li>JSON/CSV outputs contain no <code>熔池</code>, <code>molten_pool</code>, <code>molten pool</code>, <code>weld_pool</code>, or <code>weld pool</code> except negative tests and boundary text in Markdown.</li>
+<li><code>data_foundation_report</code> raises clear errors when source, dataset, field, task, or forbidden-field gates fail.</li>
+<li>Report outputs include:</li>
+<li><code>data_foundation_report_out/sources.json</code></li>
+<li><code>data_foundation_report_out/datasets.json</code></li>
+<li><code>data_foundation_report_out/field_coverage.csv</code></li>
+<li><code>data_foundation_report_out/task_evidence_map.json</code></li>
+<li><code>data_foundation_report_out/evidence.md</code></li>
+<li><code>data_foundation_report_out/synthetic_skilldataset_v2_plan_input.md</code></li>
+<li>Committed report copies are refreshed under:</li>
+<li><code>docs/data-foundation/reports/data_foundation_evidence.md</code></li>
+<li><code>docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code></li>
+<li>README and <code>details.md</code> say this implementation completes the data foundation, not <code>SyntheticSkillDataset v2</code>.</li>
+<li>Commands pass:</li>
+<li><code>uv run pytest -q</code> if <code>uv</code> is installed, otherwise <code>python -m pytest -q</code> as fallback.</li>
+<li><code>uv run python -m weldcore.report.generate</code> or fallback.</li>
+<li><code>uv run python -m weldcore.report.mvp_report</code> or fallback.</li>
+<li><code>uv run python -m weldcore.report.scenario_report</code> or fallback.</li>
+<li><code>uv run python -m weldcore.report.data_foundation_report</code> or fallback.</li>
+</ul>
+<hr>
+<h2 id="task-0-baseline-safety-check">Task 0: Baseline Safety Check</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Read only.</li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Confirm branch and worktree state</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">git status --short --branch</code></pre>
+<p>Expected:</p>
+<pre><code class="language-text">## codex/data-foundation-spec</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Check whether uv is installed</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">command -v uv || true</code></pre>
+<p>Expected:</p>
+<ul>
+<li>If a path is printed, use <code>uv</code> for verification.</li>
+<li>If no path is printed, state that <code>uv</code> is unavailable and use Python fallback only.</li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Run baseline tests</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest -q</code></pre>
+<p>Fallback if <code>uv</code> is unavailable:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest -q</code></pre>
+<p>Expected: all current tests pass.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Commit nothing</strong></span></label>
+<p>No commit for this task.</p>
+<hr>
+<h2 id="task-1-data-foundation-models">Task 1: Data Foundation Models</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/foundation.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_data_foundation_models.py</code></li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Write failing model tests</strong></span></label>
+<p>Create <code>weld-experience-engine/tests/test_data_foundation_models.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.foundation import (
+    DataFoundation,
+    DatasetCard,
+    DatasetModality,
+    DownloadPolicy,
+    PublicAccess,
+    ShipbuildingRelevanceLevel,
+    SourceCard,
+    TaskEvidenceEntry,
+    TaskReadiness,
+)
+
+
+def test_source_card_requires_use_boundary_not_just_notes():
+    source = SourceCard(
+        source_id=&quot;vendor-kranendonk-panel-welding-gantry&quot;,
+        source_type=&quot;vendor_case&quot;,
+        title=&quot;KRANENDONK Panel Welding Gantry&quot;,
+        url=&quot;https://kranendonk.com/applications/panel-welding-gantry/&quot;,
+        publisher=&quot;KRANENDONK&quot;,
+        public_access=PublicAccess.PUBLIC,
+        shipbuilding_relevance_level=ShipbuildingRelevanceLevel.STRONG,
+        shipbuilding_relevance=&quot;Panel line and stiffened panel welding automation.&quot;,
+        covered_fields=[&quot;shipbuilding_context&quot;, &quot;stiffened_panel&quot;, &quot;torch_angle&quot;],
+        missing_fields=[&quot;process_signal&quot;],
+        usable_for=[&quot;scenario_selection&quot;, &quot;parameter_range&quot;],
+        source_refs=[&quot;data-foundation-section-6.1&quot;],
+        assumptions=[&quot;Use as public scenario and field-coverage evidence.&quot;],
+        use_boundary=&quot;Use for task and field constraints; not process validation.&quot;,
+        notes=&quot;Public vendor page.&quot;,
+    )
+
+    assert source.is_complete()
+    data = source.to_dict()
+    assert data[&quot;public_access&quot;] == &quot;public&quot;
+    assert data[&quot;shipbuilding_relevance_level&quot;] == &quot;strong&quot;
+
+
+def test_source_card_rejects_notes_as_boundary_substitute():
+    source = SourceCard(
+        source_id=&quot;bad-source&quot;,
+        source_type=&quot;process_guide&quot;,
+        title=&quot;Bad&quot;,
+        url=&quot;https://example.com&quot;,
+        publisher=&quot;example&quot;,
+        public_access=PublicAccess.PUBLIC,
+        shipbuilding_relevance_level=ShipbuildingRelevanceLevel.GENERIC,
+        shipbuilding_relevance=&quot;generic&quot;,
+        covered_fields=[&quot;quality_label&quot;],
+        missing_fields=[&quot;shipbuilding_context&quot;],
+        usable_for=[&quot;quality_label&quot;],
+        source_refs=[&quot;unit-test&quot;],
+        assumptions=[&quot;example&quot;],
+        use_boundary=&quot;&quot;,
+        notes=&quot;Only use for labels.&quot;,
+    )
+
+    assert not source.is_complete()
+
+
+def test_dataset_card_serializes_download_policy_and_modalities():
+    dataset = DatasetCard(
+        dataset_id=&quot;dataset-gdxray-weld-xray&quot;,
+        source_id=&quot;dataset-gdxray-weld-xray&quot;,
+        modalities=[DatasetModality.XRAY_IMAGE, DatasetModality.METADATA],
+        size_note=&quot;Manifest only; do not mirror full dataset in git.&quot;,
+        download_policy=DownloadPolicy.MANIFEST_ONLY,
+        schema_summary=&quot;Weld X-ray images with defect categories.&quot;,
+        quality_label_type=&quot;defect vocabulary&quot;,
+        shipbuilding_fit=&quot;benchmark_only&quot;,
+        use_boundary=&quot;Use for defect vocabulary and benchmark orientation only.&quot;,
+    )
+
+    data = dataset.to_dict()
+
+    assert data[&quot;download_policy&quot;] == &quot;manifest_only&quot;
+    assert data[&quot;modalities&quot;] == [&quot;xray_image&quot;, &quot;metadata&quot;]
+
+
+def test_data_foundation_rejects_forbidden_source_content():
+    source = SourceCard(
+        source_id=&quot;bad-pool-source&quot;,
+        source_type=&quot;paper&quot;,
+        title=&quot;Bad pool source&quot;,
+        url=&quot;https://example.com&quot;,
+        publisher=&quot;example&quot;,
+        public_access=PublicAccess.PUBLIC,
+        shipbuilding_relevance_level=ShipbuildingRelevanceLevel.GENERIC,
+        shipbuilding_relevance=&quot;generic&quot;,
+        covered_fields=[&quot;weld_pool_width&quot;],
+        missing_fields=[&quot;shipbuilding_context&quot;],
+        usable_for=[&quot;schema_reference&quot;],
+        source_refs=[&quot;unit-test&quot;],
+        assumptions=[&quot;example&quot;],
+        use_boundary=&quot;Out of scope for current stage.&quot;,
+        notes=&quot;example&quot;,
+    )
+    foundation = DataFoundation(sources=[source], datasets=[], task_evidence=[])
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any(&quot;out of scope&quot; in issue for issue in result.issues)
+
+
+def test_task_evidence_entry_requires_ready_fields():
+    entry = TaskEvidenceEntry(
+        family_id=&quot;stiffened-panel-fillet&quot;,
+        required_sources=[&quot;vendor_case&quot;, &quot;project_internal&quot;],
+        supporting_source_ids=[
+            &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+            &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+        ],
+        supporting_dataset_ids=[],
+        required_fields=[&quot;shipbuilding_context&quot;, &quot;torch_angle&quot;],
+        covered_required_fields=[&quot;shipbuilding_context&quot;, &quot;torch_angle&quot;],
+        assumption_fields=[&quot;leg_size_mm&quot;],
+        readiness=TaskReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        next_action=&quot;Use for SyntheticSkillDataset v2 planning.&quot;,
+    )
+
+    assert entry.ready_for_plan()</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Run test to verify failure</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_models.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_models.py -v</code></pre>
+<p>Expected: FAIL with <code>ModuleNotFoundError</code> or missing <code>weldcore.knowledge.foundation</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Implement model layer</strong></span></label>
+<p>Create <code>weld-experience-engine/weldcore/knowledge/foundation.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any
+
+
+FORBIDDEN_POOL_TERMS = (&quot;molten&quot;, &quot;molten_pool&quot;, &quot;molten pool&quot;, &quot;weld_pool&quot;, &quot;weld pool&quot;, &quot;熔池&quot;)
+
+
+class PublicAccess(str, Enum):
+    PUBLIC = &quot;public&quot;
+    PROJECT_INTERNAL = &quot;project_internal&quot;
+    REQUIRES_SCREENING = &quot;requires_screening&quot;
+
+
+class ShipbuildingRelevanceLevel(str, Enum):
+    STRONG = &quot;strong&quot;
+    ADJACENT = &quot;adjacent&quot;
+    GENERIC = &quot;generic&quot;
+
+
+class DownloadPolicy(str, Enum):
+    MANIFEST_ONLY = &quot;manifest_only&quot;
+    SAMPLE_CACHE_LATER = &quot;sample_cache_later&quot;
+    EXTERNAL_CACHE_ONLY = &quot;external_cache_only&quot;
+
+
+class DatasetModality(str, Enum):
+    XRAY_IMAGE = &quot;xray_image&quot;
+    SURFACE_IMAGE = &quot;surface_image&quot;
+    CURRENT_VOLTAGE_TIMESERIES = &quot;current_voltage_timeseries&quot;
+    ROBOT_POSE = &quot;robot_pose&quot;
+    SCAN_3D = &quot;scan_3d&quot;
+    VIDEO = &quot;video&quot;
+    METADATA = &quot;metadata&quot;
+
+
+class TaskReadiness(str, Enum):
+    READY_FOR_SYNTHETIC_V2_PLAN = &quot;ready_for_synthetic_v2_plan&quot;
+    NEEDS_MORE_SOURCES = &quot;needs_more_sources&quot;
+    DEFER = &quot;defer&quot;
+
+
+def _jsonable(value: Any) -&gt; Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _jsonable(item) for key, item in value.items()}
+    return value
+
+
+@dataclass(frozen=True)
+class SourceCard:
+    source_id: str
+    source_type: str
+    title: str
+    url: str
+    publisher: str
+    public_access: PublicAccess
+    shipbuilding_relevance_level: ShipbuildingRelevanceLevel
+    shipbuilding_relevance: str
+    covered_fields: list[str]
+    missing_fields: list[str]
+    usable_for: list[str]
+    source_refs: list[str]
+    assumptions: list[str]
+    use_boundary: str
+    notes: str
+
+    def is_complete(self) -&gt; bool:
+        return all(
+            [
+                self.source_id,
+                self.source_type,
+                self.title,
+                self.url,
+                self.publisher,
+                self.public_access,
+                self.shipbuilding_relevance_level,
+                self.shipbuilding_relevance,
+                self.covered_fields,
+                self.missing_fields,
+                self.usable_for,
+                self.source_refs,
+                self.assumptions,
+                self.use_boundary,
+                self.notes,
+            ]
+        )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class DatasetCard:
+    dataset_id: str
+    source_id: str
+    modalities: list[DatasetModality]
+    size_note: str
+    download_policy: DownloadPolicy
+    schema_summary: str
+    quality_label_type: str
+    shipbuilding_fit: str
+    use_boundary: str
+
+    def is_complete(self) -&gt; bool:
+        return all(
+            [
+                self.dataset_id,
+                self.source_id,
+                self.modalities,
+                self.size_note,
+                self.download_policy,
+                self.schema_summary,
+                self.quality_label_type,
+                self.shipbuilding_fit,
+                self.use_boundary,
+            ]
+        )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class FieldCoverageRow:
+    field_name: str
+    source_ids: list[str]
+    dataset_ids: list[str]
+    coverage_role: str
+    notes: str
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class TaskEvidenceEntry:
+    family_id: str
+    required_sources: list[str]
+    supporting_source_ids: list[str]
+    supporting_dataset_ids: list[str]
+    required_fields: list[str]
+    covered_required_fields: list[str]
+    assumption_fields: list[str]
+    readiness: TaskReadiness
+    next_action: str
+
+    def ready_for_plan(self) -&gt; bool:
+        return self.readiness == TaskReadiness.READY_FOR_SYNTHETIC_V2_PLAN
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class DataFoundationGateResult:
+    passed: bool
+    issues: list[str]
+
+
+@dataclass
+class DataFoundation:
+    sources: list[SourceCard]
+    datasets: list[DatasetCard]
+    task_evidence: list[TaskEvidenceEntry]
+    field_coverage: list[FieldCoverageRow] | None = None
+
+    def validate(self) -&gt; DataFoundationGateResult:
+        issues: list[str] = []
+        for source in self.sources:
+            if not source.is_complete():
+                issues.append(f&quot;{source.source_id}: incomplete source card&quot;)
+            text = str(source.to_dict()).lower()
+            if any(term in text for term in FORBIDDEN_POOL_TERMS):
+                issues.append(f&quot;{source.source_id}: molten-pool dependency is out of scope&quot;)
+        for dataset in self.datasets:
+            if not dataset.is_complete():
+                issues.append(f&quot;{dataset.dataset_id}: incomplete dataset card&quot;)
+        return DataFoundationGateResult(not issues, issues)</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Export models</strong></span></label>
+<p>Modify <code>weld-experience-engine/weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">from .foundation import (
+    DataFoundation,
+    DataFoundationGateResult,
+    DatasetCard,
+    DatasetModality,
+    DownloadPolicy,
+    FieldCoverageRow,
+    PublicAccess,
+    ShipbuildingRelevanceLevel,
+    SourceCard,
+    TaskEvidenceEntry,
+    TaskReadiness,
+)</code></pre>
+<p>Append the same symbols to <code>__all__</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Run model tests</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_models.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_models.py -v</code></pre>
+<p>Expected: PASS.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 6: Commit</strong></span></label>
+<pre><code class="language-bash">git add weld-experience-engine/weldcore/knowledge/foundation.py \
+  weld-experience-engine/weldcore/knowledge/__init__.py \
+  weld-experience-engine/tests/test_data_foundation_models.py
+git commit -m &quot;feat(knowledge): add data foundation models&quot;</code></pre>
+<hr>
+<h2 id="task-2-data-foundation-manifests-and-human-cards">Task 2: Data Foundation Manifests and Human Cards</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>docs/data-foundation/README.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/shipbuilding-automation.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/process-guides.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/public-datasets.md</code></li>
+<li>Create: <code>docs/data-foundation/source-cards/standards-and-defect-vocabulary.md</code></li>
+<li>Create: <code>docs/data-foundation/manifests/sources.json</code></li>
+<li>Create: <code>docs/data-foundation/manifests/datasets.json</code></li>
+<li>Create: <code>docs/data-foundation/manifests/field_coverage.csv</code></li>
+<li>Create: <code>docs/data-foundation/manifests/task_evidence_map.json</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_data_foundation_manifests.py</code></li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Write failing manifest tests</strong></span></label>
+<p>Create <code>weld-experience-engine/tests/test_data_foundation_manifests.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.manifest import load_data_foundation
+from weldcore.knowledge.foundation import (
+    DownloadPolicy,
+    PublicAccess,
+    ShipbuildingRelevanceLevel,
+    TaskReadiness,
+)
+
+
+def test_data_foundation_manifest_meets_source_count_gates():
+    foundation = load_data_foundation()
+
+    assert len(foundation.sources) &gt;= 20
+    assert sum(s.public_access == PublicAccess.PUBLIC for s in foundation.sources) &gt;= 15
+    assert (
+        sum(
+            s.shipbuilding_relevance_level == ShipbuildingRelevanceLevel.STRONG
+            for s in foundation.sources
+        )
+        &gt;= 8
+    )
+
+
+def test_data_foundation_manifest_has_public_dataset_coverage():
+    foundation = load_data_foundation()
+    sources_by_id = {source.source_id: source for source in foundation.sources}
+
+    assert len(foundation.datasets) &gt;= 6
+    assert (
+        sum(
+            sources_by_id[dataset.source_id].public_access == PublicAccess.PUBLIC
+            for dataset in foundation.datasets
+        )
+        &gt;= 6
+    )
+    allowed_policies = {
+        DownloadPolicy.MANIFEST_ONLY,
+        DownloadPolicy.SAMPLE_CACHE_LATER,
+        DownloadPolicy.EXTERNAL_CACHE_ONLY,
+    }
+    assert all(dataset.download_policy in allowed_policies for dataset in foundation.datasets)
+
+
+def test_data_foundation_manifest_has_ready_task_evidence():
+    foundation = load_data_foundation()
+
+    ready = [
+        entry
+        for entry in foundation.task_evidence
+        if entry.readiness == TaskReadiness.READY_FOR_SYNTHETIC_V2_PLAN
+    ]
+
+    assert len(ready) &gt;= 3
+
+
+def test_data_foundation_manifest_validation_passes():
+    foundation = load_data_foundation()
+
+    result = foundation.validate()
+
+    assert result.passed, result.issues</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Run test to verify failure</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_manifests.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_manifests.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.knowledge.manifest</code> or missing files.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Create human-readable docs</strong></span></label>
+<p>Create <code>docs/data-foundation/README.md</code> with:</p>
+<pre><code class="language-markdown"># 数据集与资料底座
+
+本目录记录仿真优先路线使用的公开资料、公开数据集、字段覆盖矩阵和船舶任务证据映射。
+
+本阶段是 manifest-first：不把大体量公开数据下载进 git，只记录来源、字段、schema、体量、下载策略和使用边界。
+
+当前输出用于支撑 `SyntheticSkillDataset v2` 的后续计划，不等于真实焊接质量验证。</code></pre>
+<p>Create four source-card Markdown files. Each file should summarize the relevant source group and point to the JSON manifests as the machine-readable authority.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Create <code>sources.json</code> with at least 20 sources</strong></span></label>
+<p>Create <code>docs/data-foundation/manifests/sources.json</code>.</p>
+<p>Include at least these 20 <code>source_id</code> values:</p>
+<pre><code class="language-json">[
+  &quot;vendor-hyundai-welding-cobot-shipbuilding-2024&quot;,
+  &quot;vendor-kobelco-shipbuilding-welding&quot;,
+  &quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+  &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+  &quot;vendor-kranendonk-block-welding-line&quot;,
+  &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+  &quot;dataset-gdxray-weld-xray&quot;,
+  &quot;dataset-zenodo-metal-arc-welding-10017718&quot;,
+  &quot;dataset-zenodo-tandem-gmaw-17951725&quot;,
+  &quot;dataset-riawelc-weld-image&quot;,
+  &quot;dataset-lohi-weld&quot;,
+  &quot;dataset-mendeley-gmaw-screening-pool&quot;,
+  &quot;standard-aws-swps-public-page&quot;,
+  &quot;standard-aws-standards-index&quot;,
+  &quot;guide-twi-weld-defects&quot;,
+  &quot;encyclopedia-wartsila-weld-defects&quot;,
+  &quot;guide-lincoln-electric-gmaw&quot;,
+  &quot;guide-esab-fcaw-gmaw&quot;,
+  &quot;guide-miller-gmaw&quot;,
+  &quot;paper-shipbuilding-robot-welding-screening&quot;
+]</code></pre>
+<p>Each object must include:</p>
+<pre><code class="language-json">{
+  &quot;source_id&quot;: &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+  &quot;source_type&quot;: &quot;vendor_case&quot;,
+  &quot;title&quot;: &quot;KRANENDONK Panel Welding Gantry&quot;,
+  &quot;url&quot;: &quot;https://kranendonk.com/applications/panel-welding-gantry/&quot;,
+  &quot;publisher&quot;: &quot;KRANENDONK&quot;,
+  &quot;public_access&quot;: &quot;public&quot;,
+  &quot;shipbuilding_relevance_level&quot;: &quot;strong&quot;,
+  &quot;shipbuilding_relevance&quot;: &quot;Panel-line and stiffened-panel welding automation reference.&quot;,
+  &quot;covered_fields&quot;: [&quot;shipbuilding_context&quot;, &quot;stiffened_panel&quot;, &quot;torch_angle&quot;, &quot;travel_speed&quot;],
+  &quot;missing_fields&quot;: [&quot;process_signal&quot;, &quot;real_machine_validation&quot;],
+  &quot;usable_for&quot;: [&quot;scenario_selection&quot;, &quot;parameter_range&quot;],
+  &quot;source_refs&quot;: [&quot;data-foundation-section-6.1&quot;],
+  &quot;assumptions&quot;: [&quot;Use public page content for scenario constraints only.&quot;],
+  &quot;use_boundary&quot;: &quot;Use for task and field constraints; not process validation.&quot;,
+  &quot;notes&quot;: &quot;No controller data imported.&quot;
+}</code></pre>
+<p>Make sure at least 15 objects have <code>&quot;public_access&quot;: &quot;public&quot;</code> and at least 8 have <code>&quot;shipbuilding_relevance_level&quot;: &quot;strong&quot;</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Create <code>datasets.json</code> with at least 6 datasets</strong></span></label>
+<p>Create <code>docs/data-foundation/manifests/datasets.json</code>.</p>
+<p>Include at least:</p>
+<pre><code class="language-json">[
+  {
+    &quot;dataset_id&quot;: &quot;dataset-gdxray-weld-xray&quot;,
+    &quot;source_id&quot;: &quot;dataset-gdxray-weld-xray&quot;,
+    &quot;modalities&quot;: [&quot;xray_image&quot;, &quot;metadata&quot;],
+    &quot;size_note&quot;: &quot;Manifest only; full dataset not mirrored in git.&quot;,
+    &quot;download_policy&quot;: &quot;manifest_only&quot;,
+    &quot;schema_summary&quot;: &quot;Weld X-ray image files with defect categories.&quot;,
+    &quot;quality_label_type&quot;: &quot;defect vocabulary&quot;,
+    &quot;shipbuilding_fit&quot;: &quot;benchmark_only&quot;,
+    &quot;use_boundary&quot;: &quot;Use for defect vocabulary and benchmark orientation only.&quot;
+  },
+  {
+    &quot;dataset_id&quot;: &quot;dataset-zenodo-metal-arc-welding-10017718&quot;,
+    &quot;source_id&quot;: &quot;dataset-zenodo-metal-arc-welding-10017718&quot;,
+    &quot;modalities&quot;: [&quot;current_voltage_timeseries&quot;, &quot;metadata&quot;],
+    &quot;size_note&quot;: &quot;Large public dataset; record schema before any sample cache.&quot;,
+    &quot;download_policy&quot;: &quot;external_cache_only&quot;,
+    &quot;schema_summary&quot;: &quot;Arc welding process measurements and metadata.&quot;,
+    &quot;quality_label_type&quot;: &quot;process/quality metadata after screening&quot;,
+    &quot;shipbuilding_fit&quot;: &quot;generic&quot;,
+    &quot;use_boundary&quot;: &quot;Use for process schema and parameter-range screening, not shipbuilding validation.&quot;
+  }
+]</code></pre>
+<p>Add four more dataset cards for Tandem-GMAW, RIAWELC, LoHi-Weld, and one screened GMAW source.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 6: Create field coverage CSV</strong></span></label>
+<p>Create <code>docs/data-foundation/manifests/field_coverage.csv</code> with header:</p>
+<pre><code class="language-csv">field_name,source_ids,dataset_ids,coverage_role,notes</code></pre>
+<p>Include rows for:</p>
+<pre><code class="language-text">shipbuilding_context
+manufacturing_stage
+weld_object
+joint_type
+weld_position
+groove_geometry
+current
+voltage
+wire_feed
+travel_speed
+trajectory
+robot_pose
+torch_angle
+motion_template
+defect_label
+quality_label
+inspection_reference
+assumption_field
+requires_real_validation_later</code></pre>
+<p>Use semicolon-separated ids in <code>source_ids</code> and <code>dataset_ids</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 7: Create task evidence map</strong></span></label>
+<p>Create <code>docs/data-foundation/manifests/task_evidence_map.json</code>.</p>
+<p>Include at least 4 entries:</p>
+<ul>
+<li><code>stiffened-panel-fillet</code> ready.</li>
+<li><code>panel-butt</code> ready.</li>
+<li><code>micro-panel-web-bulkhead</code> ready.</li>
+<li><code>double-bottom-inner-fillet</code> not ready or probe.</li>
+</ul>
+<p>Ready entries must have:</p>
+<pre><code class="language-json">{
+  &quot;family_id&quot;: &quot;stiffened-panel-fillet&quot;,
+  &quot;required_sources&quot;: [&quot;vendor_case&quot;, &quot;project_internal&quot;],
+  &quot;supporting_source_ids&quot;: [
+    &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+    &quot;project-260522-shipbuilding-welding-brain-plan&quot;
+  ],
+  &quot;supporting_dataset_ids&quot;: [],
+  &quot;required_fields&quot;: [&quot;shipbuilding_context&quot;, &quot;stiffened_panel&quot;, &quot;torch_angle&quot;, &quot;travel_speed&quot;],
+  &quot;covered_required_fields&quot;: [&quot;shipbuilding_context&quot;, &quot;stiffened_panel&quot;, &quot;torch_angle&quot;, &quot;travel_speed&quot;],
+  &quot;assumption_fields&quot;: [&quot;leg_size_mm&quot;, &quot;plate_thickness_mm&quot;],
+  &quot;readiness&quot;: &quot;ready_for_synthetic_v2_plan&quot;,
+  &quot;next_action&quot;: &quot;Use as first SyntheticSkillDataset v2 task family.&quot;
+}</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 8: Commit docs/manifests after loader exists</strong></span></label>
+<p>Do not commit yet if tests cannot load manifests. The commit happens in Task 3 after loader tests pass.</p>
+<hr>
+<h2 id="task-3-manifest-loader-and-foundation-gate">Task 3: Manifest Loader and Foundation Gate</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/manifest.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/foundation.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_data_foundation_manifests.py</code></li>
+<li>Add docs/manifests from Task 2.</li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Implement manifest loader</strong></span></label>
+<p>Create <code>weld-experience-engine/weldcore/knowledge/manifest.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import csv
+import json
+from pathlib import Path
+
+from .foundation import (
+    DataFoundation,
+    DatasetCard,
+    DatasetModality,
+    DownloadPolicy,
+    FieldCoverageRow,
+    PublicAccess,
+    ShipbuildingRelevanceLevel,
+    SourceCard,
+    TaskEvidenceEntry,
+    TaskReadiness,
+)
+
+
+DEFAULT_FOUNDATION_ROOT = Path(__file__).resolve().parents[3] / &quot;docs&quot; / &quot;data-foundation&quot;
+
+
+def _load_json(path: Path):
+    return json.loads(path.read_text(encoding=&quot;utf-8&quot;))
+
+
+def _source_from_dict(data: dict) -&gt; SourceCard:
+    return SourceCard(
+        source_id=data[&quot;source_id&quot;],
+        source_type=data[&quot;source_type&quot;],
+        title=data[&quot;title&quot;],
+        url=data[&quot;url&quot;],
+        publisher=data[&quot;publisher&quot;],
+        public_access=PublicAccess(data[&quot;public_access&quot;]),
+        shipbuilding_relevance_level=ShipbuildingRelevanceLevel(
+            data[&quot;shipbuilding_relevance_level&quot;]
+        ),
+        shipbuilding_relevance=data[&quot;shipbuilding_relevance&quot;],
+        covered_fields=list(data[&quot;covered_fields&quot;]),
+        missing_fields=list(data[&quot;missing_fields&quot;]),
+        usable_for=list(data[&quot;usable_for&quot;]),
+        source_refs=list(data[&quot;source_refs&quot;]),
+        assumptions=list(data[&quot;assumptions&quot;]),
+        use_boundary=data[&quot;use_boundary&quot;],
+        notes=data[&quot;notes&quot;],
+    )
+
+
+def _dataset_from_dict(data: dict) -&gt; DatasetCard:
+    return DatasetCard(
+        dataset_id=data[&quot;dataset_id&quot;],
+        source_id=data[&quot;source_id&quot;],
+        modalities=[DatasetModality(item) for item in data[&quot;modalities&quot;]],
+        size_note=data[&quot;size_note&quot;],
+        download_policy=DownloadPolicy(data[&quot;download_policy&quot;]),
+        schema_summary=data[&quot;schema_summary&quot;],
+        quality_label_type=data[&quot;quality_label_type&quot;],
+        shipbuilding_fit=data[&quot;shipbuilding_fit&quot;],
+        use_boundary=data[&quot;use_boundary&quot;],
+    )
+
+
+def _task_entry_from_dict(data: dict) -&gt; TaskEvidenceEntry:
+    return TaskEvidenceEntry(
+        family_id=data[&quot;family_id&quot;],
+        required_sources=list(data[&quot;required_sources&quot;]),
+        supporting_source_ids=list(data[&quot;supporting_source_ids&quot;]),
+        supporting_dataset_ids=list(data[&quot;supporting_dataset_ids&quot;]),
+        required_fields=list(data[&quot;required_fields&quot;]),
+        covered_required_fields=list(data[&quot;covered_required_fields&quot;]),
+        assumption_fields=list(data[&quot;assumption_fields&quot;]),
+        readiness=TaskReadiness(data[&quot;readiness&quot;]),
+        next_action=data[&quot;next_action&quot;],
+    )
+
+
+def _load_field_coverage(path: Path) -&gt; list[FieldCoverageRow]:
+    rows = []
+    with path.open(encoding=&quot;utf-8&quot;, newline=&quot;&quot;) as f:
+        for row in csv.DictReader(f):
+            rows.append(
+                FieldCoverageRow(
+                    field_name=row[&quot;field_name&quot;],
+                    source_ids=[item for item in row[&quot;source_ids&quot;].split(&quot;;&quot;) if item],
+                    dataset_ids=[item for item in row[&quot;dataset_ids&quot;].split(&quot;;&quot;) if item],
+                    coverage_role=row[&quot;coverage_role&quot;],
+                    notes=row[&quot;notes&quot;],
+                )
+            )
+    return rows
+
+
+def load_data_foundation(root: str | Path | None = None) -&gt; DataFoundation:
+    base = Path(root) if root is not None else DEFAULT_FOUNDATION_ROOT
+    manifests = base / &quot;manifests&quot;
+    return DataFoundation(
+        sources=[_source_from_dict(item) for item in _load_json(manifests / &quot;sources.json&quot;)],
+        datasets=[_dataset_from_dict(item) for item in _load_json(manifests / &quot;datasets.json&quot;)],
+        task_evidence=[
+            _task_entry_from_dict(item)
+            for item in _load_json(manifests / &quot;task_evidence_map.json&quot;)
+        ],
+        field_coverage=_load_field_coverage(manifests / &quot;field_coverage.csv&quot;),
+    )</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Expand <code>DataFoundation.validate()</code> with full gates</strong></span></label>
+<p>Modify <code>DataFoundation.validate()</code> to check:</p>
+<ul>
+<li>total sources &gt;= 20.</li>
+<li>public sources &gt;= 15.</li>
+<li>strong shipbuilding sources &gt;= 8.</li>
+<li>public datasets &gt;= 6, counted by linked <code>DatasetCard.source_id -&gt; SourceCard.public_access</code>.</li>
+<li>no dataset with invalid download policy.</li>
+<li>ready task entries &gt;= 3.</li>
+<li>source ids and dataset ids referenced by datasets/tasks/field coverage exist.</li>
+<li>ready tasks have at least one supporting source with <code>shipbuilding_relevance_level == STRONG</code>.</li>
+<li>ready task required fields are covered or assumed.</li>
+<li>forbidden terms do not appear in JSON-like source/dataset/task/field output.</li>
+</ul>
+<p>Implementation shape:</p>
+<pre><code class="language-python">source_ids = {source.source_id for source in self.sources}
+dataset_ids = {dataset.dataset_id for dataset in self.datasets}
+sources_by_id = {source.source_id: source for source in self.sources}
+
+public_count = sum(source.public_access == PublicAccess.PUBLIC for source in self.sources)
+strong_count = sum(
+    source.shipbuilding_relevance_level == ShipbuildingRelevanceLevel.STRONG
+    for source in self.sources
+)
+public_dataset_count = sum(
+    sources_by_id.get(dataset.source_id)
+    and sources_by_id[dataset.source_id].public_access == PublicAccess.PUBLIC
+    for dataset in self.datasets
+)
+ready_entries = [entry for entry in self.task_evidence if entry.ready_for_plan()]
+
+if len(self.sources) &lt; 20:
+    issues.append(&quot;requires at least 20 sources&quot;)
+if public_count &lt; 15:
+    issues.append(&quot;requires at least 15 public sources&quot;)
+if strong_count &lt; 8:
+    issues.append(&quot;requires at least 8 strong shipbuilding sources&quot;)
+if public_dataset_count &lt; 6:
+    issues.append(&quot;requires at least 6 public datasets&quot;)
+if len(ready_entries) &lt; 3:
+    issues.append(&quot;requires at least 3 ready task evidence entries&quot;)</code></pre>
+<p>Add specific issue strings for unknown source ids and unsupported fields.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Export loader</strong></span></label>
+<p>Modify <code>weld-experience-engine/weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">from .manifest import DEFAULT_FOUNDATION_ROOT, load_data_foundation</code></pre>
+<p>Append to <code>__all__</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Run manifest tests</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_manifests.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_manifests.py -v</code></pre>
+<p>Expected: PASS.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Commit</strong></span></label>
+<pre><code class="language-bash">git add docs/data-foundation \
+  weld-experience-engine/weldcore/knowledge/foundation.py \
+  weld-experience-engine/weldcore/knowledge/manifest.py \
+  weld-experience-engine/weldcore/knowledge/__init__.py \
+  weld-experience-engine/tests/test_data_foundation_manifests.py
+git commit -m &quot;feat(knowledge): add data foundation manifests&quot;</code></pre>
+<hr>
+<h2 id="task-4-data-foundation-report">Task 4: Data Foundation Report</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/report/data_foundation_report.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_data_foundation_report.py</code></li>
+<li>Create/refresh: <code>docs/data-foundation/reports/data_foundation_evidence.md</code></li>
+<li>Create/refresh: <code>docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code></li>
+<li>Output ignored: <code>weld-experience-engine/data_foundation_report_out/</code></li>
+<li>Modify: <code>.gitignore</code></li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Write failing report tests</strong></span></label>
+<p>Create <code>weld-experience-engine/tests/test_data_foundation_report.py</code>:</p>
+<pre><code class="language-python">import json
+import subprocess
+import sys
+
+import pytest
+
+from weldcore.knowledge.foundation import DataFoundation
+from weldcore.report.data_foundation_report import run_data_foundation_report
+
+
+def test_data_foundation_report_writes_evidence_outputs(tmp_path):
+    evidence = run_data_foundation_report(tmp_path)
+
+    assert evidence[&quot;summary&quot;][&quot;source_count&quot;] &gt;= 20
+    assert evidence[&quot;summary&quot;][&quot;public_source_count&quot;] &gt;= 15
+    assert evidence[&quot;summary&quot;][&quot;strong_shipbuilding_source_count&quot;] &gt;= 8
+    assert evidence[&quot;summary&quot;][&quot;public_dataset_count&quot;] &gt;= 6
+    assert evidence[&quot;summary&quot;][&quot;ready_task_count&quot;] &gt;= 3
+
+    assert (tmp_path / &quot;sources.json&quot;).exists()
+    assert (tmp_path / &quot;datasets.json&quot;).exists()
+    assert (tmp_path / &quot;field_coverage.csv&quot;).exists()
+    assert (tmp_path / &quot;task_evidence_map.json&quot;).exists()
+    assert (tmp_path / &quot;evidence.md&quot;).exists()
+    assert (tmp_path / &quot;synthetic_skilldataset_v2_plan_input.md&quot;).exists()
+
+    sources = json.loads((tmp_path / &quot;sources.json&quot;).read_text(encoding=&quot;utf-8&quot;))
+    assert len(sources) &gt;= 20
+
+
+def test_data_foundation_report_refreshes_committed_docs_outputs(tmp_path):
+    docs_dir = tmp_path / &quot;docs-report&quot;
+
+    run_data_foundation_report(tmp_path / &quot;out&quot;, docs_report_dir=docs_dir)
+
+    assert (docs_dir / &quot;data_foundation_evidence.md&quot;).exists()
+    assert (docs_dir / &quot;synthetic_skilldataset_v2_plan_input.md&quot;).exists()
+    assert &quot;SyntheticSkillDataset v2&quot; in (
+        docs_dir / &quot;synthetic_skilldataset_v2_plan_input.md&quot;
+    ).read_text(encoding=&quot;utf-8&quot;)
+
+
+def test_data_foundation_report_blocks_when_gate_fails(tmp_path):
+    with pytest.raises(ValueError, match=&quot;Data foundation gate failed&quot;):
+        run_data_foundation_report(
+            tmp_path,
+            foundation=DataFoundation(sources=[], datasets=[], task_evidence=[]),
+        )
+
+
+def test_data_foundation_report_json_has_no_forbidden_pool_terms(tmp_path):
+    run_data_foundation_report(tmp_path)
+    json_text = &quot;\n&quot;.join(
+        path.read_text(encoding=&quot;utf-8&quot;)
+        for path in [
+            tmp_path / &quot;sources.json&quot;,
+            tmp_path / &quot;datasets.json&quot;,
+            tmp_path / &quot;task_evidence_map.json&quot;,
+        ]
+    ).lower()
+
+    assert &quot;molten_pool&quot; not in json_text
+    assert &quot;molten pool&quot; not in json_text
+    assert &quot;weld_pool&quot; not in json_text
+    assert &quot;weld pool&quot; not in json_text
+    assert &quot;熔池&quot; not in json_text
+
+
+def test_data_foundation_report_module_entrypoint(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            &quot;-m&quot;,
+            &quot;weldcore.report.data_foundation_report&quot;,
+            &quot;--outdir&quot;,
+            str(tmp_path / &quot;out&quot;),
+            &quot;--docs-report-dir&quot;,
+            str(tmp_path / &quot;docs-report&quot;),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert &quot;=== 数据集与资料底座证据摘要 ===&quot; in result.stdout
+    assert (tmp_path / &quot;out&quot; / &quot;sources.json&quot;).exists()
+    assert (tmp_path / &quot;docs-report&quot; / &quot;data_foundation_evidence.md&quot;).exists()</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Run test to verify failure</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_report.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_report.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.report.data_foundation_report</code>.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Implement report</strong></span></label>
+<p>Create <code>weld-experience-engine/weldcore/report/data_foundation_report.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import csv
+import json
+import argparse
+from pathlib import Path
+from typing import Any
+
+from ..knowledge.foundation import DataFoundation, PublicAccess, ShipbuildingRelevanceLevel
+from ..knowledge.manifest import DEFAULT_FOUNDATION_ROOT, load_data_foundation
+
+
+DEFAULT_DOCS_REPORT_DIR = DEFAULT_FOUNDATION_ROOT / &quot;reports&quot;
+
+
+def _write_json(path: Path, data: Any) -&gt; None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding=&quot;utf-8&quot;)
+
+
+def _summary(foundation: DataFoundation) -&gt; dict[str, int]:
+    sources_by_id = {source.source_id: source for source in foundation.sources}
+    return {
+        &quot;source_count&quot;: len(foundation.sources),
+        &quot;public_source_count&quot;: sum(
+            source.public_access == PublicAccess.PUBLIC for source in foundation.sources
+        ),
+        &quot;strong_shipbuilding_source_count&quot;: sum(
+            source.shipbuilding_relevance_level == ShipbuildingRelevanceLevel.STRONG
+            for source in foundation.sources
+        ),
+        &quot;dataset_count&quot;: len(foundation.datasets),
+        &quot;public_dataset_count&quot;: sum(
+            sources_by_id.get(dataset.source_id)
+            and sources_by_id[dataset.source_id].public_access == PublicAccess.PUBLIC
+            for dataset in foundation.datasets
+        ),
+        &quot;ready_task_count&quot;: sum(entry.ready_for_plan() for entry in foundation.task_evidence),
+    }
+
+
+def run_data_foundation_report(
+    outdir: str | Path = &quot;data_foundation_report_out&quot;,
+    foundation: DataFoundation | None = None,
+    docs_report_dir: str | Path | None = None,
+) -&gt; dict[str, Any]:
+    outpath = Path(outdir)
+    outpath.mkdir(parents=True, exist_ok=True)
+
+    data = foundation or load_data_foundation()
+    gate = data.validate()
+    if not gate.passed:
+        raise ValueError(&quot;Data foundation gate failed: &quot; + &quot;; &quot;.join(gate.issues))
+
+    evidence = {
+        &quot;summary&quot;: _summary(data),
+        &quot;sources&quot;: [source.to_dict() for source in data.sources],
+        &quot;datasets&quot;: [dataset.to_dict() for dataset in data.datasets],
+        &quot;field_coverage&quot;: [row.to_dict() for row in data.field_coverage or []],
+        &quot;task_evidence&quot;: [entry.to_dict() for entry in data.task_evidence],
+    }
+
+    _write_json(outpath / &quot;sources.json&quot;, evidence[&quot;sources&quot;])
+    _write_json(outpath / &quot;datasets.json&quot;, evidence[&quot;datasets&quot;])
+    _write_json(outpath / &quot;task_evidence_map.json&quot;, evidence[&quot;task_evidence&quot;])
+
+    with (outpath / &quot;field_coverage.csv&quot;).open(&quot;w&quot;, encoding=&quot;utf-8&quot;, newline=&quot;&quot;) as f:
+        writer = csv.writer(f)
+        writer.writerow([&quot;field_name&quot;, &quot;source_ids&quot;, &quot;dataset_ids&quot;, &quot;coverage_role&quot;, &quot;notes&quot;])
+        for row in data.field_coverage or []:
+            writer.writerow(
+                [
+                    row.field_name,
+                    &quot;;&quot;.join(row.source_ids),
+                    &quot;;&quot;.join(row.dataset_ids),
+                    row.coverage_role,
+                    row.notes,
+                ]
+            )
+
+    _write_evidence_markdown(outpath / &quot;evidence.md&quot;, evidence)
+    _write_plan_input(outpath / &quot;synthetic_skilldataset_v2_plan_input.md&quot;, data)
+    if docs_report_dir is not None:
+        docs_path = Path(docs_report_dir)
+        docs_path.mkdir(parents=True, exist_ok=True)
+        _write_evidence_markdown(docs_path / &quot;data_foundation_evidence.md&quot;, evidence)
+        _write_plan_input(docs_path / &quot;synthetic_skilldataset_v2_plan_input.md&quot;, data)
+
+    print(&quot;=== 数据集与资料底座证据摘要 ===&quot;)
+    print(f&quot;来源: {evidence['summary']['source_count']}&quot;)
+    print(f&quot;公开来源: {evidence['summary']['public_source_count']}&quot;)
+    print(f&quot;船舶强相关: {evidence['summary']['strong_shipbuilding_source_count']}&quot;)
+    print(f&quot;公开数据集: {evidence['summary']['public_dataset_count']}&quot;)
+    print(f&quot;Ready task families: {evidence['summary']['ready_task_count']}&quot;)
+    print(f&quot;报告目录: {outpath}&quot;)
+    if docs_report_dir is not None:
+        print(f&quot;提交版报告目录: {Path(docs_report_dir)}&quot;)
+    return evidence</code></pre>
+<p>Also implement <code>_write_evidence_markdown()</code> and <code>_write_plan_input()</code>:</p>
+<ul>
+<li><code>evidence.md</code> must say the report is not real welding quality validation.</li>
+<li><code>synthetic_skilldataset_v2_plan_input.md</code> must list ready task families, required fields, assumption fields, and next actions.</li>
+<li>Chinese molten-pool boundary text may appear only in Markdown boundary text.</li>
+<li><code>docs_report_dir</code> is optional for tests, but the command entrypoint must default it to <code>docs/data-foundation/reports/</code> so the committed Markdown copies are refreshed.</li>
+</ul>
+<p>Add the command entrypoint in the same file:</p>
+<pre><code class="language-python">def main(argv: list[str] | None = None) -&gt; None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(&quot;--outdir&quot;, default=&quot;data_foundation_report_out&quot;)
+    parser.add_argument(&quot;--docs-report-dir&quot;, default=str(DEFAULT_DOCS_REPORT_DIR))
+    args = parser.parse_args(argv)
+    run_data_foundation_report(args.outdir, docs_report_dir=args.docs_report_dir)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Ignore report output</strong></span></label>
+<p>Modify <code>.gitignore</code>:</p>
+<pre><code class="language-gitignore">data_foundation_report_out/
+weld-experience-engine/data_foundation_report_out/</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Run report tests</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_data_foundation_report.py -v</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest tests/test_data_foundation_report.py -v</code></pre>
+<p>Expected: PASS.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 6: Run report command</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.data_foundation_report</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m weldcore.report.data_foundation_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 数据集与资料底座证据摘要 ===
+来源: 20
+公开来源: 15
+船舶强相关: 8
+公开数据集: 6
+Ready task families: 3</code></pre>
+<p>Counts can be higher than these minimums.</p>
+<p>The command must also refresh:</p>
+<pre><code class="language-text">docs/data-foundation/reports/data_foundation_evidence.md
+docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 7: Verify committed docs reports exist</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">cd &quot;$(git rev-parse --show-toplevel)&quot;
+test -f docs/data-foundation/reports/data_foundation_evidence.md
+test -f docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code></pre>
+<p>Expected: exit code 0.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 8: Commit</strong></span></label>
+<pre><code class="language-bash">git add .gitignore \
+  docs/data-foundation/reports/data_foundation_evidence.md \
+  docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md \
+  weld-experience-engine/weldcore/report/data_foundation_report.py \
+  weld-experience-engine/tests/test_data_foundation_report.py
+git commit -m &quot;feat(report): add data foundation evidence report&quot;</code></pre>
+<hr>
+<h2 id="task-5-documentation-updates">Task 5: Documentation Updates</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>README.md</code></li>
+<li>Modify: <code>details.md</code></li>
+<li>Modify: <code>weld-experience-engine/README.md</code></li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Update root README</strong></span></label>
+<p>In <code>README.md</code>, add:</p>
+<ul>
+<li><code>docs/data-foundation/</code> to the directory tree.</li>
+<li><code>data_foundation_report</code> command to the run section.</li>
+<li>A paragraph stating:</li>
+</ul>
+<pre><code class="language-markdown">`data_foundation_report` 会生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Update <code>details.md</code></strong></span></label>
+<p>Add or update:</p>
+<ul>
+<li>Current phase: data foundation is the next executable gate after scenario gate.</li>
+<li>Report command list includes <code>uv run python -m weldcore.report.data_foundation_report</code>.</li>
+<li>Risk boundary: data foundation is not <code>SyntheticSkillDataset v2</code>, not real welding quality validation, and does not include molten-pool route.</li>
+<li>New deliverables:</li>
+<li><code>docs/data-foundation/</code></li>
+<li><code>data_foundation_report_out/</code></li>
+<li><code>synthetic_skilldataset_v2_plan_input.md</code></li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Update <code>weld-experience-engine/README.md</code></strong></span></label>
+<p>Add command:</p>
+<pre><code class="language-bash">uv run python -m weldcore.report.data_foundation_report # 数据集与资料底座证据</code></pre>
+<p>Add a short paragraph explaining the report outputs and boundary.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Verify docs mention route and boundaries</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">rg -n &quot;data_foundation_report|docs/data-foundation|SyntheticSkillDataset v2|资料底座|熔池&quot; README.md details.md weld-experience-engine/README.md</code></pre>
+<p>Expected: command finds the new route, command, deferred <code>SyntheticSkillDataset v2</code> status, and molten-pool exclusion language.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Commit</strong></span></label>
+<pre><code class="language-bash">git add README.md details.md weld-experience-engine/README.md
+git commit -m &quot;docs: document data foundation gate&quot;</code></pre>
+<hr>
+<h2 id="task-6-final-verification">Task 6: Final Verification</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Read only.</li>
+</ul>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 1: Run full test suite</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest -q</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest -q</code></pre>
+<p>Expected: all tests pass.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 2: Run existing POC report</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.generate</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m weldcore.report.generate</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 经验结构化 POC 证据摘要 ===</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 3: Run existing MVP report</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.mvp_report</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m weldcore.report.mvp_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 焊接技能迁移 MVP 证据摘要 ===</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 4: Run existing scenario report</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.scenario_report</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m weldcore.report.scenario_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 仿真优先船舶焊接场景证据摘要 ===</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 5: Run new data foundation report</strong></span></label>
+<p>Preferred:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.data_foundation_report</code></pre>
+<p>Fallback:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m weldcore.report.data_foundation_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 数据集与资料底座证据摘要 ===</code></pre>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 6: Verify output files</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+test -f data_foundation_report_out/sources.json
+test -f data_foundation_report_out/datasets.json
+test -f data_foundation_report_out/field_coverage.csv
+test -f data_foundation_report_out/task_evidence_map.json
+test -f data_foundation_report_out/evidence.md
+test -f data_foundation_report_out/synthetic_skilldataset_v2_plan_input.md</code></pre>
+<p>Expected: exit code 0.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 7: Verify forbidden-field boundary</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python - &lt;&lt;'PY'
+from pathlib import Path
+for path in [
+    Path(&quot;data_foundation_report_out/sources.json&quot;),
+    Path(&quot;data_foundation_report_out/datasets.json&quot;),
+    Path(&quot;data_foundation_report_out/task_evidence_map.json&quot;),
+]:
+    text = path.read_text(encoding=&quot;utf-8&quot;).lower()
+    found = [term for term in [&quot;molten_pool&quot;, &quot;molten pool&quot;, &quot;weld_pool&quot;, &quot;weld pool&quot;, &quot;熔池&quot;] if term in text]
+    print(path, found)
+    assert not found
+PY</code></pre>
+<p>Expected: all printed lists are empty.</p>
+<label class="check"><input type="checkbox" disabled><span><strong>Step 8: Verify git state</strong></span></label>
+<p>Run:</p>
+<pre><code class="language-bash">git status --short --branch</code></pre>
+<p>Expected: no unexpected modified or untracked files. Generated report outputs should be ignored.</p>
+<hr>
+<h2 id="execution-handoff">Execution Handoff</h2>
+<p>Plan complete when this document is approved.</p>
+<p>Recommended execution mode:</p>
+<p><strong>1. Subagent-Driven (recommended)</strong> - dispatch one fresh worker per task, review between tasks, fast iteration.</p>
+<p>Alternative:</p>
+<p><strong>2. Inline Execution</strong> - execute tasks in this session using <code>superpowers:executing-plans</code>, batch execution with checkpoints.</p>
+</main></div></body>
+</html>
