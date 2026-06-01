@@ -11,6 +11,54 @@ from weldcore.knowledge.foundation import (
 )
 
 
+def _source_card(source_id: str = "source-a") -> SourceCard:
+    return SourceCard(
+        source_id=source_id,
+        source_type="vendor_case",
+        title="Source A",
+        url="https://example.com/source-a",
+        publisher="example",
+        public_access=PublicAccess.PUBLIC,
+        shipbuilding_relevance_level=ShipbuildingRelevanceLevel.GENERIC,
+        shipbuilding_relevance="generic",
+        covered_fields=["shipbuilding_context"],
+        missing_fields=["process_signal"],
+        usable_for=["scenario_selection"],
+        source_refs=["unit-test"],
+        assumptions=["example"],
+        use_boundary="Use for tests only; not process validation.",
+        notes="example",
+    )
+
+
+def _dataset_card(dataset_id: str = "dataset-a") -> DatasetCard:
+    return DatasetCard(
+        dataset_id=dataset_id,
+        source_id="source-a",
+        modalities=[DatasetModality.METADATA],
+        size_note="Manifest only.",
+        download_policy=DownloadPolicy.MANIFEST_ONLY,
+        schema_summary="Metadata fields.",
+        quality_label_type="none",
+        shipbuilding_fit="generic",
+        use_boundary="Use for tests only.",
+    )
+
+
+def _task_evidence_entry(family_id: str = "family-a") -> TaskEvidenceEntry:
+    return TaskEvidenceEntry(
+        family_id=family_id,
+        required_sources=["vendor_case"],
+        supporting_source_ids=["source-a"],
+        supporting_dataset_ids=[],
+        required_fields=["shipbuilding_context"],
+        covered_required_fields=["shipbuilding_context"],
+        assumption_fields=[],
+        readiness=TaskReadiness.NEEDS_MORE_SOURCES,
+        next_action="Add more sources.",
+    )
+
+
 def test_source_card_requires_use_boundary_not_just_notes():
     source = SourceCard(
         source_id="vendor-kranendonk-panel-welding-gantry",
@@ -120,3 +168,45 @@ def test_task_evidence_entry_ready_for_plan_accepts_synthetic_v2_plan():
     )
 
     assert entry.ready_for_plan()
+
+
+def test_data_foundation_rejects_duplicate_source_ids():
+    foundation = DataFoundation(
+        sources=[_source_card("duplicate-source"), _source_card("duplicate-source")],
+        datasets=[],
+        task_evidence=[],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("duplicate source_id" in issue for issue in result.issues)
+
+
+def test_data_foundation_rejects_duplicate_dataset_ids():
+    foundation = DataFoundation(
+        sources=[],
+        datasets=[_dataset_card("duplicate-dataset"), _dataset_card("duplicate-dataset")],
+        task_evidence=[],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("duplicate dataset_id" in issue for issue in result.issues)
+
+
+def test_data_foundation_rejects_duplicate_task_family_ids():
+    foundation = DataFoundation(
+        sources=[],
+        datasets=[],
+        task_evidence=[
+            _task_evidence_entry("duplicate-family"),
+            _task_evidence_entry("duplicate-family"),
+        ],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("duplicate family_id" in issue for issue in result.issues)

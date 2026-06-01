@@ -52,6 +52,16 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def _duplicate_values(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for value in values:
+        if value in seen:
+            duplicates.add(value)
+        seen.add(value)
+    return sorted(duplicates)
+
+
 @dataclass(frozen=True)
 class SourceCard:
     source_id: str
@@ -172,6 +182,12 @@ class DataFoundation:
 
     def validate(self) -> DataFoundationGateResult:
         issues: list[str] = []
+        for source_id in _duplicate_values([source.source_id for source in self.sources]):
+            issues.append(f"{source_id}: duplicate source_id")
+        for dataset_id in _duplicate_values([dataset.dataset_id for dataset in self.datasets]):
+            issues.append(f"{dataset_id}: duplicate dataset_id")
+        for family_id in _duplicate_values([entry.family_id for entry in self.task_evidence]):
+            issues.append(f"{family_id}: duplicate family_id")
         for source in self.sources:
             if not source.is_complete():
                 issues.append(f"{source.source_id}: incomplete source card")
