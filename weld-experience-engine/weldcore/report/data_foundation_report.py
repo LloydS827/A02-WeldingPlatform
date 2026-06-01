@@ -46,7 +46,7 @@ def run_data_foundation_report(
     outdir: str | Path = "data_foundation_report_out",
     foundation: DataFoundation | None = None,
     docs_report_dir: str | Path | None = None,
-) -> dict[str, int]:
+) -> dict[str, Any]:
     outpath = Path(outdir)
     outpath.mkdir(parents=True, exist_ok=True)
 
@@ -58,7 +58,15 @@ def run_data_foundation_report(
     summary = _summary(data_foundation)
     sources = [source.to_dict() for source in data_foundation.sources]
     datasets = [dataset.to_dict() for dataset in data_foundation.datasets]
+    field_coverage = [row.to_dict() for row in data_foundation.field_coverage or []]
     tasks = [entry.to_dict() for entry in data_foundation.task_evidence]
+    evidence = {
+        "summary": summary,
+        "sources": sources,
+        "datasets": datasets,
+        "field_coverage": field_coverage,
+        "task_evidence": tasks,
+    }
 
     _write_json(outpath / "sources.json", sources)
     _write_json(outpath / "datasets.json", datasets)
@@ -93,7 +101,7 @@ def run_data_foundation_report(
     print(f"公开数据集: {summary['public_dataset_count']}")
     print(f"可进入 SyntheticSkillDataset v2 规划的任务族: {summary['ready_task_count']}")
     print(f"报告目录: {outpath}")
-    return summary
+    return evidence
 
 
 def _write_field_coverage_csv(path: Path, foundation: DataFoundation) -> None:
@@ -275,7 +283,7 @@ def _escape_markdown_table(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
 
 
-def main(argv: list[str] | None = None) -> dict[str, int]:
+def main(argv: list[str] | None = None) -> dict[str, Any]:
     parser = argparse.ArgumentParser(description="生成数据集与资料底座证据报告。")
     parser.add_argument("--outdir", default="data_foundation_report_out")
     parser.add_argument(
