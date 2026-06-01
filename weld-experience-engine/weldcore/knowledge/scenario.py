@@ -90,7 +90,7 @@ class ScenarioGateResult:
                 *scenario.assumptions,
             ]
         ).lower()
-        if "molten" in text or "weld_pool" in text or "熔池" in text:
+        if "molten" in text or "weld_pool" in text or "weld pool" in text or "熔池" in text:
             issues.append("molten-pool dependency is out of scope")
         return cls(scenario.scenario_id, not issues, issues)
 

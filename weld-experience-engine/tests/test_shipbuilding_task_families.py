@@ -112,3 +112,29 @@ def test_task_support_accepts_required_field_when_declared_as_assumption():
     result = validate_task_family_support(family, kb)
 
     assert result.passed
+
+
+def test_task_support_rejects_weld_pool_dependency_written_with_spaces():
+    kb = load_seed_knowledge_base()
+    family = ShipbuildingTaskFamily(
+        family_id="pool-dependent-family",
+        name="Pool dependent family",
+        shipbuilding_context="panel line",
+        typical_weld_objects=["screening"],
+        joint_types=[WeldJointType.FILLET],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=["shipbuilding_context"],
+        assumption_fields=[],
+        source_ids=[
+            "vendor-hyundai-welding-cobot-shipbuilding-2024",
+            "project-260522-shipbuilding-welding-brain-plan",
+        ],
+        disposition=TaskDisposition.CANDIDATE,
+        notes="requires weld pool feedback",
+    )
+
+    result = validate_task_family_support(family, kb)
+
+    assert not result.passed
+    assert any("out of scope" in issue for issue in result.issues)

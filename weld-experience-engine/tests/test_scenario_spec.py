@@ -2,6 +2,7 @@ from weldcore.knowledge.scenario import (
     EvidenceRole,
     ParameterRange,
     ScenarioGateResult,
+    SimulationScenarioSpec,
     scenario_from_task_family,
 )
 from weldcore.knowledge.seeds import load_seed_task_families
@@ -47,3 +48,27 @@ def test_parameter_range_serializes_units_and_source_role():
     )
 
     assert value.to_dict()["evidence_role"] == "public_constraint"
+
+
+def test_scenario_gate_rejects_weld_pool_dependency_written_with_spaces():
+    scenario = SimulationScenarioSpec(
+        scenario_id="scenario-pool-dependent",
+        shipbuilding_task="Pool dependent",
+        shipbuilding_context="panel line",
+        difficulty="easy",
+        task_disposition=TaskDisposition.CANDIDATE,
+        weld_condition={"family_id": "pool-dependent"},
+        parameter_ranges=[],
+        motion_templates=["straight"],
+        quality_placeholders=["weld pool feedback label"],
+        source_refs=[
+            "vendor-hyundai-welding-cobot-shipbuilding-2024",
+            "project-260522-shipbuilding-welding-brain-plan",
+        ],
+        assumptions=[],
+    )
+
+    result = ScenarioGateResult.from_scenario(scenario, require_candidate=True)
+
+    assert not result.passed
+    assert any("out of scope" in issue for issue in result.issues)

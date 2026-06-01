@@ -115,7 +115,7 @@ def validate_task_family_support(
             family.notes,
         ]
     ).lower()
-    if "molten" in text or "weld_pool" in text or "熔池" in text:
+    if "molten" in text or "weld_pool" in text or "weld pool" in text or "熔池" in text:
         issues.append("molten-pool dependency is out of scope")
 
     return TaskGateResult(family.family_id, not issues, issues)
