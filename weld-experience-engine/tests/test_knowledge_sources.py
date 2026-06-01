@@ -53,6 +53,28 @@ def test_knowledge_base_rejects_incomplete_source():
     assert "incomplete" in issues[0]
 
 
+def test_knowledge_base_rejects_duplicate_source_id():
+    source = PublicWeldSource(
+        source_id="duplicate",
+        source_type=SourceType.DATASET,
+        title="Complete source",
+        url="https://example.com",
+        publisher="example",
+        shipbuilding_relevance="example relevance",
+        covered_fields=["field_a"],
+        missing_fields=["field_b"],
+        usable_for=[UsableFor.BENCHMARK],
+        source_refs=["unit-test"],
+        assumptions=["example assumption"],
+        notes="example notes",
+    )
+    kb = PublicWeldKnowledgeBase([source, source])
+
+    issues = kb.validation_issues()
+
+    assert any("duplicate source_id" in issue for issue in issues)
+
+
 def test_seed_knowledge_base_has_first_gate_coverage():
     kb = load_seed_knowledge_base()
 
@@ -76,5 +98,7 @@ def test_seed_knowledge_base_has_no_molten_pool_source_content():
     source_json_text = str(kb.to_dict()).lower()
 
     assert "molten_pool" not in source_json_text
+    assert "molten pool" not in source_json_text
     assert "weld_pool" not in source_json_text
+    assert "weld pool" not in source_json_text
     assert "熔池" not in source_json_text

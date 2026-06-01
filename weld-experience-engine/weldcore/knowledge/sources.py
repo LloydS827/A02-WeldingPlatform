@@ -50,6 +50,7 @@ class PublicWeldSource:
         return all(
             [
                 self.source_id,
+                self.source_type,
                 self.title,
                 self.url,
                 self.publisher,
