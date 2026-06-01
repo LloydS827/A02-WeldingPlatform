@@ -281,6 +281,12 @@ class DataFoundation:
                     issues.append(
                         f"{entry.family_id}: required source type {required_source} is not supported"
                     )
+            supported_fields = set(entry.covered_required_fields) | set(entry.assumption_fields)
+            missing_fields = sorted(set(entry.required_fields) - supported_fields)
+            if missing_fields:
+                issues.append(
+                    f"{entry.family_id}: task missing required fields {missing_fields}"
+                )
             if entry.ready_for_plan():
                 has_strong_source = any(
                     source_id in source_by_id
@@ -290,12 +296,6 @@ class DataFoundation:
                 )
                 if not has_strong_source:
                     issues.append(f"{entry.family_id}: ready task needs a strong source")
-                supported_fields = set(entry.covered_required_fields) | set(entry.assumption_fields)
-                missing_fields = sorted(set(entry.required_fields) - supported_fields)
-                if missing_fields:
-                    issues.append(
-                        f"{entry.family_id}: ready task missing required fields {missing_fields}"
-                    )
                 for field_name in entry.covered_required_fields:
                     row = field_coverage_by_name.get(field_name)
                     if row is None:

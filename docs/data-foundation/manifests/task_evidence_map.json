@@ -61,7 +61,7 @@
     "supporting_dataset_ids": [],
     "required_fields": ["shipbuilding_context", "weld_object", "weld_position", "robot_pose", "motion_template"],
     "covered_required_fields": ["shipbuilding_context", "weld_object", "weld_position", "robot_pose"],
-    "assumption_fields": ["confined_space_clearance", "reachability_placeholder", "collision_margin"],
+    "assumption_fields": ["motion_template", "confined_space_clearance", "reachability_placeholder", "collision_margin"],
     "readiness": "needs_more_sources",
     "next_action": "暂不进入 ready；先补充分段内部空间、姿态和可达性证据。"
   }

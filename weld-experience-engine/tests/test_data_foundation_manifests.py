@@ -96,6 +96,25 @@ def test_task_required_source_type_must_be_satisfied_by_supporting_sources():
     assert any("standard" in issue and entry.family_id in issue for issue in result.issues)
 
 
+def test_non_ready_task_required_fields_must_be_covered_or_assumed():
+    foundation = load_data_foundation()
+    entry = next(
+        item for item in foundation.task_evidence if item.family_id == "double-bottom-inner-fillet"
+    )
+    index = foundation.task_evidence.index(entry)
+    foundation.task_evidence[index] = replace(
+        entry,
+        assumption_fields=[
+            field for field in entry.assumption_fields if field != "motion_template"
+        ],
+    )
+
+    result = foundation.validate()
+
+    assert not result.passed
+    assert any("motion_template" in issue and entry.family_id in issue for issue in result.issues)
+
+
 def test_field_coverage_row_with_unknown_id_fails_validation():
     foundation = load_data_foundation()
     foundation.field_coverage = list(foundation.field_coverage or []) + [
