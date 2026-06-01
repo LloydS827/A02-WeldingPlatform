@@ -1,0 +1,1579 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>仿真优先船舶焊接数据底座实施计划</title>
+  <style>
+    :root { --ink:#1f2933; --muted:#65758b; --line:#d8dee8; --accent:#2563eb; --accent-dark:#1e40af; --code:#101827; --paper:#fff; --soft:#eff6ff; --ok:#0f766e; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#eef4ff 0,#f7f8fb 360px,#f7f8fb 100%); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; line-height:1.72; }
+    .layout { display:grid; grid-template-columns:minmax(230px,310px) minmax(0,960px); gap:32px; max-width:1320px; margin:0 auto; padding:32px 24px 56px; }
+    nav { position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto; padding:20px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.92); box-shadow:0 8px 26px rgba(15,23,42,.06); }
+    nav h2 { margin:0 0 12px; font-size:15px; color:var(--accent-dark); letter-spacing:0; }
+    nav a { display:block; color:#334155; text-decoration:none; font-size:13px; line-height:1.35; padding:7px 0; border-bottom:1px solid #edf1f5; }
+    nav a:hover { color:var(--accent); }
+    nav .toc-l3 { padding-left:12px; color:var(--muted); } nav .toc-l4,nav .toc-l5,nav .toc-l6 { padding-left:24px; color:var(--muted); }
+    main { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:44px 56px 64px; box-shadow:0 18px 48px rgba(15,23,42,.08); }
+    h1 { margin:0 0 18px; color:#102a43; font-size:34px; line-height:1.22; letter-spacing:0; }
+    h2 { margin:42px 0 14px; padding-top:12px; border-top:1px solid var(--line); color:#102a43; font-size:24px; line-height:1.32; letter-spacing:0; }
+    h3 { margin:30px 0 12px; color:var(--accent-dark); font-size:19px; line-height:1.35; letter-spacing:0; }
+    h4 { margin:24px 0 8px; font-size:16px; color:#334155; } p { margin:10px 0 14px; } ul,ol { margin:10px 0 18px 24px; padding:0; } li { margin:6px 0; }
+    a { color:var(--accent-dark); text-decoration-thickness:1px; text-underline-offset:3px; }
+    code { padding:2px 5px; border-radius:5px; background:#eaf1ff; color:#17315f; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em; }
+    pre { overflow-x:auto; padding:16px 18px; border-radius:8px; background:var(--code); color:#e5edf7; line-height:1.55; } pre code { padding:0; background:transparent; color:inherit; }
+    hr { border:0; border-top:1px solid var(--line); margin:28px 0; }
+    .table-wrap { overflow-x:auto; margin:18px 0 24px; border:1px solid var(--line); border-radius:8px; } table { width:100%; border-collapse:collapse; min-width:720px; background:#fff; } th,td { padding:10px 12px; border-bottom:1px solid #e7ecf2; vertical-align:top; text-align:left; } th { background:#eef5ff; color:#17315f; font-weight:700; } tr:last-child td { border-bottom:0; }
+    .check { display:flex; gap:10px; align-items:flex-start; margin:8px 0; padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; background:#fbfdff; } .check input { margin-top:5px; accent-color:var(--ok); }
+    @media (max-width:900px) { .layout { display:block; padding:16px; } nav { position:relative; top:0; max-height:none; margin-bottom:16px; } main { padding:28px 22px 40px; } h1 { font-size:26px; } h2 { font-size:21px; } }
+    @media print { body { background:#fff; } .layout { display:block; padding:0; } nav { display:none; } main { border:0; box-shadow:none; padding:0; } a { color:inherit; } }
+  </style>
+</head>
+<body><div class="layout"><nav aria-label="目录"><h2>目录</h2><a class="toc-l2" href="#0-scope-boundary">0. Scope Boundary</a>
+<a class="toc-l2" href="#1-file-structure">1. File Structure</a>
+<a class="toc-l3" href="#knowledge-base">Knowledge Base</a>
+<a class="toc-l3" href="#report">Report</a>
+<a class="toc-l3" href="#tests">Tests</a>
+<a class="toc-l3" href="#documentation">Documentation</a>
+<a class="toc-l2" href="#2-success-criteria">2. Success Criteria</a>
+<a class="toc-l2" href="#task-0-baseline-safety-check">Task 0: Baseline Safety Check</a>
+<a class="toc-l2" href="#task-1-public-source-knowledge-models">Task 1: Public Source Knowledge Models</a>
+<a class="toc-l2" href="#task-2-seed-public-knowledge-base">Task 2: Seed Public Knowledge Base</a>
+<a class="toc-l2" href="#task-3-shipbuilding-task-families-and-support-gate">Task 3: Shipbuilding Task Families and Support Gate</a>
+<a class="toc-l2" href="#task-4-simulation-scenario-specs">Task 4: Simulation Scenario Specs</a>
+<a class="toc-l2" href="#task-5-scenario-evidence-report">Task 5: Scenario Evidence Report</a>
+<a class="toc-l2" href="#task-6-documentation-updates">Task 6: Documentation Updates</a>
+<a class="toc-l2" href="#task-7-final-verification">Task 7: Final Verification</a>
+<a class="toc-l2" href="#execution-handoff">Execution Handoff</a></nav><main><h1 id="仿真优先船舶焊接数据底座-implementation-plan">仿真优先船舶焊接数据底座 Implementation Plan</h1>
+<p>&gt; <strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+<p><strong>Goal:</strong> Build the first executable gate for the new simulation-first route: a source-traceable public welding knowledge base, shipbuilding task-family support check, candidate scenario specs, and evidence report.</p>
+<p><strong>Architecture:</strong> Add a focused <code>weldcore.knowledge</code> package and one <code>scenario_report</code> command. This plan deliberately stops before bulk <code>SyntheticSkillDataset v2</code> generation: it proves the public-knowledge and shipbuilding-task gate first, then a later gated plan can generate synthetic datasets from approved scenario specs. Existing POC/MVP code and report commands must keep working.</p>
+<p><strong>Tech Stack:</strong> Python 3.10+, dataclasses, enum, json/csv/pathlib, pytest, existing <code>weldcore</code> report conventions, optional matplotlib for a non-blocking priority plot.</p>
+<hr>
+<h2 id="0-scope-boundary">0. Scope Boundary</h2>
+<p>Design spec:</p>
+<ul>
+<li><code>docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.md</code></li>
+<li>HTML reading copy: <code>docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.html</code></li>
+</ul>
+<p>This is the <strong>knowledge-gate subplan</strong> for that spec.</p>
+<p>It does:</p>
+<ul>
+<li>Build <code>PublicWeldKnowledgeBase</code>.</li>
+<li>Build a shipbuilding task-family table and support gate.</li>
+<li>Build <code>SimulationScenarioSpec</code> candidates from supported task families.</li>
+<li>Build <code>scenario_report</code> evidence artifacts.</li>
+<li>Update README and <code>details.md</code> to reflect the route change.</li>
+</ul>
+<p>It does not:</p>
+<ul>
+<li>Generate bulk new shipbuilding <code>SkillDataset</code> samples.</li>
+<li>Implement robot programs or real-machine adapters.</li>
+<li>Introduce molten-pool fields, labels, dependencies, or evidence.</li>
+</ul>
+<p>Next plan after this one:</p>
+<ul>
+<li><code>SyntheticSkillDataset v2</code> generation from approved <code>SimulationScenarioSpec</code> outputs.</li>
+</ul>
+<hr>
+<h2 id="1-file-structure">1. File Structure</h2>
+<p>Create or modify these files.</p>
+<h3 id="knowledge-base">Knowledge Base</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/sources.py</code></li>
+</ul>
+<p>- <code>SourceType</code>, <code>UsableFor</code>, <code>PublicWeldSource</code>, <code>PublicWeldKnowledgeBase</code>, <code>FieldCoverageSummary</code>. - No network access.</p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/shipbuilding.py</code></li>
+</ul>
+<p>- <code>WeldJointType</code>, <code>WeldPosition</code>, <code>TaskDisposition</code>, <code>ShipbuildingTaskFamily</code>, <code>TaskGateResult</code>, scoring and support validation.</p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/scenario.py</code></li>
+</ul>
+<p>- <code>EvidenceRole</code>, <code>ParameterRange</code>, <code>SimulationScenarioSpec</code>, <code>ScenarioGateResult</code>.</p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/seeds.py</code></li>
+</ul>
+<p>- Seed public sources and shipbuilding task families.</p>
+<h3 id="report">Report</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/report/scenario_report.py</code></li>
+</ul>
+<p>- Writes source, task-family, scenario, field-coverage, and evidence artifacts. - Blocks when the knowledge-base, task-family, or scenario gate fails.</p>
+<h3 id="tests">Tests</h3>
+<ul>
+<li>Create: <code>weld-experience-engine/tests/test_knowledge_sources.py</code></li>
+<li>Create: <code>weld-experience-engine/tests/test_shipbuilding_task_families.py</code></li>
+<li>Create: <code>weld-experience-engine/tests/test_scenario_spec.py</code></li>
+<li>Create: <code>weld-experience-engine/tests/test_scenario_report.py</code></li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li>Modify: <code>README.md</code></li>
+<li>Modify: <code>details.md</code></li>
+<li>Modify: <code>weld-experience-engine/README.md</code></li>
+</ul>
+<hr>
+<h2 id="2-success-criteria">2. Success Criteria</h2>
+<p>Complete means all of these are true:</p>
+<ul>
+<li>At least 8 public sources are seeded.</li>
+<li>Every source has <code>usable_for</code>, <code>covered_fields</code>, <code>missing_fields</code>, <code>source_refs</code>, <code>assumptions</code>, and <code>notes</code>.</li>
+<li>Candidate task selection validates against <code>PublicWeldKnowledgeBase</code>, not just source count.</li>
+<li>Source ids referenced by task families must exist.</li>
+<li>At least one referenced source for a candidate must be usable for <code>scenario_selection</code>.</li>
+<li>Required task fields must be either covered by referenced sources or explicitly declared as family-level <code>assumption_fields</code>.</li>
+<li>Scenario specs preserve real source refs; no code truncates refs to force a gate result.</li>
+<li>Scenario specs include <code>shipbuilding_context</code>, <code>task_disposition</code>, and evidence roles.</li>
+<li>Scenario gates can require <code>candidate</code> disposition explicitly.</li>
+<li><code>scenario_report</code> raises a clear error when the KB, task gate, or scenario gate fails.</li>
+<li>JSON outputs contain no <code>熔池</code>, <code>molten_pool</code>, or <code>weld_pool</code> as fields, labels, dependencies, source content, or scenario input.</li>
+<li>Any Chinese <code>熔池</code> mention appears only in report/documentation boundary text saying it is excluded from this stage.</li>
+<li>README and <code>details.md</code> say this implementation completes the public-knowledge/task-family gate, not <code>SyntheticSkillDataset v2</code>.</li>
+<li>Commands pass:</li>
+</ul>
+<p>- <code>uv run pytest -q</code> - <code>uv run python -m weldcore.report.generate</code> - <code>uv run python -m weldcore.report.mvp_report</code> - <code>uv run python -m weldcore.report.scenario_report</code></p>
+<hr>
+<h2 id="task-0-baseline-safety-check">Task 0: Baseline Safety Check</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Read only.</li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Confirm branch and worktree state</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">git status --short --branch</code></pre>
+<p>Expected:</p>
+<pre><code class="language-text">## codex/weld-skill-transfer-mvp...origin/codex/weld-skill-transfer-mvp [ahead N]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run baseline tests with uv</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv sync --extra dev --extra viz
+uv run pytest -q</code></pre>
+<p>Expected: all current tests pass.</p>
+<p>If <code>uv</code> is missing, state that clearly and use this fallback only for temporary verification:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+python -m pytest -q</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Commit nothing</strong></span></div>
+<p>No commit for this task.</p>
+<hr>
+<h2 id="task-1-public-source-knowledge-models">Task 1: Public Source Knowledge Models</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/sources.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_knowledge_sources.py</code></li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Write failing source model tests</strong></span></div>
+<p>Create <code>tests/test_knowledge_sources.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.sources import (
+    PublicWeldKnowledgeBase,
+    PublicWeldSource,
+    SourceType,
+    UsableFor,
+)
+
+
+def test_public_source_requires_traceability_fields():
+    source = PublicWeldSource(
+        source_id=&quot;vendor-hyundai-welding-cobot-shipbuilding-2024&quot;,
+        source_type=SourceType.VENDOR_CASE,
+        title=&quot;Hyundai Welding Cobot Solution (Shipbuilding) Leaflet 2024&quot;,
+        url=&quot;https://www.hyundaiwelding.com/data/file/download/brochures/Hyundai_Welding_Cobot%20Solution%20%28Shipbuilding%29_Leaflet_2024.pdf&quot;,
+        publisher=&quot;Hyundai Welding&quot;,
+        shipbuilding_relevance=&quot;shipbuilding cobot welding scenario reference&quot;,
+        covered_fields=[&quot;shipbuilding_context&quot;, &quot;robot_welding_application&quot;],
+        missing_fields=[&quot;trajectory&quot;, &quot;process_signal&quot;, &quot;quality_result&quot;],
+        usable_for=[UsableFor.SCENARIO_SELECTION],
+        source_refs=[&quot;design-spec-section-7.1&quot;],
+        assumptions=[&quot;Use as scenario evidence only, not process validation.&quot;],
+        notes=&quot;No direct real-machine dataset imported.&quot;,
+    )
+
+    assert source.is_complete()
+    data = source.to_dict()
+    assert data[&quot;source_type&quot;] == &quot;vendor_case&quot;
+    assert data[&quot;usable_for&quot;] == [&quot;scenario_selection&quot;]
+    assert &quot;molten&quot; not in &quot; &quot;.join(data[&quot;covered_fields&quot;]).lower()
+
+
+def test_knowledge_base_rejects_incomplete_source():
+    source = PublicWeldSource(
+        source_id=&quot;incomplete&quot;,
+        source_type=SourceType.DATASET,
+        title=&quot;Incomplete&quot;,
+        url=&quot;https://example.com&quot;,
+        publisher=&quot;unknown&quot;,
+        shipbuilding_relevance=&quot;&quot;,
+        covered_fields=[],
+        missing_fields=[],
+        usable_for=[],
+        source_refs=[],
+        assumptions=[],
+        notes=&quot;&quot;,
+    )
+    kb = PublicWeldKnowledgeBase([source])
+
+    issues = kb.validation_issues()
+
+    assert issues
+    assert &quot;incomplete&quot; in issues[0]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run test to verify failure</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_knowledge_sources.py -v</code></pre>
+<p>Expected: FAIL with <code>ModuleNotFoundError: No module named &#x27;weldcore.knowledge&#x27;</code>.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Implement source models</strong></span></div>
+<p>Create <code>weldcore/knowledge/sources.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any
+
+
+class SourceType(str, Enum):
+    DATASET = &quot;dataset&quot;
+    PROCESS_GUIDE = &quot;process_guide&quot;
+    VENDOR_CASE = &quot;vendor_case&quot;
+    STANDARD = &quot;standard&quot;
+    PAPER = &quot;paper&quot;
+
+
+class UsableFor(str, Enum):
+    SCENARIO_SELECTION = &quot;scenario_selection&quot;
+    PARAMETER_RANGE = &quot;parameter_range&quot;
+    QUALITY_LABEL = &quot;quality_label&quot;
+    BENCHMARK = &quot;benchmark&quot;
+
+
+def _jsonable(value: Any) -&gt; Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _jsonable(item) for key, item in value.items()}
+    return value
+
+
+@dataclass(frozen=True)
+class PublicWeldSource:
+    source_id: str
+    source_type: SourceType
+    title: str
+    url: str
+    publisher: str
+    shipbuilding_relevance: str
+    covered_fields: list[str]
+    missing_fields: list[str]
+    usable_for: list[UsableFor]
+    source_refs: list[str]
+    assumptions: list[str]
+    notes: str
+    license_or_terms_note: str = &quot;&quot;
+
+    def is_complete(self) -&gt; bool:
+        return all(
+            [
+                self.source_id,
+                self.title,
+                self.url,
+                self.publisher,
+                self.shipbuilding_relevance,
+                self.covered_fields,
+                self.missing_fields,
+                self.usable_for,
+                self.source_refs,
+                self.assumptions,
+                self.notes,
+            ]
+        )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class FieldCoverageSummary:
+    source_count: int
+    covered_fields: list[str]
+    missing_fields: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class PublicWeldKnowledgeBase:
+    sources: list[PublicWeldSource]
+
+    def validation_issues(self) -&gt; list[str]:
+        issues: list[str] = []
+        seen: set[str] = set()
+        for source in self.sources:
+            if source.source_id in seen:
+                issues.append(f&quot;{source.source_id}: duplicate source_id&quot;)
+            seen.add(source.source_id)
+            if not source.is_complete():
+                issues.append(f&quot;{source.source_id}: incomplete traceability fields&quot;)
+        return issues
+
+    def by_id(self) -&gt; dict[str, PublicWeldSource]:
+        return {source.source_id: source for source in self.sources}
+
+    def field_coverage(self) -&gt; FieldCoverageSummary:
+        covered = sorted({field for source in self.sources for field in source.covered_fields})
+        missing = sorted({field for source in self.sources for field in source.missing_fields})
+        return FieldCoverageSummary(
+            source_count=len(self.sources),
+            covered_fields=covered,
+            missing_fields=missing,
+        )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {&quot;sources&quot;: [source.to_dict() for source in self.sources]}</code></pre>
+<p>Create <code>weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">&quot;&quot;&quot;Public welding knowledge sources and shipbuilding simulation scenario gates.&quot;&quot;&quot;
+
+from .sources import (
+    FieldCoverageSummary,
+    PublicWeldKnowledgeBase,
+    PublicWeldSource,
+    SourceType,
+    UsableFor,
+)
+
+__all__ = [
+    &quot;FieldCoverageSummary&quot;,
+    &quot;PublicWeldKnowledgeBase&quot;,
+    &quot;PublicWeldSource&quot;,
+    &quot;SourceType&quot;,
+    &quot;UsableFor&quot;,
+]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Run tests</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_knowledge_sources.py -v</code></pre>
+<p>Expected: PASS.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Commit</strong></span></div>
+<pre><code class="language-bash">git add weldcore/knowledge/__init__.py weldcore/knowledge/sources.py tests/test_knowledge_sources.py
+git commit -m &quot;feat(knowledge): add public weld source models&quot;</code></pre>
+<hr>
+<h2 id="task-2-seed-public-knowledge-base">Task 2: Seed Public Knowledge Base</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/seeds.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_knowledge_sources.py</code></li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Add failing tests for seed coverage and scope</strong></span></div>
+<p>Append to <code>tests/test_knowledge_sources.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.seeds import load_seed_knowledge_base
+
+
+def test_seed_knowledge_base_has_first_gate_coverage():
+    kb = load_seed_knowledge_base()
+
+    assert len(kb.sources) &gt;= 8
+    assert kb.validation_issues() == []
+
+    usable_for = {item.value for source in kb.sources for item in source.usable_for}
+    assert &quot;scenario_selection&quot; in usable_for
+    assert &quot;parameter_range&quot; in usable_for
+    assert &quot;quality_label&quot; in usable_for
+
+
+def test_seed_knowledge_base_has_no_molten_pool_source_content():
+    kb = load_seed_knowledge_base()
+    source_json_text = str(kb.to_dict()).lower()
+
+    assert &quot;molten_pool&quot; not in source_json_text
+    assert &quot;weld_pool&quot; not in source_json_text
+    assert &quot;熔池&quot; not in source_json_text</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run tests to verify failure</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_knowledge_sources.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.knowledge.seeds</code>.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Implement seed sources</strong></span></div>
+<p>Create <code>weldcore/knowledge/seeds.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from .sources import PublicWeldKnowledgeBase, PublicWeldSource, SourceType, UsableFor
+
+
+def load_seed_knowledge_base() -&gt; PublicWeldKnowledgeBase:
+    sources = [
+        PublicWeldSource(
+            source_id=&quot;vendor-hyundai-welding-cobot-shipbuilding-2024&quot;,
+            source_type=SourceType.VENDOR_CASE,
+            title=&quot;Hyundai Welding Cobot Solution (Shipbuilding) Leaflet 2024&quot;,
+            url=&quot;https://www.hyundaiwelding.com/data/file/download/brochures/Hyundai_Welding_Cobot%20Solution%20%28Shipbuilding%29_Leaflet_2024.pdf&quot;,
+            publisher=&quot;Hyundai Welding&quot;,
+            shipbuilding_relevance=&quot;Shipbuilding cobot welding scenario reference.&quot;,
+            covered_fields=[&quot;shipbuilding_context&quot;, &quot;robot_welding_application&quot;],
+            missing_fields=[&quot;trajectory&quot;, &quot;process_signal&quot;, &quot;quality_result&quot;],
+            usable_for=[UsableFor.SCENARIO_SELECTION],
+            source_refs=[&quot;design-spec-section-7.1&quot;],
+            assumptions=[&quot;Use for task-family discovery only.&quot;],
+            notes=&quot;No direct production data imported.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+            source_type=SourceType.PROCESS_GUIDE,
+            title=&quot;KOBELCO Shipbuilding Welding Industry Page&quot;,
+            url=&quot;https://www.kobelco.co.jp/english/products/welding/industries/shipbuilding.html&quot;,
+            publisher=&quot;Kobe Steel / KOBELCO&quot;,
+            shipbuilding_relevance=&quot;Lists shipbuilding welding stages and weld objects.&quot;,
+            covered_fields=[&quot;shipbuilding_context&quot;, &quot;weld_position&quot;, &quot;joint_family&quot;],
+            missing_fields=[&quot;trajectory&quot;, &quot;process_signal&quot;],
+            usable_for=[UsableFor.SCENARIO_SELECTION, UsableFor.PARAMETER_RANGE],
+            source_refs=[&quot;design-spec-section-4.1&quot;, &quot;design-spec-section-7.1&quot;],
+            assumptions=[&quot;Use stage and weld-object terms as public constraints.&quot;],
+            notes=&quot;Does not validate project simulation outputs.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+            source_type=SourceType.VENDOR_CASE,
+            title=&quot;HD Hyundai Mipo Autonomous Welding Robot Development Case&quot;,
+            url=&quot;https://resources.sw.siemens.com/en-US/case-study-hd-hyundai-mipo/&quot;,
+            publisher=&quot;Siemens&quot;,
+            shipbuilding_relevance=&quot;References subassembly welding, block constraints, simulation and robot programs.&quot;,
+            covered_fields=[&quot;shipbuilding_context&quot;, &quot;robot_program_simulation&quot;, &quot;confined_space_context&quot;],
+            missing_fields=[&quot;weld_parameters&quot;, &quot;quality_result&quot;],
+            usable_for=[UsableFor.SCENARIO_SELECTION],
+            source_refs=[&quot;design-spec-section-4.1&quot;, &quot;design-spec-section-7.1&quot;],
+            assumptions=[&quot;Use as public case evidence for shipbuilding task decomposition.&quot;],
+            notes=&quot;No robot program or customer process data imported.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;vendor-kranendonk-panel-welding-gantry&quot;,
+            source_type=SourceType.VENDOR_CASE,
+            title=&quot;KRANENDONK Shipbuilding Panel Welding Gantry&quot;,
+            url=&quot;https://www.kranendonk.com/solutions/shipbuilding/panel-welding-gantry/&quot;,
+            publisher=&quot;KRANENDONK&quot;,
+            shipbuilding_relevance=&quot;Panel welding automation for large stiffened panels.&quot;,
+            covered_fields=[&quot;shipbuilding_context&quot;, &quot;stiffened_panel&quot;, &quot;torch_angle&quot;, &quot;travel_speed&quot;, &quot;stitch_pattern&quot;],
+            missing_fields=[&quot;process_signal&quot;, &quot;quality_result&quot;],
+            usable_for=[UsableFor.SCENARIO_SELECTION, UsableFor.PARAMETER_RANGE],
+            source_refs=[&quot;design-spec-section-4.1&quot;, &quot;design-spec-section-7.1&quot;],
+            assumptions=[&quot;Use as scenario and field coverage reference.&quot;],
+            notes=&quot;No controller data imported.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;dataset-gdxray-weld-xray&quot;,
+            source_type=SourceType.DATASET,
+            title=&quot;GDXray Weld X-ray Dataset&quot;,
+            url=&quot;https://github.com/computervision-xray-testing/GDXray&quot;,
+            publisher=&quot;Computer Vision X-Ray Testing repository&quot;,
+            shipbuilding_relevance=&quot;Generic weld defect image labels can inform quality label vocabulary.&quot;,
+            covered_fields=[&quot;quality_label&quot;, &quot;defect_label&quot;],
+            missing_fields=[&quot;shipbuilding_context&quot;, &quot;trajectory&quot;, &quot;process_signal&quot;],
+            usable_for=[UsableFor.QUALITY_LABEL, UsableFor.BENCHMARK],
+            source_refs=[&quot;design-spec-section-7.2&quot;],
+            assumptions=[&quot;Use only for defect vocabulary and benchmark orientation.&quot;],
+            notes=&quot;Not proof of shipbuilding task quality.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;dataset-zenodo-metal-arc-welding-10017718&quot;,
+            source_type=SourceType.DATASET,
+            title=&quot;Zenodo Metal Arc Welding Dataset&quot;,
+            url=&quot;https://zenodo.org/records/10017718&quot;,
+            publisher=&quot;Zenodo&quot;,
+            shipbuilding_relevance=&quot;Generic arc welding data source for field coverage review.&quot;,
+            covered_fields=[&quot;process_reference&quot;, &quot;measurement_artifact&quot;],
+            missing_fields=[&quot;shipbuilding_context&quot;, &quot;robot_trajectory&quot;],
+            usable_for=[UsableFor.PARAMETER_RANGE, UsableFor.BENCHMARK],
+            source_refs=[&quot;design-spec-section-7.2&quot;],
+            assumptions=[&quot;Screen exact files before using any field in scenarios.&quot;],
+            notes=&quot;Use as candidate public data source, not validation.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;standard-aws-swps-public-page&quot;,
+            source_type=SourceType.STANDARD,
+            title=&quot;AWS Standard Welding Procedure Specifications Public Page&quot;,
+            url=&quot;https://www.aws.org/about/get-involved/committees/b2-committee-on-procedure-and-performance-qualification/swps/&quot;,
+            publisher=&quot;American Welding Society&quot;,
+            shipbuilding_relevance=&quot;Public WPS concept and variable reference for process constraints.&quot;,
+            covered_fields=[&quot;process_variable&quot;, &quot;procedure_reference&quot;],
+            missing_fields=[&quot;shipbuilding_context&quot;, &quot;trajectory&quot;],
+            usable_for=[UsableFor.PARAMETER_RANGE],
+            source_refs=[&quot;design-spec-section-7.3&quot;],
+            assumptions=[&quot;Use public page as WPS concept reference only.&quot;],
+            notes=&quot;Does not replace project or customer WPS.&quot;,
+        ),
+        PublicWeldSource(
+            source_id=&quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            source_type=SourceType.PROCESS_GUIDE,
+            title=&quot;船舶焊接工艺大脑平台整体规划方案&quot;,
+            url=&quot;docs/project/船舶焊接工艺大脑平台整体规划方案.html&quot;,
+            publisher=&quot;project internal&quot;,
+            shipbuilding_relevance=&quot;Defines project-specific weld objects, groove geometry, trajectory objects, and quality objects.&quot;,
+            covered_fields=[&quot;shipbuilding_context&quot;, &quot;weld_object&quot;, &quot;groove_geometry&quot;, &quot;trajectory_object&quot;, &quot;quality_object&quot;],
+            missing_fields=[&quot;public_dataset&quot;, &quot;real_machine_validation&quot;],
+            usable_for=[UsableFor.SCENARIO_SELECTION, UsableFor.PARAMETER_RANGE, UsableFor.QUALITY_LABEL],
+            source_refs=[&quot;design-spec-section-3&quot;, &quot;design-spec-section-4&quot;],
+            assumptions=[&quot;Use as project planning source, not real measured data.&quot;],
+            notes=&quot;Internal planning document.&quot;,
+        ),
+    ]
+    return PublicWeldKnowledgeBase(sources)</code></pre>
+<p>Update <code>weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">from .seeds import load_seed_knowledge_base
+
+__all__.append(&quot;load_seed_knowledge_base&quot;)</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Run tests</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_knowledge_sources.py -v</code></pre>
+<p>Expected: PASS.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Commit</strong></span></div>
+<pre><code class="language-bash">git add weldcore/knowledge/__init__.py weldcore/knowledge/seeds.py tests/test_knowledge_sources.py
+git commit -m &quot;feat(knowledge): seed shipbuilding welding sources&quot;</code></pre>
+<hr>
+<h2 id="task-3-shipbuilding-task-families-and-support-gate">Task 3: Shipbuilding Task Families and Support Gate</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/knowledge/shipbuilding.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/seeds.py</code></li>
+<li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_shipbuilding_task_families.py</code></li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Write failing tests for KB-backed task support</strong></span></div>
+<p>Create <code>tests/test_shipbuilding_task_families.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.seeds import load_seed_knowledge_base, load_seed_task_families
+from weldcore.knowledge.shipbuilding import (
+    ShipbuildingTaskFamily,
+    TaskDisposition,
+    WeldJointType,
+    WeldPosition,
+    rank_task_families,
+    select_first_batch_candidates,
+    validate_task_family_support,
+)
+
+
+def test_seed_task_families_are_shipbuilding_specific_and_ranked():
+    kb = load_seed_knowledge_base()
+    families = load_seed_task_families()
+
+    assert len(families) &gt;= 6
+    assert all(f.shipbuilding_context for f in families)
+
+    ranked = rank_task_families(families, kb)
+
+    assert all(validate_task_family_support(f, kb).passed for f in families)
+    assert ranked[0].family_id == &quot;stiffened-panel-fillet&quot;
+    assert ranked[0].disposition == TaskDisposition.CANDIDATE
+    assert ranked[-1].disposition == TaskDisposition.DEFER
+
+
+def test_first_batch_requires_kb_supported_sources_and_fields():
+    kb = load_seed_knowledge_base()
+    families = load_seed_task_families()
+
+    selected = select_first_batch_candidates(families, kb, limit=3)
+
+    assert 2 &lt;= len(selected) &lt;= 3
+    assert all(validate_task_family_support(f, kb).passed for f in selected)
+    assert {f.family_id for f in selected}.issubset(
+        {
+            &quot;stiffened-panel-fillet&quot;,
+            &quot;panel-butt&quot;,
+            &quot;micro-panel-web-bulkhead&quot;,
+        }
+    )
+
+
+def test_task_support_rejects_unknown_sources_and_unsupported_fields():
+    kb = load_seed_knowledge_base()
+    family = ShipbuildingTaskFamily(
+        family_id=&quot;bad-family&quot;,
+        name=&quot;Bad&quot;,
+        shipbuilding_context=&quot;panel line&quot;,
+        typical_weld_objects=[&quot;unknown&quot;],
+        joint_types=[WeldJointType.FILLET],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=[&quot;not_covered_or_declared&quot;],
+        assumption_fields=[],
+        source_ids=[&quot;missing-source&quot;],
+        disposition=TaskDisposition.CANDIDATE,
+        notes=&quot;bad&quot;,
+    )
+
+    result = validate_task_family_support(family, kb)
+
+    assert not result.passed
+    assert any(&quot;unknown source&quot; in issue for issue in result.issues)
+    assert any(&quot;unsupported required field&quot; in issue for issue in result.issues)
+
+
+def test_task_support_does_not_treat_source_missing_fields_as_support():
+    kb = load_seed_knowledge_base()
+    family = ShipbuildingTaskFamily(
+        family_id=&quot;missing-field-family&quot;,
+        name=&quot;Missing field family&quot;,
+        shipbuilding_context=&quot;generic public dataset screening&quot;,
+        typical_weld_objects=[&quot;screening&quot;],
+        joint_types=[WeldJointType.BUTT],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=[&quot;trajectory&quot;],
+        assumption_fields=[],
+        source_ids=[&quot;dataset-gdxray-weld-xray&quot;, &quot;dataset-zenodo-metal-arc-welding-10017718&quot;],
+        disposition=TaskDisposition.CANDIDATE,
+        notes=&quot;trajectory is listed as missing by a source and must not count as support&quot;,
+    )
+
+    result = validate_task_family_support(family, kb)
+
+    assert not result.passed
+    assert any(&quot;unsupported required field: trajectory&quot; in issue for issue in result.issues)
+
+
+def test_task_support_accepts_required_field_when_declared_as_assumption():
+    kb = load_seed_knowledge_base()
+    family = ShipbuildingTaskFamily(
+        family_id=&quot;assumed-field-family&quot;,
+        name=&quot;Assumed field family&quot;,
+        shipbuilding_context=&quot;generic public dataset screening&quot;,
+        typical_weld_objects=[&quot;screening&quot;],
+        joint_types=[WeldJointType.BUTT],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=[&quot;trajectory&quot;],
+        assumption_fields=[&quot;trajectory&quot;],
+        source_ids=[&quot;dataset-gdxray-weld-xray&quot;, &quot;dataset-zenodo-metal-arc-welding-10017718&quot;],
+        disposition=TaskDisposition.CANDIDATE,
+        notes=&quot;trajectory is explicit project assumption for this gate&quot;,
+    )
+
+    result = validate_task_family_support(family, kb)
+
+    assert result.passed</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run tests to verify failure</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_shipbuilding_task_families.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.knowledge.shipbuilding</code>.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Implement KB-backed task family gate</strong></span></div>
+<p>Create <code>weldcore/knowledge/shipbuilding.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any
+
+from .sources import PublicWeldKnowledgeBase, UsableFor
+
+
+class WeldJointType(str, Enum):
+    BUTT = &quot;butt&quot;
+    FILLET = &quot;fillet&quot;
+    TEE = &quot;tee&quot;
+    LAP = &quot;lap&quot;
+    GROOVE = &quot;groove&quot;
+    COMPLEX = &quot;complex&quot;
+
+
+class WeldPosition(str, Enum):
+    FLAT = &quot;flat&quot;
+    HORIZONTAL = &quot;horizontal&quot;
+    VERTICAL_UP = &quot;vertical_up&quot;
+    OVERHEAD = &quot;overhead&quot;
+    MULTI_POSITION = &quot;multi_position&quot;
+
+
+class TaskDisposition(str, Enum):
+    CANDIDATE = &quot;candidate&quot;
+    PROBE = &quot;probe&quot;
+    DEFER = &quot;defer&quot;
+
+
+@dataclass(frozen=True)
+class ShipbuildingTaskFamily:
+    family_id: str
+    name: str
+    shipbuilding_context: str
+    typical_weld_objects: list[str]
+    joint_types: list[WeldJointType]
+    positions: list[WeldPosition]
+    modeling_difficulty: int
+    required_fields: list[str]
+    assumption_fields: list[str]
+    source_ids: list[str]
+    disposition: TaskDisposition
+    notes: str
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        data = asdict(self)
+        data[&quot;joint_types&quot;] = [item.value for item in self.joint_types]
+        data[&quot;positions&quot;] = [item.value for item in self.positions]
+        data[&quot;disposition&quot;] = self.disposition.value
+        return data
+
+
+@dataclass(frozen=True)
+class TaskGateResult:
+    family_id: str
+    passed: bool
+    issues: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class TaskPriorityScore:
+    family_id: str
+    score: int
+    reasons: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+def validate_task_family_support(
+    family: ShipbuildingTaskFamily,
+    kb: PublicWeldKnowledgeBase,
+) -&gt; TaskGateResult:
+    issues: list[str] = []
+    sources_by_id = kb.by_id()
+    referenced_sources = []
+
+    if not family.shipbuilding_context:
+        issues.append(&quot;missing shipbuilding_context&quot;)
+
+    for source_id in family.source_ids:
+        source = sources_by_id.get(source_id)
+        if source is None:
+            issues.append(f&quot;unknown source: {source_id}&quot;)
+        else:
+            referenced_sources.append(source)
+
+    if len(referenced_sources) &lt; 2:
+        issues.append(&quot;requires at least two known sources&quot;)
+
+    if referenced_sources and not any(
+        UsableFor.SCENARIO_SELECTION in source.usable_for for source in referenced_sources
+    ):
+        issues.append(&quot;requires at least one scenario_selection source&quot;)
+
+    covered_fields = {field for source in referenced_sources for field in source.covered_fields}
+    declared_assumptions = set(family.assumption_fields)
+    for field in family.required_fields:
+        if field not in covered_fields and field not in declared_assumptions:
+            issues.append(f&quot;unsupported required field: {field}&quot;)
+
+    text = &quot; &quot;.join(
+        [
+            family.family_id,
+            family.name,
+            family.shipbuilding_context,
+            *family.required_fields,
+            *family.assumption_fields,
+            family.notes,
+        ]
+    ).lower()
+    if &quot;molten&quot; in text or &quot;weld_pool&quot; in text or &quot;熔池&quot; in text:
+        issues.append(&quot;molten-pool dependency is out of scope&quot;)
+
+    return TaskGateResult(family.family_id, not issues, issues)
+
+
+def score_task_family(
+    family: ShipbuildingTaskFamily,
+    kb: PublicWeldKnowledgeBase,
+) -&gt; TaskPriorityScore:
+    support = validate_task_family_support(family, kb)
+    score = 0
+    reasons: list[str] = []
+    if support.passed:
+        score += 5
+        reasons.append(&quot;kb support gate passed&quot;)
+    else:
+        reasons.extend(support.issues)
+    if family.disposition == TaskDisposition.CANDIDATE:
+        score += 3
+        reasons.append(&quot;candidate disposition&quot;)
+    elif family.disposition == TaskDisposition.PROBE:
+        score += 1
+        reasons.append(&quot;probe disposition&quot;)
+    score += max(0, 4 - family.modeling_difficulty)
+    reasons.append(f&quot;modeling_difficulty={family.modeling_difficulty}&quot;)
+    return TaskPriorityScore(family.family_id, score, reasons)
+
+
+def rank_task_families(
+    families: list[ShipbuildingTaskFamily],
+    kb: PublicWeldKnowledgeBase,
+) -&gt; list[ShipbuildingTaskFamily]:
+    return sorted(
+        families,
+        key=lambda family: (
+            -score_task_family(family, kb).score,
+            family.modeling_difficulty,
+            family.family_id,
+        ),
+    )
+
+
+def select_first_batch_candidates(
+    families: list[ShipbuildingTaskFamily],
+    kb: PublicWeldKnowledgeBase,
+    limit: int = 3,
+) -&gt; list[ShipbuildingTaskFamily]:
+    return [
+        family
+        for family in rank_task_families(families, kb)
+        if family.disposition == TaskDisposition.CANDIDATE
+        and validate_task_family_support(family, kb).passed
+    ][:limit]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Add seed task families</strong></span></div>
+<p>Append to <code>weldcore/knowledge/seeds.py</code>:</p>
+<pre><code class="language-python">from .shipbuilding import (
+    ShipbuildingTaskFamily,
+    TaskDisposition,
+    WeldJointType,
+    WeldPosition,
+)
+
+
+def load_seed_task_families() -&gt; list[ShipbuildingTaskFamily]:
+    return [
+        ShipbuildingTaskFamily(
+            family_id=&quot;stiffened-panel-fillet&quot;,
+            name=&quot;加筋板/纵骨角焊&quot;,
+            shipbuilding_context=&quot;panel line, small assembly, stiffener-to-plate welding&quot;,
+            typical_weld_objects=[&quot;stiffener-to-plate&quot;, &quot;longitudinal-to-panel&quot;, &quot;web-to-panel&quot;],
+            joint_types=[WeldJointType.FILLET, WeldJointType.TEE],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=1,
+            required_fields=[&quot;stiffened_panel&quot;, &quot;torch_angle&quot;, &quot;travel_speed&quot;],
+            assumption_fields=[&quot;leg_size_mm&quot;, &quot;plate_thickness_mm&quot;],
+            source_ids=[
+                &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes=&quot;First candidate because it is shipbuilding-specific and geometry is tractable.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;panel-butt&quot;,
+            name=&quot;平面板拼接/简化对接焊&quot;,
+            shipbuilding_context=&quot;panel line and flat block plate joining&quot;,
+            typical_weld_objects=[&quot;bottom shell butt&quot;, &quot;tank top butt&quot;, &quot;deck butt&quot;, &quot;side shell butt&quot;],
+            joint_types=[WeldJointType.BUTT],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=2,
+            required_fields=[&quot;shipbuilding_context&quot;, &quot;groove_geometry&quot;],
+            assumption_fields=[&quot;plate_thickness_mm&quot;, &quot;root_gap_mm&quot;, &quot;travel_speed&quot;],
+            source_ids=[
+                &quot;vendor-kobelco-shipbuilding-welding&quot;,
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes=&quot;Candidate, but must be distinguished from generic straight-flat welding.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;micro-panel-web-bulkhead&quot;,
+            name=&quot;微型面板/腹板/隔板多短焊缝&quot;,
+            shipbuilding_context=&quot;subassembly welding for web, bulkhead, bracket and small stiffened structures&quot;,
+            typical_weld_objects=[&quot;web fillet&quot;, &quot;bulkhead fillet&quot;, &quot;bracket lap&quot;, &quot;short seam sequence&quot;],
+            joint_types=[WeldJointType.FILLET, WeldJointType.LAP, WeldJointType.TEE],
+            positions=[WeldPosition.FLAT, WeldPosition.HORIZONTAL],
+            modeling_difficulty=2,
+            required_fields=[&quot;shipbuilding_context&quot;],
+            assumption_fields=[&quot;weld_seam_list&quot;, &quot;sequence_order&quot;, &quot;node_transition&quot;, &quot;torch_angle_deg&quot;],
+            source_ids=[
+                &quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            ],
+            disposition=TaskDisposition.CANDIDATE,
+            notes=&quot;Candidate for multi-seam sequence before confined-space block welding.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;double-bottom-inner-fillet&quot;,
+            name=&quot;双层底/双壳内部角焊&quot;,
+            shipbuilding_context=&quot;double bottom, double hull, block cell internal welding&quot;,
+            typical_weld_objects=[&quot;inner double-hull fillet&quot;, &quot;double-bottom inside fillet&quot;],
+            joint_types=[WeldJointType.FILLET],
+            positions=[WeldPosition.HORIZONTAL, WeldPosition.VERTICAL_UP],
+            modeling_difficulty=3,
+            required_fields=[&quot;shipbuilding_context&quot;, &quot;weld_position&quot;, &quot;confined_space_context&quot;],
+            assumption_fields=[&quot;pose_segment&quot;, &quot;reachability_placeholder&quot;],
+            source_ids=[
+                &quot;vendor-kobelco-shipbuilding-welding&quot;,
+                &quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+            ],
+            disposition=TaskDisposition.PROBE,
+            notes=&quot;Strong shipbuilding relevance, but better as a second-round probe.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;vertical-overhead-block-weld&quot;,
+            name=&quot;立向/仰位船体焊缝&quot;,
+            shipbuilding_context=&quot;block assembly and erection stage&quot;,
+            typical_weld_objects=[&quot;side shell vertical butt&quot;, &quot;overhead butt&quot;, &quot;vertical-up fillet&quot;],
+            joint_types=[WeldJointType.BUTT, WeldJointType.FILLET],
+            positions=[WeldPosition.VERTICAL_UP, WeldPosition.OVERHEAD],
+            modeling_difficulty=4,
+            required_fields=[&quot;weld_position&quot;],
+            assumption_fields=[&quot;position_specific_parameters&quot;, &quot;pose_constraints&quot;, &quot;operator_review&quot;],
+            source_ids=[
+                &quot;vendor-kobelco-shipbuilding-welding&quot;,
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes=&quot;Defer until easier flat/horizontal scenarios are stable.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;thick-plate-groove-multipass&quot;,
+            name=&quot;厚板坡口多层多道&quot;,
+            shipbuilding_context=&quot;block assembly, grand assembly and erection welds&quot;,
+            typical_weld_objects=[&quot;V groove&quot;, &quot;X groove&quot;, &quot;K groove&quot;, &quot;long thick-plate butt weld&quot;],
+            joint_types=[WeldJointType.GROOVE, WeldJointType.BUTT],
+            positions=[WeldPosition.MULTI_POSITION],
+            modeling_difficulty=4,
+            required_fields=[&quot;groove_geometry&quot;, &quot;procedure_reference&quot;],
+            assumption_fields=[&quot;layer_pass_plan&quot;, &quot;interpass_constraints&quot;],
+            source_ids=[
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+                &quot;standard-aws-swps-public-page&quot;,
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes=&quot;Important roadmap item, not first-batch lightweight simulation.&quot;,
+        ),
+        ShipbuildingTaskFamily(
+            family_id=&quot;curved-complex-seams&quot;,
+            name=&quot;曲面与空间复杂焊缝&quot;,
+            shipbuilding_context=&quot;curved shell plate and complex node welding&quot;,
+            typical_weld_objects=[&quot;curved seam&quot;, &quot;cross node&quot;, &quot;bracket intersection&quot;],
+            joint_types=[WeldJointType.COMPLEX],
+            positions=[WeldPosition.MULTI_POSITION],
+            modeling_difficulty=5,
+            required_fields=[&quot;shipbuilding_context&quot;],
+            assumption_fields=[&quot;curved_centerline&quot;, &quot;multi_joint_topology&quot;, &quot;cad_reference&quot;],
+            source_ids=[
+                &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+                &quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+            ],
+            disposition=TaskDisposition.DEFER,
+            notes=&quot;Defer because modeling complexity is too high for the current stage, despite high-level source support.&quot;,
+        ),
+    ]</code></pre>
+<p>Update <code>weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">from .seeds import load_seed_knowledge_base, load_seed_task_families
+from .shipbuilding import (
+    ShipbuildingTaskFamily,
+    TaskDisposition,
+    TaskGateResult,
+    TaskPriorityScore,
+    WeldJointType,
+    WeldPosition,
+    rank_task_families,
+    score_task_family,
+    select_first_batch_candidates,
+    validate_task_family_support,
+)
+
+__all__ += [
+    &quot;ShipbuildingTaskFamily&quot;,
+    &quot;TaskDisposition&quot;,
+    &quot;TaskGateResult&quot;,
+    &quot;TaskPriorityScore&quot;,
+    &quot;WeldJointType&quot;,
+    &quot;WeldPosition&quot;,
+    &quot;load_seed_task_families&quot;,
+    &quot;rank_task_families&quot;,
+    &quot;score_task_family&quot;,
+    &quot;select_first_batch_candidates&quot;,
+    &quot;validate_task_family_support&quot;,
+]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Run tests</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_shipbuilding_task_families.py -v</code></pre>
+<p>Expected: PASS.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 6: Commit</strong></span></div>
+<pre><code class="language-bash">git add weldcore/knowledge/__init__.py weldcore/knowledge/shipbuilding.py weldcore/knowledge/seeds.py tests/test_shipbuilding_task_families.py
+git commit -m &quot;feat(knowledge): add shipbuilding task family gate&quot;</code></pre>
+<hr>
+<h2 id="task-4-simulation-scenario-specs">Task 4: Simulation Scenario Specs</h2>
+<p><strong>Files:</strong> – Create: <code>weld-experience-engine/weldcore/knowledge/scenario.py</code> – Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code> – Test: <code>weld-experience-engine/tests/test_scenario_spec.py</code></p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Write failing tests for scenario evidence roles and gates</strong></span></div>
+<p>Create <code>tests/test_scenario_spec.py</code>:</p>
+<pre><code class="language-python">from weldcore.knowledge.scenario import (
+    EvidenceRole,
+    ParameterRange,
+    ScenarioGateResult,
+    scenario_from_task_family,
+)
+from weldcore.knowledge.seeds import load_seed_task_families
+from weldcore.knowledge.shipbuilding import TaskDisposition
+
+
+def test_scenario_from_task_family_preserves_sources_context_and_roles():
+    family = next(
+        item for item in load_seed_task_families() if item.family_id == &quot;stiffened-panel-fillet&quot;
+    )
+
+    scenario = scenario_from_task_family(family)
+
+    assert scenario.scenario_id == &quot;scenario-stiffened-panel-fillet&quot;
+    assert scenario.shipbuilding_context == family.shipbuilding_context
+    assert scenario.source_refs == family.source_ids
+    assert scenario.task_disposition == TaskDisposition.CANDIDATE
+    assert EvidenceRole.PUBLIC_CONSTRAINT in scenario.evidence_roles
+    assert EvidenceRole.REQUIRES_REAL_VALIDATION_LATER in scenario.evidence_roles
+
+
+def test_scenario_gate_rejects_deferred_when_candidate_required():
+    family = next(
+        item for item in load_seed_task_families() if item.family_id == &quot;curved-complex-seams&quot;
+    )
+    scenario = scenario_from_task_family(family)
+
+    result = ScenarioGateResult.from_scenario(scenario, require_candidate=True)
+
+    assert scenario.source_refs == family.source_ids
+    assert not result.passed
+    assert any(&quot;candidate&quot; in issue for issue in result.issues)
+
+
+def test_parameter_range_serializes_units_and_source_role():
+    value = ParameterRange(
+        name=&quot;travel_speed&quot;,
+        unit=&quot;mm/s&quot;,
+        min_value=3.0,
+        max_value=8.0,
+        evidence_role=EvidenceRole.PUBLIC_CONSTRAINT,
+        source_refs=[&quot;vendor-kranendonk-panel-welding-gantry&quot;],
+    )
+
+    assert value.to_dict()[&quot;evidence_role&quot;] == &quot;public_constraint&quot;</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run tests to verify failure</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_scenario_spec.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.knowledge.scenario</code>.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Implement scenario specs</strong></span></div>
+<p>Create <code>weldcore/knowledge/scenario.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from enum import Enum
+from typing import Any
+
+from .shipbuilding import ShipbuildingTaskFamily, TaskDisposition
+
+
+class EvidenceRole(str, Enum):
+    PUBLIC_CONSTRAINT = &quot;public_constraint&quot;
+    SIMULATION_OUTPUT = &quot;simulation_output&quot;
+    ASSUMPTION = &quot;assumption&quot;
+    REQUIRES_REAL_VALIDATION_LATER = &quot;requires_real_validation_later&quot;
+
+
+@dataclass(frozen=True)
+class ParameterRange:
+    name: str
+    unit: str
+    min_value: float
+    max_value: float
+    evidence_role: EvidenceRole
+    source_refs: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        data = asdict(self)
+        data[&quot;evidence_role&quot;] = self.evidence_role.value
+        return data
+
+
+@dataclass(frozen=True)
+class SimulationScenarioSpec:
+    scenario_id: str
+    shipbuilding_task: str
+    shipbuilding_context: str
+    difficulty: str
+    task_disposition: TaskDisposition
+    weld_condition: dict[str, Any]
+    parameter_ranges: list[ParameterRange]
+    motion_templates: list[str]
+    quality_placeholders: list[str]
+    source_refs: list[str]
+    assumptions: list[str]
+    evidence_roles: list[EvidenceRole] = field(
+        default_factory=lambda: [
+            EvidenceRole.PUBLIC_CONSTRAINT,
+            EvidenceRole.ASSUMPTION,
+            EvidenceRole.REQUIRES_REAL_VALIDATION_LATER,
+        ]
+    )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        data = asdict(self)
+        data[&quot;task_disposition&quot;] = self.task_disposition.value
+        data[&quot;parameter_ranges&quot;] = [item.to_dict() for item in self.parameter_ranges]
+        data[&quot;evidence_roles&quot;] = [item.value for item in self.evidence_roles]
+        return data
+
+
+@dataclass(frozen=True)
+class ScenarioGateResult:
+    scenario_id: str
+    passed: bool
+    issues: list[str]
+
+    @classmethod
+    def from_scenario(
+        cls,
+        scenario: SimulationScenarioSpec,
+        require_candidate: bool = False,
+    ) -&gt; &quot;ScenarioGateResult&quot;:
+        issues: list[str] = []
+        if not scenario.shipbuilding_context:
+            issues.append(&quot;missing shipbuilding_context&quot;)
+        if len(scenario.source_refs) &lt; 2:
+            issues.append(&quot;requires at least two source refs&quot;)
+        if require_candidate and scenario.task_disposition != TaskDisposition.CANDIDATE:
+            issues.append(&quot;scenario must come from a candidate task family&quot;)
+        if EvidenceRole.PUBLIC_CONSTRAINT not in scenario.evidence_roles:
+            issues.append(&quot;missing public_constraint evidence role&quot;)
+        if EvidenceRole.REQUIRES_REAL_VALIDATION_LATER not in scenario.evidence_roles:
+            issues.append(&quot;missing requires_real_validation_later evidence role&quot;)
+        text = &quot; &quot;.join(
+            [
+                scenario.shipbuilding_task,
+                scenario.shipbuilding_context,
+                *scenario.motion_templates,
+                *scenario.quality_placeholders,
+                *scenario.assumptions,
+            ]
+        ).lower()
+        if &quot;molten&quot; in text or &quot;weld_pool&quot; in text or &quot;熔池&quot; in text:
+            issues.append(&quot;molten-pool dependency is out of scope&quot;)
+        return cls(scenario.scenario_id, not issues, issues)
+
+
+def _difficulty_label(modeling_difficulty: int) -&gt; str:
+    if modeling_difficulty &lt;= 1:
+        return &quot;easy&quot;
+    if modeling_difficulty &lt;= 3:
+        return &quot;medium&quot;
+    return &quot;hard&quot;
+
+
+def scenario_from_task_family(family: ShipbuildingTaskFamily) -&gt; SimulationScenarioSpec:
+    return SimulationScenarioSpec(
+        scenario_id=f&quot;scenario-{family.family_id}&quot;,
+        shipbuilding_task=family.name,
+        shipbuilding_context=family.shipbuilding_context,
+        difficulty=_difficulty_label(family.modeling_difficulty),
+        task_disposition=family.disposition,
+        weld_condition={
+            &quot;family_id&quot;: family.family_id,
+            &quot;joint_types&quot;: [item.value for item in family.joint_types],
+            &quot;positions&quot;: [item.value for item in family.positions],
+            &quot;typical_weld_objects&quot;: family.typical_weld_objects,
+        },
+        parameter_ranges=[
+            ParameterRange(
+                name=&quot;travel_speed&quot;,
+                unit=&quot;mm/s&quot;,
+                min_value=3.0,
+                max_value=8.0,
+                evidence_role=EvidenceRole.PUBLIC_CONSTRAINT,
+                source_refs=family.source_ids,
+            )
+        ],
+        motion_templates=[&quot;straight&quot;, &quot;optional_weave&quot;],
+        quality_placeholders=[&quot;geometry_risk_label&quot;, &quot;defect_vocabulary_placeholder&quot;],
+        source_refs=family.source_ids,
+        assumptions=[
+            &quot;Candidate scenario only; public references constrain fields but do not validate welding quality.&quot;
+        ],
+    )</code></pre>
+<p>Update <code>weldcore/knowledge/__init__.py</code>:</p>
+<pre><code class="language-python">from .scenario import (
+    EvidenceRole,
+    ParameterRange,
+    ScenarioGateResult,
+    SimulationScenarioSpec,
+    scenario_from_task_family,
+)
+
+__all__ += [
+    &quot;EvidenceRole&quot;,
+    &quot;ParameterRange&quot;,
+    &quot;ScenarioGateResult&quot;,
+    &quot;SimulationScenarioSpec&quot;,
+    &quot;scenario_from_task_family&quot;,
+]</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Run tests</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_scenario_spec.py -v</code></pre>
+<p>Expected: PASS.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Commit</strong></span></div>
+<pre><code class="language-bash">git add weldcore/knowledge/__init__.py weldcore/knowledge/scenario.py tests/test_scenario_spec.py
+git commit -m &quot;feat(knowledge): add simulation scenario specs&quot;</code></pre>
+<hr>
+<h2 id="task-5-scenario-evidence-report">Task 5: Scenario Evidence Report</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>weld-experience-engine/weldcore/report/scenario_report.py</code></li>
+<li>Test: <code>weld-experience-engine/tests/test_scenario_report.py</code></li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Write failing report tests</strong></span></div>
+<p>Create <code>tests/test_scenario_report.py</code>:</p>
+<pre><code class="language-python">import json
+
+import pytest
+
+from weldcore.knowledge.seeds import load_seed_knowledge_base, load_seed_task_families
+from weldcore.knowledge.shipbuilding import ShipbuildingTaskFamily, TaskDisposition, WeldJointType, WeldPosition
+from weldcore.report.scenario_report import run_scenario_report
+
+
+def test_scenario_report_writes_source_and_scenario_evidence(tmp_path):
+    evidence = run_scenario_report(tmp_path)
+
+    assert len(evidence[&quot;sources&quot;][&quot;sources&quot;]) &gt;= 8
+    assert evidence[&quot;scenarios&quot;]
+    assert all(&quot;shipbuilding_context&quot; in item for item in evidence[&quot;scenarios&quot;])
+    assert all(&quot;requires_real_validation_later&quot; in item[&quot;evidence_roles&quot;] for item in evidence[&quot;scenarios&quot;])
+
+    assert (tmp_path / &quot;sources.json&quot;).exists()
+    assert (tmp_path / &quot;task_families.json&quot;).exists()
+    assert (tmp_path / &quot;scenarios.json&quot;).exists()
+    assert (tmp_path / &quot;field_coverage.csv&quot;).exists()
+    assert (tmp_path / &quot;evidence.md&quot;).exists()
+
+    data = json.loads((tmp_path / &quot;scenarios.json&quot;).read_text(encoding=&quot;utf-8&quot;))
+    assert data[0][&quot;shipbuilding_context&quot;]
+
+
+def test_scenario_report_blocks_when_task_gate_fails(tmp_path):
+    kb = load_seed_knowledge_base()
+    bad_family = ShipbuildingTaskFamily(
+        family_id=&quot;bad-family&quot;,
+        name=&quot;Bad&quot;,
+        shipbuilding_context=&quot;panel line&quot;,
+        typical_weld_objects=[&quot;bad&quot;],
+        joint_types=[WeldJointType.FILLET],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=[&quot;unsupported&quot;],
+        assumption_fields=[],
+        source_ids=[&quot;missing-source&quot;],
+        disposition=TaskDisposition.CANDIDATE,
+        notes=&quot;bad&quot;,
+    )
+
+    with pytest.raises(ValueError, match=&quot;Task family gate failed&quot;):
+        run_scenario_report(tmp_path, knowledge_base=kb, task_families=[bad_family])
+
+
+def test_scenario_report_keeps_chinese_molten_pool_only_as_boundary_text(tmp_path):
+    run_scenario_report(tmp_path)
+
+    evidence_text = (tmp_path / &quot;evidence.md&quot;).read_text(encoding=&quot;utf-8&quot;)
+    json_text = &quot;\n&quot;.join(
+        path.read_text(encoding=&quot;utf-8&quot;)
+        for path in [
+            tmp_path / &quot;sources.json&quot;,
+            tmp_path / &quot;task_families.json&quot;,
+            tmp_path / &quot;scenarios.json&quot;,
+        ]
+    )
+
+    assert &quot;真实焊接质量已经验证&quot; not in evidence_text
+    assert &quot;不等于真实焊接质量验证&quot; in evidence_text
+    assert &quot;熔池&quot; in evidence_text
+    assert &quot;不纳入本阶段&quot; in evidence_text
+    assert &quot;熔池&quot; not in json_text
+    assert &quot;molten_pool&quot; not in json_text.lower()
+    assert &quot;weld_pool&quot; not in json_text.lower()</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run tests to verify failure</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_scenario_report.py -v</code></pre>
+<p>Expected: FAIL with missing <code>weldcore.report.scenario_report</code>.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Implement scenario report with gates</strong></span></div>
+<p>Create <code>weldcore/report/scenario_report.py</code>:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import csv
+import json
+from pathlib import Path
+from typing import Any
+
+from ..knowledge.scenario import ScenarioGateResult, scenario_from_task_family
+from ..knowledge.seeds import load_seed_knowledge_base, load_seed_task_families
+from ..knowledge.shipbuilding import (
+    rank_task_families,
+    score_task_family,
+    select_first_batch_candidates,
+    validate_task_family_support,
+)
+
+
+def _write_json(path: Path, data: Any) -&gt; None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding=&quot;utf-8&quot;)
+
+
+def run_scenario_report(
+    outdir: str | Path = &quot;scenario_report_out&quot;,
+    knowledge_base=None,
+    task_families=None,
+) -&gt; dict[str, Any]:
+    outpath = Path(outdir)
+    outpath.mkdir(parents=True, exist_ok=True)
+
+    kb = knowledge_base or load_seed_knowledge_base()
+    families = task_families or load_seed_task_families()
+
+    kb_issues = kb.validation_issues()
+    if kb_issues:
+        raise ValueError(&quot;Knowledge base gate failed: &quot; + &quot;; &quot;.join(kb_issues))
+
+    family_gate_results = [validate_task_family_support(family, kb) for family in families]
+    task_gate_failures = [result for result in family_gate_results if not result.passed]
+    if task_gate_failures:
+        message = &quot;; &quot;.join(
+            f&quot;{result.family_id}: {&#x27;, &#x27;.join(result.issues)}&quot; for result in task_gate_failures
+        )
+        raise ValueError(&quot;Task family gate failed: &quot; + message)
+
+    ranked = rank_task_families(families, kb)
+    selected = select_first_batch_candidates(families, kb, limit=3)
+    scenarios = [scenario_from_task_family(family) for family in selected]
+    scenario_gates = [ScenarioGateResult.from_scenario(scenario, require_candidate=True) for scenario in scenarios]
+    failed_scenarios = [gate for gate in scenario_gates if not gate.passed]
+    if failed_scenarios:
+        message = &quot;; &quot;.join(
+            f&quot;{gate.scenario_id}: {&#x27;, &#x27;.join(gate.issues)}&quot; for gate in failed_scenarios
+        )
+        raise ValueError(&quot;Scenario gate failed: &quot; + message)
+
+    coverage = kb.field_coverage()
+    evidence = {
+        &quot;sources&quot;: kb.to_dict(),
+        &quot;field_coverage&quot;: coverage.to_dict(),
+        &quot;task_families&quot;: [family.to_dict() for family in ranked],
+        &quot;task_scores&quot;: [score_task_family(family, kb).to_dict() for family in ranked],
+        &quot;task_gates&quot;: [result.to_dict() for result in family_gate_results],
+        &quot;scenarios&quot;: [scenario.to_dict() for scenario in scenarios],
+        &quot;scenario_gates&quot;: [gate.__dict__ for gate in scenario_gates],
+    }
+
+    _write_json(outpath / &quot;sources.json&quot;, evidence[&quot;sources&quot;])
+    _write_json(outpath / &quot;task_families.json&quot;, evidence[&quot;task_families&quot;])
+    _write_json(outpath / &quot;scenarios.json&quot;, evidence[&quot;scenarios&quot;])
+
+    with (outpath / &quot;field_coverage.csv&quot;).open(&quot;w&quot;, encoding=&quot;utf-8&quot;, newline=&quot;&quot;) as f:
+        writer = csv.writer(f)
+        writer.writerow([&quot;source_count&quot;, &quot;covered_fields&quot;, &quot;missing_fields&quot;])
+        writer.writerow(
+            [
+                coverage.source_count,
+                &quot;;&quot;.join(coverage.covered_fields),
+                &quot;;&quot;.join(coverage.missing_fields),
+            ]
+        )
+
+    lines = [
+        &quot;# 仿真优先船舶焊接场景证据报告&quot;,
+        &quot;&quot;,
+        &quot;## 边界&quot;,
+        &quot;&quot;,
+        &quot;- 本报告用于选择仿真场景和字段约束，不等于真实焊接质量验证。&quot;,
+        &quot;- 公开资料是 public_constraint，不是 validation。&quot;,
+        &quot;- 熔池图像、熔池形态、熔池控制和焊中闭环不纳入本阶段。&quot;,
+        &quot;&quot;,
+        &quot;## 第一批候选场景&quot;,
+        &quot;&quot;,
+    ]
+    for scenario in scenarios:
+        lines.extend(
+            [
+                f&quot;### {scenario.scenario_id}&quot;,
+                &quot;&quot;,
+                f&quot;- 船舶任务：{scenario.shipbuilding_task}&quot;,
+                f&quot;- 船舶制造环节：{scenario.shipbuilding_context}&quot;,
+                f&quot;- 难度：{scenario.difficulty}&quot;,
+                f&quot;- 来源：{&#x27;, &#x27;.join(scenario.source_refs)}&quot;,
+                f&quot;- 证据角色：{&#x27;, &#x27;.join(role.value for role in scenario.evidence_roles)}&quot;,
+                &quot;&quot;,
+            ]
+        )
+    (outpath / &quot;evidence.md&quot;).write_text(&quot;\n&quot;.join(lines), encoding=&quot;utf-8&quot;)
+
+    try:
+        _write_priority_plot(outpath / &quot;task_priority.png&quot;, ranked, kb)
+    except Exception:
+        pass
+
+    print(&quot;=== 仿真优先船舶焊接场景证据摘要 ===&quot;)
+    print(f&quot;公开来源: {len(kb.sources)}&quot;)
+    print(f&quot;候选场景: {len(scenarios)}&quot;)
+    print(f&quot;报告目录: {outpath}&quot;)
+    return evidence
+
+
+def _write_priority_plot(path: Path, families, kb) -&gt; None:
+    import matplotlib.pyplot as plt
+
+    scores = [score_task_family(family, kb).score for family in families]
+    labels = [family.family_id for family in families]
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    ax.barh(labels, scores)
+    ax.invert_yaxis()
+    ax.set_xlabel(&quot;priority score&quot;)
+    ax.set_title(&quot;Shipbuilding welding task family priority&quot;)
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
+if __name__ == &quot;__main__&quot;:
+    run_scenario_report()</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Run tests</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest tests/test_scenario_report.py -v</code></pre>
+<p>Expected: PASS.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Run report command</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.scenario_report</code></pre>
+<p>Expected:</p>
+<pre><code class="language-text">=== 仿真优先船舶焊接场景证据摘要 ===
+公开来源: 8
+候选场景: 3
+报告目录: scenario_report_out</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 6: Commit</strong></span></div>
+<pre><code class="language-bash">git add weldcore/report/scenario_report.py tests/test_scenario_report.py
+git commit -m &quot;feat(report): add shipbuilding scenario evidence report&quot;</code></pre>
+<hr>
+<h2 id="task-6-documentation-updates">Task 6: Documentation Updates</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>README.md</code></li>
+<li>Modify: <code>details.md</code></li>
+<li>Modify: <code>weld-experience-engine/README.md</code></li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Update root README route heading</strong></span></div>
+<p>In <code>README.md</code>, replace:</p>
+<pre><code class="language-markdown">下一阶段建议进入“真实数据与工程化 MVP”：</code></pre>
+<p>with:</p>
+<pre><code class="language-markdown">下一阶段建议进入“仿真优先的船舶焊接数据与工艺知识底座”：</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Replace root README next-step list</strong></span></div>
+<p>Replace the old five-item next-stage list with:</p>
+<pre><code class="language-markdown">1. 先建立公开焊接数据集与工艺资料底座，形成 `PublicWeldKnowledgeBase`。
+2. 先调研船舶制造焊接任务族，再确认 2-3 个候选 `SimulationScenarioSpec`。
+3. 用公开资料约束仿真场景字段和参数范围；本轮只完成知识底座与任务族闸门，不直接宣称 `SyntheticSkillDataset v2` 已完成。
+4. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
+5. 本阶段不纳入熔池图像、熔池控制或焊中闭环。</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Add root README report command</strong></span></div>
+<p>In the report command section, add:</p>
+<pre><code class="language-bash">uv run python -m weldcore.report.scenario_report</code></pre>
+<p>Add this bullet to the report outputs:</p>
+<pre><code class="language-markdown">`scenario_report` 会生成公开资料来源、船舶焊接任务族、候选仿真场景和字段覆盖证据。它是仿真前的知识闸门，不生成真机结论，也不纳入熔池路线。</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Update details.md stage status</strong></span></div>
+<p>In <code>details.md</code>, add this paragraph under “当前阶段判断”:</p>
+<pre><code class="language-markdown">根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。这一阶段优先完成公开资料来源、船舶焊接任务族和候选仿真场景的证据闸门；它还不是 `SyntheticSkillDataset v2` 的完成结论，也不是真实焊接质量验证。</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Replace details.md next priority list</strong></span></div>
+<p>In <code>details.md</code> 的 “下一步计划”, replace the old “第一优先级：真机数据最小闭环” and “第二优先级：专家知识采集模板” sections with:</p>
+<pre><code class="language-markdown">### 第一优先级：公开资料与数据来源底座
+
+先整理公开焊接数据集、船舶焊接机器人案例、焊接工艺资料和既有项目总规，形成 `PublicWeldKnowledgeBase`。每个来源都要说明能支持什么字段、缺少什么字段、只能作为约束还是可作为标签参考。
+
+### 第二优先级：船舶焊接任务族闸门
+
+先调研船舶制造中的典型焊接任务族，例如加筋板/纵骨角焊、平面板拼接、微型面板/腹板/隔板多短焊缝、双层底/双壳内部角焊等。只有当任务族有船舶制造上下文、公开来源支撑和字段覆盖说明后，才进入候选仿真场景。
+
+### 第三优先级：候选仿真场景规格
+
+生成 2-3 个候选 `SimulationScenarioSpec`，明确哪些字段来自公开资料约束，哪些是仿真假设，哪些后续需要真机标定。本阶段不把这些候选场景说成真实焊接质量验证。
+
+### 第四优先级：后续仿真数据生成计划
+
+在公开资料底座和任务族闸门通过后，再进入 `SyntheticSkillDataset v2` 的生成计划。真机采集和专家访谈作为后续校准、验证和审查，不作为当前主路径。</code></pre>
+<p>Keep the existing risk reminder that simulation results must not be described as real welding quality validation. Add this risk if missing:</p>
+<pre><code class="language-markdown">- 不要把公开资料约束、仿真样本或候选场景写成真实焊接质量已经验证。</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 6: Update weld-experience-engine README</strong></span></div>
+<p>In <code>weld-experience-engine/README.md</code>, add to the run block:</p>
+<pre><code class="language-bash">uv run python -m weldcore.report.scenario_report # 船舶场景资料底座与候选任务证据</code></pre>
+<p>Add this paragraph after the MVP section:</p>
+<pre><code class="language-markdown">`scenario_report` 用于生成公开资料来源、船舶焊接任务族、候选仿真场景和字段覆盖证据；它是 `SyntheticSkillDataset v2` 之前的知识闸门，不生成真机结论，也不纳入熔池路线。</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 7: Verify docs mention new route and boundary</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">rg -n &quot;scenario_report|PublicWeldKnowledgeBase|SimulationScenarioSpec|仿真优先|SyntheticSkillDataset v2|熔池&quot; README.md details.md weld-experience-engine/README.md</code></pre>
+<p>Expected: command finds the new route, command, deferred SyntheticSkillDataset v2 status, and molten-pool exclusion language.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 8: Commit</strong></span></div>
+<pre><code class="language-bash">git add README.md details.md weld-experience-engine/README.md
+git commit -m &quot;docs: update route for simulation-first knowledge gate&quot;</code></pre>
+<hr>
+<h2 id="task-7-final-verification">Task 7: Final Verification</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Read only.</li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 1: Run full test suite</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run pytest -q</code></pre>
+<p>Expected: all tests pass.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 2: Run existing POC report</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.generate</code></pre>
+<p>Expected: report completes and writes existing <code>report_out</code> artifacts.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 3: Run existing MVP report</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.mvp_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 焊接技能迁移 MVP 证据摘要 ===</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 4: Run new scenario report</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+uv run python -m weldcore.report.scenario_report</code></pre>
+<p>Expected output includes:</p>
+<pre><code class="language-text">=== 仿真优先船舶焊接场景证据摘要 ===
+公开来源: 8
+候选场景: 3</code></pre>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 5: Verify output files</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+test -f scenario_report_out/sources.json
+test -f scenario_report_out/task_families.json
+test -f scenario_report_out/scenarios.json
+test -f scenario_report_out/field_coverage.csv
+test -f scenario_report_out/evidence.md</code></pre>
+<p>Expected: exit code 0.</p>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 6: Verify molten-pool boundary</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">cd weld-experience-engine
+rg -n &quot;molten_pool|weld_pool&quot; weldcore tests README.md ../README.md ../details.md
+rg -n &quot;熔池&quot; weldcore README.md ../README.md ../details.md</code></pre>
+<p>Expected:</p>
+<ul>
+<li>No <code>molten_pool</code> or <code>weld_pool</code> code fields.</li>
+<li>Any <code>熔池</code> matches in code/docs/report text are boundary statements saying it is excluded or not part of this stage.</li>
+<li><code>tests/</code> may contain Chinese <code>熔池</code> inside negative assertions such as <code>assert &quot;熔池&quot; not in json_text</code>, and inside boundary-text assertions that verify the report explicitly says this stage excludes it.</li>
+</ul>
+<div class="check"><input type="checkbox" disabled> <span><strong>Step 7: Verify git state</strong></span></div>
+<p>Run:</p>
+<pre><code class="language-bash">git status --short --branch</code></pre>
+<p>Expected: no unexpected modified source files. Generated report outputs may be ignored or untracked depending on project <code>.gitignore</code>; handle them consistently with existing report output policy.</p>
+<hr>
+<h2 id="execution-handoff">Execution Handoff</h2>
+<p>Plan complete when this document is approved.</p>
+<p>Recommended execution mode:</p>
+<p><strong>1. Subagent-Driven (recommended)</strong> - dispatch one fresh worker per task, review between tasks, fast iteration.</p>
+<p>Alternative:</p>
+<p><strong>2. Inline Execution</strong> - execute tasks in this session using <code>superpowers:executing-plans</code>, batch execution with checkpoints.</p></main></div></body></html>

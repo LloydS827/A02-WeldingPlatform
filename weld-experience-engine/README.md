@@ -10,6 +10,7 @@
     uv run pytest -q
     uv run python -m weldcore.report.generate   # 出图+数据表
     uv run python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
+    uv run python -m weldcore.report.scenario_report # 船舶场景资料底座与候选任务证据
 
 如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
@@ -22,6 +23,7 @@
 - `metrics/`：往返 RMS、参数恢复误差、抗扰动失效边界。
 - `report/`：生成 `report_out/roundtrip.png`、`robustness.png`、`evidence.json`、`robustness.csv`。
 - `sim/` + `transfer/`：轻量仿真样本、WeldSkillPackage 生成、条件迁移、迁移评测。
+- `knowledge/`：公开资料来源、船舶焊接任务族、候选仿真场景和三层 gate。
 - `viz/rerun_bridge.py`：可选 Rerun 回放边界；未安装 `rerun-sdk` 时不会影响测试。
 
 ## 技能迁移 MVP
@@ -29,6 +31,10 @@
 `python -m weldcore.report.mvp_report` 会生成 `mvp_report_out/evidence.json`、`metrics.csv`、`transfer_summary.png`、`ip_notes.md`，用于证明从仿真样本到技能包、再到目标焊接条件迁移评测的最小闭环。
 
 MVP 阶段的边界是：先验证结构化技能迁移机制，不把结果夸大为真实焊接质量结论。ManiSkill 仅作为机器人任务与 demonstration 数据范式的可选 adapter 方向，真机数据后续通过同一套 `SkillDataset` 接入。
+
+`scenario_report` 用于生成公开资料来源、船舶焊接任务族、候选仿真场景和字段覆盖证据；它是 `SyntheticSkillDataset v2` 之前的知识闸门，不生成真机结论，也不纳入熔池路线。
+
+默认输出目录为 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。
 
 ## 评测结论
 
