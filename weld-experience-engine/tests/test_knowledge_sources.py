@@ -57,6 +57,12 @@ def test_seed_knowledge_base_has_first_gate_coverage():
     kb = load_seed_knowledge_base()
 
     assert len(kb.sources) >= 8
+    public_sources = [
+        source
+        for source in kb.sources
+        if source.url.startswith("http") and source.publisher != "project internal"
+    ]
+    assert len(public_sources) >= 8
     assert kb.validation_issues() == []
 
     usable_for = {item.value for source in kb.sources for item in source.usable_for}
