@@ -20,6 +20,7 @@ from .foundation import (
     TaskEvidenceEntry,
     TaskReadiness,
 )
+from .manifest import DEFAULT_FOUNDATION_ROOT, load_data_foundation
 from .seeds import load_seed_knowledge_base, load_seed_task_families
 from .shipbuilding import (
     ShipbuildingTaskFamily,
@@ -49,6 +50,7 @@ __all__ = [
     "UsableFor",
     "DataFoundation",
     "DataFoundationGateResult",
+    "DEFAULT_FOUNDATION_ROOT",
     "DatasetCard",
     "DatasetModality",
     "DownloadPolicy",
@@ -70,6 +72,7 @@ __all__ = [
     "WeldPosition",
     "load_seed_knowledge_base",
     "load_seed_task_families",
+    "load_data_foundation",
     "rank_task_families",
     "score_task_family",
     "select_first_batch_candidates",

@@ -1,0 +1,68 @@
+[
+  {
+    "family_id": "stiffened-panel-fillet",
+    "required_sources": ["vendor_case", "project_internal"],
+    "supporting_source_ids": [
+      "vendor-kranendonk-panel-welding-gantry",
+      "project-260522-shipbuilding-welding-brain-plan"
+    ],
+    "supporting_dataset_ids": [],
+    "required_fields": ["shipbuilding_context", "weld_object", "joint_type", "torch_angle", "travel_speed"],
+    "covered_required_fields": ["shipbuilding_context", "weld_object", "joint_type", "torch_angle", "travel_speed"],
+    "assumption_fields": ["leg_size_mm", "plate_thickness_mm"],
+    "readiness": "ready_for_synthetic_v2_plan",
+    "next_action": "作为第一批 SyntheticSkillDataset v2 任务族，先生成面板线角焊规划输入。"
+  },
+  {
+    "family_id": "panel-butt",
+    "required_sources": ["process_guide", "project_internal", "standard"],
+    "supporting_source_ids": [
+      "vendor-kobelco-shipbuilding-welding",
+      "project-260522-shipbuilding-welding-brain-plan",
+      "standard-aws-swps-public-page",
+      "guide-lincoln-electric-gmaw"
+    ],
+    "supporting_dataset_ids": [
+      "dataset-zenodo-metal-arc-welding-10017718",
+      "dataset-mendeley-gmaw-screening-pool"
+    ],
+    "required_fields": ["shipbuilding_context", "weld_object", "joint_type", "groove_geometry", "current", "voltage", "travel_speed"],
+    "covered_required_fields": ["shipbuilding_context", "weld_object", "joint_type", "groove_geometry", "current", "voltage", "travel_speed"],
+    "assumption_fields": ["plate_thickness_mm", "root_gap_mm"],
+    "readiness": "ready_for_synthetic_v2_plan",
+    "next_action": "进入 SyntheticSkillDataset v2 规划，但参数值必须保留 WPS 待验证标记。"
+  },
+  {
+    "family_id": "micro-panel-web-bulkhead",
+    "required_sources": ["vendor_case", "project_internal"],
+    "supporting_source_ids": [
+      "case-siemens-hd-hyundai-mipo-autonomous-welding",
+      "project-260522-shipbuilding-welding-brain-plan",
+      "paper-shipbuilding-robot-welding-screening"
+    ],
+    "supporting_dataset_ids": [
+      "dataset-zenodo-tandem-gmaw-17951725"
+    ],
+    "required_fields": ["shipbuilding_context", "weld_object", "trajectory", "robot_pose", "motion_template"],
+    "covered_required_fields": ["shipbuilding_context", "weld_object", "trajectory", "robot_pose", "motion_template"],
+    "assumption_fields": ["weld_seam_list", "sequence_order", "node_transition"],
+    "readiness": "ready_for_synthetic_v2_plan",
+    "next_action": "作为多短焊缝 synthetic v2 规划输入，先输出任务序列 schema。"
+  },
+  {
+    "family_id": "double-bottom-inner-fillet",
+    "required_sources": ["vendor_case", "process_guide", "project_internal"],
+    "supporting_source_ids": [
+      "vendor-kobelco-shipbuilding-welding",
+      "case-siemens-hd-hyundai-mipo-autonomous-welding",
+      "vendor-kranendonk-block-welding-line",
+      "project-260522-shipbuilding-welding-brain-plan"
+    ],
+    "supporting_dataset_ids": [],
+    "required_fields": ["shipbuilding_context", "weld_object", "weld_position", "robot_pose", "motion_template"],
+    "covered_required_fields": ["shipbuilding_context", "weld_object", "weld_position", "robot_pose"],
+    "assumption_fields": ["confined_space_clearance", "reachability_placeholder", "collision_margin"],
+    "readiness": "needs_more_sources",
+    "next_action": "暂不进入 ready；先补充分段内部空间、姿态和可达性证据。"
+  }
+]

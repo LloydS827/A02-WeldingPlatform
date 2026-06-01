@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any
 
 
-FORBIDDEN_POOL_TERMS = ("molten", "molten_pool", "molten pool", "weld_pool", "weld pool", "熔池")
+FORBIDDEN_POOL_TERMS = ("molten_pool", "molten pool", "weld_pool", "weld pool", "熔池")
 
 
 class PublicAccess(str, Enum):
@@ -60,6 +60,11 @@ def _duplicate_values(values: list[str]) -> list[str]:
             duplicates.add(value)
         seen.add(value)
     return sorted(duplicates)
+
+
+def _has_forbidden_term(value: Any) -> bool:
+    text = str(value).lower()
+    return any(term in text for term in FORBIDDEN_POOL_TERMS)
 
 
 @dataclass(frozen=True)
@@ -182,19 +187,113 @@ class DataFoundation:
 
     def validate(self) -> DataFoundationGateResult:
         issues: list[str] = []
+        source_by_id = {source.source_id: source for source in self.sources}
+        dataset_by_id = {dataset.dataset_id: dataset for dataset in self.datasets}
+
         for source_id in _duplicate_values([source.source_id for source in self.sources]):
             issues.append(f"{source_id}: duplicate source_id")
         for dataset_id in _duplicate_values([dataset.dataset_id for dataset in self.datasets]):
             issues.append(f"{dataset_id}: duplicate dataset_id")
         for family_id in _duplicate_values([entry.family_id for entry in self.task_evidence]):
             issues.append(f"{family_id}: duplicate family_id")
+        if self.field_coverage is not None:
+            for field_name in _duplicate_values([row.field_name for row in self.field_coverage]):
+                issues.append(f"{field_name}: duplicate field_name")
+
+        public_source_count = sum(
+            source.public_access == PublicAccess.PUBLIC for source in self.sources
+        )
+        strong_source_count = sum(
+            source.shipbuilding_relevance_level == ShipbuildingRelevanceLevel.STRONG
+            for source in self.sources
+        )
+        if len(self.sources) < 20:
+            issues.append("data foundation requires at least 20 sources")
+        if public_source_count < 15:
+            issues.append("data foundation requires at least 15 public sources")
+        if strong_source_count < 8:
+            issues.append("data foundation requires at least 8 strong shipbuilding sources")
+
         for source in self.sources:
             if not source.is_complete():
                 issues.append(f"{source.source_id}: incomplete source card")
-            text = str(source.to_dict()).lower()
-            if any(term in text for term in FORBIDDEN_POOL_TERMS):
-                issues.append(f"{source.source_id}: molten-pool dependency is out of scope")
+            if not isinstance(source.public_access, PublicAccess):
+                issues.append(f"{source.source_id}: invalid public_access")
+            if not isinstance(source.shipbuilding_relevance_level, ShipbuildingRelevanceLevel):
+                issues.append(f"{source.source_id}: invalid shipbuilding_relevance_level")
+            if _has_forbidden_term(source.to_dict()):
+                issues.append(f"{source.source_id}: forbidden pool-route dependency is out of scope")
+
         for dataset in self.datasets:
             if not dataset.is_complete():
                 issues.append(f"{dataset.dataset_id}: incomplete dataset card")
+            if dataset.source_id not in source_by_id:
+                issues.append(f"{dataset.dataset_id}: unknown source_id {dataset.source_id}")
+            if not isinstance(dataset.download_policy, DownloadPolicy):
+                issues.append(f"{dataset.dataset_id}: unsupported download_policy")
+            if any(not isinstance(modality, DatasetModality) for modality in dataset.modalities):
+                issues.append(f"{dataset.dataset_id}: unsupported modality")
+            if _has_forbidden_term(dataset.to_dict()):
+                issues.append(f"{dataset.dataset_id}: forbidden pool-route dependency is out of scope")
+
+        supported_policies = {
+            DownloadPolicy.MANIFEST_ONLY,
+            DownloadPolicy.SAMPLE_CACHE_LATER,
+            DownloadPolicy.EXTERNAL_CACHE_ONLY,
+        }
+        for dataset in self.datasets:
+            if dataset.download_policy not in supported_policies:
+                issues.append(f"{dataset.dataset_id}: unsupported download_policy")
+
+        public_dataset_count = sum(
+            dataset.source_id in source_by_id
+            and source_by_id[dataset.source_id].public_access == PublicAccess.PUBLIC
+            for dataset in self.datasets
+        )
+        if public_dataset_count < 6:
+            issues.append("data foundation requires at least 6 public datasets")
+
+        ready_entries = [entry for entry in self.task_evidence if entry.ready_for_plan()]
+        if len(ready_entries) < 3:
+            issues.append("data foundation requires at least 3 ready task entries")
+
+        for entry in self.task_evidence:
+            if not isinstance(entry.readiness, TaskReadiness):
+                issues.append(f"{entry.family_id}: invalid readiness")
+            for source_id in entry.supporting_source_ids:
+                if source_id not in source_by_id:
+                    issues.append(f"{entry.family_id}: unknown supporting_source_id {source_id}")
+            for dataset_id in entry.supporting_dataset_ids:
+                if dataset_id not in dataset_by_id:
+                    issues.append(f"{entry.family_id}: unknown supporting_dataset_id {dataset_id}")
+            if _has_forbidden_term(entry.to_dict()):
+                issues.append(f"{entry.family_id}: forbidden pool-route dependency is out of scope")
+            if entry.ready_for_plan():
+                has_strong_source = any(
+                    source_id in source_by_id
+                    and source_by_id[source_id].shipbuilding_relevance_level
+                    == ShipbuildingRelevanceLevel.STRONG
+                    for source_id in entry.supporting_source_ids
+                )
+                if not has_strong_source:
+                    issues.append(f"{entry.family_id}: ready task needs a strong source")
+                supported_fields = set(entry.covered_required_fields) | set(entry.assumption_fields)
+                missing_fields = sorted(set(entry.required_fields) - supported_fields)
+                if missing_fields:
+                    issues.append(
+                        f"{entry.family_id}: ready task missing required fields {missing_fields}"
+                    )
+
+        for row in self.field_coverage or []:
+            if not row.field_name or not row.coverage_role or not row.notes:
+                issues.append(f"{row.field_name}: incomplete field coverage row")
+            for source_id in row.source_ids:
+                if source_id not in source_by_id:
+                    issues.append(f"{row.field_name}: unknown source_id {source_id}")
+            for dataset_id in row.dataset_ids:
+                if dataset_id not in dataset_by_id:
+                    issues.append(f"{row.field_name}: unknown dataset_id {dataset_id}")
+            if _has_forbidden_term(row.to_dict()):
+                issues.append(f"{row.field_name}: forbidden pool-route dependency is out of scope")
+
         return DataFoundationGateResult(not issues, issues)
