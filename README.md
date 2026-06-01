@@ -45,7 +45,8 @@ MVP 与知识闸门的阶段性判断是：软件与数据结构层面的核心�
 │   ├── project/      # 课题定义、总体方案、规划说明
 │   ├── specs/        # 白皮书与技能迁移 MVP 设计 spec
 │   ├── plans/        # POC、白皮书与 MVP 实施计划
-│   └── reference/    # 外部/前序技术方案参考
+│   ├── reference/    # 外部/前序技术方案参考
+│   └── superpowers/  # 仿真优先路线的设计 spec、实施计划和 HTML 阅读版
 ├── report/
 │   ├── 船舶焊接工艺大脑平台_风险驱动论证白皮书.md
 │   ├── data/         # 白皮书引用的 POC 数据
@@ -94,7 +95,7 @@ MVP 与知识闸门的阶段性判断是：软件与数据结构层面的核心�
 
 ## 运行方式
 
-进入 POC/MVP 子项目：
+进入 `weldcore` 引擎子项目：
 
 ```bash
 cd weld-experience-engine
@@ -130,6 +131,14 @@ uv run python -m weldcore.report.scenario_report
 - `mvp_report_out/ip_notes.md`
 
 `scenario_report` 会生成公开资料来源、船舶焊接任务族、候选仿真场景和字段覆盖证据。它是仿真前的知识闸门，不生成真机结论，也不纳入熔池路线。
+
+`scenario_report` 的默认输出目录是 `scenario_report_out/`，核心文件包括：
+
+- `scenario_report_out/sources.json`
+- `scenario_report_out/task_families.json`
+- `scenario_report_out/scenarios.json`
+- `scenario_report_out/field_coverage.csv`
+- `scenario_report_out/evidence.md`
 
 ## 技术边界
 
