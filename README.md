@@ -6,13 +6,14 @@
 
 ## 当前结论
 
-现阶段已经完成三条可运行证据链：
+现阶段已经完成四条可运行证据链：
 
 1. **经验结构化 POC**：验证“大师焊接轨迹 -> 结构化工艺参数 -> 机器人可执行轨迹”的闭环。
 2. **技能迁移 MVP**：验证“仿真样本 -> SkillDataset -> WeldSkillPackage -> TransferExperiment -> 评测报告”的最小闭环。
 3. **仿真优先知识闸门**：验证“公开资料来源 -> 船舶焊接任务族 -> 候选 SimulationScenarioSpec -> 场景证据报告”的最小闭环。
+4. **资料底座 gate**：验证“资料来源 -> 公开数据集 -> 字段覆盖矩阵 -> 任务证据映射 -> `SyntheticSkillDataset v2` 计划输入”的最小闭环。
 
-MVP 与知识闸门的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以作为下一阶段仿真数据生成、真机标定、专家知识整理、专利/论文材料沉淀的基础。但它还不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。
+MVP、场景知识闸门与资料底座 gate 的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以作为下一阶段仿真数据生成、真机标定、专家知识整理、专利/论文材料沉淀的基础。但它还不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。
 
 ## 已完成成果
 
@@ -33,6 +34,10 @@ MVP 与知识闸门的阶段性判断是：软件与数据结构层面的核心�
   - 新增 `PublicWeldKnowledgeBase`，整理公开焊接数据集、工艺资料、船舶焊接机器人案例和项目规划资料的字段覆盖边界。
   - 新增船舶焊接任务族支持闸门，先从船舶制造典型任务出发，而不是从通用直线焊或真机采集出发。
   - 新增 `SimulationScenarioSpec` 候选场景和 `scenario_report`，输出来源、任务族、字段覆盖和候选场景证据。
+- 完成资料底座 gate：
+  - 新增 `docs/data-foundation/`，沉淀中文资料卡、公开数据集说明、字段覆盖矩阵和任务证据映射。
+  - 新增 manifest-first 资料底座加载与校验，先通过清单证明资料、数据集、字段和任务证据足够支撑下一步计划。
+  - 新增 `data_foundation_report`，生成中文证据报告和 `SyntheticSkillDataset v2` 计划输入。
 
 ## 目录结构
 
@@ -42,6 +47,7 @@ MVP 与知识闸门的阶段性判断是：软件与数据结构层面的核心�
 ├── details.md       # 面向非技术读者的项目进展台账
 ├── AGENTS.md / CLAUDE.md
 ├── docs/
+│   ├── data-foundation/ # 资料底座资料卡、manifest 和报告
 │   ├── project/      # 课题定义、总体方案、规划说明
 │   ├── specs/        # 白皮书与技能迁移 MVP 设计 spec
 │   ├── plans/        # POC、白皮书与 MVP 实施计划
@@ -123,6 +129,12 @@ uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 ```
 
+生成数据集与资料底座证据：
+
+```bash
+uv run python -m weldcore.report.data_foundation_report
+```
+
 `mvp_report` 会生成：
 
 - `mvp_report_out/evidence.json`
@@ -140,6 +152,10 @@ uv run python -m weldcore.report.scenario_report
 - `scenario_report_out/field_coverage.csv`
 - `scenario_report_out/evidence.md`
 
+`data_foundation_report` 会生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。
+
+`data_foundation_report` 的运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/data-foundation/reports/` 下的中文证据报告和 `SyntheticSkillDataset v2` 计划输入。
+
 ## 技术边界
 
 - MVP 与下一阶段数据路线优先使用轻量仿真和公开资料知识闸门，不等待真机或高保真熔池物理仿真。
@@ -150,19 +166,18 @@ uv run python -m weldcore.report.scenario_report
 
 ## 阶段判断
 
-现阶段工作可以视为“技能迁移 MVP 第一轮完成，并完成仿真优先知识闸门第一轮”：
+现阶段工作可以视为“技能迁移 MVP 第一轮完成，并完成仿真优先知识闸门和资料底座 gate 第一轮”：
 
 - 已有可运行代码。
 - 已有自动化测试。
-- 已有 POC、MVP 和场景证据报告生成命令。
+- 已有 POC、MVP、场景证据和资料底座证据报告生成命令。
 - 已有白皮书与 IP notes 可引用材料。
 - 已明确 Rerun、ManiSkill、真机数据和专家知识的边界。
-- 已明确公开资料只能作为场景约束、参数参考或标签词汇来源，不能写成真实焊接质量验证。
+- 已明确公开资料和资料底座只能作为场景约束、参数参考、标签词汇来源和 `SyntheticSkillDataset v2` 计划输入，不能写成真实焊接质量验证。
 
-下一阶段建议进入“仿真优先的船舶焊接数据与工艺知识底座”：
+下一阶段建议进入“基于资料底座的 `SyntheticSkillDataset v2` 小批量生成设计”：
 
-1. 先建立公开焊接数据集与工艺资料底座，形成 `PublicWeldKnowledgeBase`。
-2. 先调研船舶制造焊接任务族，再确认 2-3 个候选 `SimulationScenarioSpec`。
-3. 用公开资料约束仿真场景字段和参数范围；本轮只完成知识底座与任务族闸门，不直接宣称 `SyntheticSkillDataset v2` 已完成。
-4. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
-5. 本阶段不纳入熔池图像、熔池控制或焊中闭环。
+1. 基于已通过 gate 的资料底座，选择 2-3 个 ready 任务进入小批量 `SyntheticSkillDataset v2` 生成设计。
+2. 继续把公开资料用于约束仿真场景字段和参数范围；不能把公开资料或仿真结果写成真实焊接质量验证。
+3. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
+4. 本阶段不纳入熔池图像、熔池控制或焊中闭环。
