@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据集与资料底座 Design Spec</title>
+<style>
+:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;} .layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;max-width:1320px;margin:0 auto;padding:28px;} nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto;} nav h2{font-size:15px;margin:0 0 10px;color:var(--muted);} nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0;} main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06);} h1{font-size:34px;line-height:1.18;margin:0 0 18px;} h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px;} h3{font-size:19px;margin-top:26px;} code{background:var(--soft);padding:.12em .35em;border-radius:4px;} pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55;} pre code{background:transparent;padding:0;} table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto;} th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top;} th{background:#f0f4f9;text-align:left;} blockquote{border-left:4px solid var(--accent);margin:18px 0;padding:4px 18px;color:var(--muted);background:var(--soft);} hr{border:0;border-top:1px solid var(--line);margin:28px 0;} a{color:var(--accent);} @media(max-width:900px){.layout{display:block;padding:14px;}nav{position:relative;top:0;margin-bottom:14px;}main{padding:28px 20px;}h1{font-size:28px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav><h2>目录</h2><a href="#0-结论先行">0. 结论先行</a>
+<a href="#1-已确认关键决策">1. 已确认关键决策</a>
+<a href="#2-背景与当前缺口">2. 背景与当前缺口</a>
+<a href="#3-范围边界">3. 范围边界</a>
+<a href="#4-资料底座目录设计">4. 资料底座目录设计</a>
+<a href="#5-数据模型">5. 数据模型</a>
+<a href="#6-初始来源池">6. 初始来源池</a>
+<a href="#7-gate-设计">7. Gate 设计</a>
+<a href="#8-与现有代码的关系">8. 与现有代码的关系</a>
+<a href="#9-后续任务规划输出">9. 后续任务规划输出</a>
+<a href="#10-验收标准">10. 验收标准</a>
+<a href="#11-风险与控制">11. 风险与控制</a>
+<a href="#12-推荐执行顺序">12. 推荐执行顺序</a></nav>
+<main><h1 id="数据集与资料底座-design-spec">数据集与资料底座 Design Spec</h1>
+<p>日期：2026-06-01  </p>
+<p>版本：v0.1  </p>
+<p>适用项目：A02 焊接技能大师平台  </p>
+<p>阶段：仿真优先知识闸门通过后的资料底座建设</p>
+<hr>
+<h2 id="0-结论先行">0. 结论先行</h2>
+<p>本阶段采用 <strong>A+：Manifest-first 资料底座</strong>。</p>
+<p>本轮不把大体量公开数据下载进 git 仓库，也不直接进入批量 <code>SyntheticSkillDataset v2</code> 生成。先建立一个可审查、可追溯、可执行 gate 的资料底座：</p>
+<pre><code>
+公开资料/公开数据集/项目资料
+-&gt; SourceCard / DatasetCard
+-&gt; FieldCoverageMatrix
+-&gt; TaskEvidenceMap
+-&gt; DataFoundationGate
+-&gt; 后续 SyntheticSkillDataset v2 生成计划
+</code></pre>
+<p>该底座的作用是回答三件事：</p>
+<ol>
+<li>哪些来源可以支撑船舶焊接任务选择。</li>
+<li>哪些字段有公开资料约束，哪些字段仍是仿真假设。</li>
+<li>哪些候选场景已经具备进入 <code>SyntheticSkillDataset v2</code> 的证据条件。</li>
+</ol>
+<p>本阶段仍然明确排除熔池图像、熔池控制和焊中闭环路线。任何公开资料或数据集即使包含相关内容，也只能登记为“本阶段不使用/未来路线”，不得进入当前 JSON 输出、字段依赖或仿真输入。</p>
+<hr>
+<h2 id="1-已确认关键决策">1. 已确认关键决策</h2>
+<ol>
+<li>本轮采用 Manifest-first，不下载大文件，只保留小样本接口。</li>
+<li>资料底座文档放在 <code>docs/data-foundation/</code>。</li>
+<li>可执行 gate 和报告能力继续放在 <code>weld-experience-engine/weldcore/knowledge</code> 与 <code>weldcore.report</code>。</li>
+<li>第一版验收目标：</li>
+</ol>
+<p>   - 总来源不少于 20 条。</p>
+<p>   - 公开来源不少于 15 条。</p>
+<p>   - 船舶制造强相关来源不少于 8 条。</p>
+<p>   - 公开数据集不少于 6 条。</p>
+<ol>
+<li>本轮产物包含 Markdown spec 与 HTML 阅读版。</li>
+<li>后续任务主线是：</li>
+</ol>
+<pre><code>
+资料底座通过 gate
+-&gt; SyntheticSkillDataset v2 生成计划
+-&gt; 仿真样本与报告实现
+</code></pre>
+<hr>
+<h2 id="2-背景与当前缺口">2. 背景与当前缺口</h2>
+<p>上一阶段已经完成了第一道知识闸门：</p>
+<ul>
+<li><code>PublicWeldKnowledgeBase</code>：9 条 seed 来源，其中 8 条公开来源。</li>
+<li><code>ShipbuildingTaskFamily</code> gate：用来源、字段覆盖和 <code>assumption_fields</code> 验证任务族。</li>
+<li><code>SimulationScenarioSpec</code>：生成 3 个候选船舶焊接仿真场景。</li>
+<li><code>scenario_report</code>：输出 sources、task families、scenarios、field coverage 和 evidence。</li>
+</ul>
+<p>但这些能力仍然偏“seed 级别”。下一阶段要把它升级成正式底座：</p>
+<ul>
+<li>来源不应只写在 Python seed 里，还需要可被非研发人员阅读和审查的资料卡。</li>
+<li>公开数据集需要记录体量、模态、schema、下载策略和使用边界。</li>
+<li>船舶任务族需要看到“哪些来源支持哪些任务字段”的映射矩阵。</li>
+<li>后续 <code>SyntheticSkillDataset v2</code> 的计划必须从这个底座派生，而不是凭经验直接生成样本。</li>
+</ul>
+<hr>
+<h2 id="3-范围边界">3. 范围边界</h2>
+<h3 id="3-1-本阶段做什么">3.1 本阶段做什么</h3>
+<ul>
+<li>建立 <code>docs/data-foundation/</code> 下的资料底座文档与机器可读 manifest。</li>
+<li>扩展当前 seed 来源池到不少于 20 条。</li>
+<li>把来源分为 <code>SourceCard</code>、<code>DatasetCard</code>、<code>TaskEvidenceMap</code>、<code>FieldCoverageMatrix</code>。</li>
+<li>新增或扩展可执行 gate，验证来源数量、字段完整性、任务证据覆盖和禁止字段。</li>
+<li>生成 <code>data_foundation_report</code>，输出资料底座证据、覆盖矩阵和下一步任务建议。</li>
+<li>根据资料底座结果，形成后续 <code>SyntheticSkillDataset v2</code> 的实施计划。</li>
+</ul>
+<h3 id="3-2-本阶段不做什么">3.2 本阶段不做什么</h3>
+<ul>
+<li>不下载大体量公开数据集进 git。</li>
+<li>不生成批量 <code>SyntheticSkillDataset v2</code>。</li>
+<li>不实现真机采集、机器人程序或生产控制接口。</li>
+<li>不把公开资料或仿真标签写成真实焊接质量验证。</li>
+<li>不纳入熔池图像、熔池控制或焊中闭环字段。</li>
+</ul>
+<hr>
+<h2 id="4-资料底座目录设计">4. 资料底座目录设计</h2>
+<p>新增目录：</p>
+<pre><code>
+docs/data-foundation/
+├── README.md
+├── source-cards/
+│   ├── shipbuilding-automation.md
+│   ├── process-guides.md
+│   ├── public-datasets.md
+│   └── standards-and-defect-vocabulary.md
+├── manifests/
+│   ├── sources.json
+│   ├── datasets.json
+│   ├── field_coverage.csv
+│   └── task_evidence_map.json
+└── reports/
+    └── data_foundation_evidence.md
+</code></pre>
+<p>设计原则：</p>
+<ul>
+<li>Markdown 给业务、工艺和项目人员阅读。</li>
+<li>JSON/CSV 给测试、报告和后续数据生成计划使用。</li>
+<li>不把外部大文件放入仓库；只记录 URL、大小、schema、下载策略和使用边界。</li>
+<li>资料卡必须与 <code>weldcore.knowledge</code> 的可执行对象可以互相映射。</li>
+</ul>
+<hr>
+<h2 id="5-数据模型">5. 数据模型</h2>
+<h3 id="5-1-sourcecard">5.1 <code>SourceCard</code></h3>
+<p><code>SourceCard</code> 描述任何可用于任务选择、工艺约束、字段覆盖或标签词汇的来源。</p>
+<p>建议字段：</p>
+<table><tbody>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>source_id</code></td><td>稳定来源编号</td></tr>
+<tr><td><code>source_type</code></td><td><code>vendor_case</code> / <code>process_guide</code> / <code>dataset</code> / <code>standard</code> / <code>paper</code> / <code>project_internal</code></td></tr>
+<tr><td><code>title</code></td><td>来源标题</td></tr>
+<tr><td><code>url</code></td><td>公开 URL 或项目内相对路径</td></tr>
+<tr><td><code>publisher</code></td><td>发布方</td></tr>
+<tr><td><code>public_access</code></td><td><code>public</code> / <code>project_internal</code> / <code>requires_screening</code></td></tr>
+<tr><td><code>shipbuilding_relevance</code></td><td>与船舶制造任务的关系</td></tr>
+<tr><td><code>covered_fields</code></td><td>可支撑字段</td></tr>
+<tr><td><code>missing_fields</code></td><td>明确缺失字段</td></tr>
+<tr><td><code>usable_for</code></td><td><code>scenario_selection</code> / <code>parameter_range</code> / <code>quality_label</code> / <code>benchmark</code> / <code>schema_reference</code></td></tr>
+<tr><td><code>source_refs</code></td><td>对应 spec、资料页、章节或备注</td></tr>
+<tr><td><code>assumptions</code></td><td>使用该来源时引入的假设</td></tr>
+<tr><td><code>notes</code></td><td>使用边界</td></tr>
+</tbody></table>
+<h3 id="5-2-datasetcard">5.2 <code>DatasetCard</code></h3>
+<p><code>DatasetCard</code> 是 <code>SourceCard</code> 的数据集扩展，用于公开焊接数据集和后续小样本缓存。</p>
+<p>建议字段：</p>
+<table><tbody>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>dataset_id</code></td><td>数据集编号</td></tr>
+<tr><td><code>source_id</code></td><td>对应 <code>SourceCard</code></td></tr>
+<tr><td><code>modalities</code></td><td><code>xray_image</code> / <code>surface_image</code> / <code>current_voltage_timeseries</code> / <code>robot_pose</code> / <code>scan_3d</code> / <code>video</code> / <code>metadata</code></td></tr>
+<tr><td><code>size_note</code></td><td>体量说明</td></tr>
+<tr><td><code>download_policy</code></td><td><code>manifest_only</code> / <code>sample_cache_later</code> / <code>external_cache_only</code></td></tr>
+<tr><td><code>schema_summary</code></td><td>字段或文件结构摘要</td></tr>
+<tr><td><code>quality_label_type</code></td><td>缺陷标签、视觉标签、过程标签或无标签</td></tr>
+<tr><td><code>shipbuilding_fit</code></td><td><code>direct</code> / <code>adjacent</code> / <code>generic</code> / <code>benchmark_only</code></td></tr>
+<tr><td><code>use_boundary</code></td><td>只能如何使用，不能如何使用</td></tr>
+</tbody></table>
+<h3 id="5-3-fieldcoveragematrix">5.3 <code>FieldCoverageMatrix</code></h3>
+<p>字段覆盖矩阵用于回答“每个字段由哪些来源支撑”。</p>
+<p>第一版字段分组：</p>
+<ul>
+<li>任务上下文：<code>shipbuilding_context</code>、<code>manufacturing_stage</code>、<code>weld_object</code></li>
+<li>接头与位置：<code>joint_type</code>、<code>weld_position</code>、<code>groove_geometry</code></li>
+<li>工艺参数：<code>current</code>、<code>voltage</code>、<code>wire_feed</code>、<code>travel_speed</code></li>
+<li>运动字段：<code>trajectory</code>、<code>robot_pose</code>、<code>torch_angle</code>、<code>motion_template</code></li>
+<li>质量与标签：<code>defect_label</code>、<code>quality_label</code>、<code>inspection_reference</code></li>
+<li>仿真边界：<code>assumption_field</code>、<code>requires_real_validation_later</code></li>
+</ul>
+<h3 id="5-4-taskevidencemap">5.4 <code>TaskEvidenceMap</code></h3>
+<p><code>TaskEvidenceMap</code> 把任务族与来源连接起来。</p>
+<p>建议字段：</p>
+<table><tbody>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>family_id</code></td><td>船舶焊接任务族</td></tr>
+<tr><td><code>required_sources</code></td><td>至少需要哪些来源类别</td></tr>
+<tr><td><code>supporting_source_ids</code></td><td>实际来源</td></tr>
+<tr><td><code>covered_required_fields</code></td><td>已覆盖字段</td></tr>
+<tr><td><code>assumption_fields</code></td><td>仍为仿真假设的字段</td></tr>
+<tr><td><code>readiness</code></td><td><code>ready_for_synthetic_v2_plan</code> / <code>needs_more_sources</code> / <code>defer</code></td></tr>
+<tr><td><code>next_action</code></td><td>下一步任务建议</td></tr>
+</tbody></table>
+<hr>
+<h2 id="6-初始来源池">6. 初始来源池</h2>
+<p>第一版来源池必须从 seed 的 9 条扩展到至少 20 条。以下是候选池，不要求所有来源都进入第一版，但进入底座的来源必须完成卡片化与 gate。</p>
+<h3 id="6-1-船舶焊接自动化与机器人资料">6.1 船舶焊接自动化与机器人资料</h3>
+<table><tbody>
+<tr><th>来源</th><th>用途</th></tr>
+<tr><td>Hyundai Welding Cobot Solution Shipbuilding Leaflet 2024</td><td>船舶协作机器人焊接场景、任务选择</td></tr>
+<tr><td>KOBELCO Shipbuilding Welding Industry Page</td><td>船舶制造阶段、焊接对象、位置和工艺参考</td></tr>
+<tr><td>Siemens / HD Hyundai Mipo Autonomous Welding Case</td><td>subassembly、block、tight compartment、仿真和机器人程序边界</td></tr>
+<tr><td>KRANENDONK Panel Welding Gantry</td><td>加筋板/纵骨角焊、torch angle、travel speed、CAD seam detection</td></tr>
+<tr><td>KRANENDONK Block Welding Line</td><td>block welding、复杂构件和自动化产线参考</td></tr>
+<tr><td>既有项目总规 HTML</td><td>项目内部焊缝对象、坡口、轨迹和质量对象定义</td></tr>
+</tbody></table>
+<h3 id="6-2-公开焊接数据集">6.2 公开焊接数据集</h3>
+<table><tbody>
+<tr><th>来源</th><th>用途</th></tr>
+<tr><td>GDXray weld X-ray dataset</td><td>缺陷标签、X-ray benchmark、质量词汇</td></tr>
+<tr><td>Zenodo Metal Arc Welding Dataset</td><td>电流/电压时序、过程数据、质量标签筛选</td></tr>
+<tr><td>Tandem-GMAW dataset</td><td>多模态 robot/process/power/scan/video schema 参考</td></tr>
+<tr><td>RIAWELC</td><td>焊缝图像分类、公开标签和视觉 benchmark</td></tr>
+<tr><td>LoHi-Weld</td><td>焊缝视觉质量数据集、标签词汇和 benchmark</td></tr>
+<tr><td>其他 Mendeley / Zenodo / GitHub GMAW 数据集</td><td>作为待筛选来源池，必须落到具体 URL 和字段覆盖后才可进入 gate</td></tr>
+</tbody></table>
+<h3 id="6-3-工艺-标准与缺陷词汇">6.3 工艺、标准与缺陷词汇</h3>
+<table><tbody>
+<tr><th>来源</th><th>用途</th></tr>
+<tr><td>AWS standards / SWPS public page</td><td>WPS 概念、工艺变量边界</td></tr>
+<tr><td>TWI weld defects materials</td><td>缺陷词汇与质量标签边界</td></tr>
+<tr><td>Wartsila weld defects encyclopedia</td><td>船舶/海工语境下的缺陷词汇</td></tr>
+<tr><td>Lincoln Electric / ESAB / Miller 等公开工艺指南</td><td>GMAW/FCAW 参数范围参考，需标注非船舶专用</td></tr>
+</tbody></table>
+<hr>
+<h2 id="7-gate-设计">7. Gate 设计</h2>
+<h3 id="7-1-source-gate">7.1 Source gate</h3>
+<p>必须验证：</p>
+<ul>
+<li>总来源数不少于 20。</li>
+<li>公开来源不少于 15。</li>
+<li>每条来源必须有 <code>usable_for</code>、<code>covered_fields</code>、<code>missing_fields</code>、<code>source_refs</code>、<code>assumptions</code>、<code>notes</code>。</li>
+<li>每条来源必须声明 <code>public_access</code> 与 <code>use_boundary</code>。</li>
+<li>禁止字段不得出现在 JSON 输出或当前阶段字段依赖中。</li>
+</ul>
+<h3 id="7-2-dataset-gate">7.2 Dataset gate</h3>
+<p>必须验证：</p>
+<ul>
+<li>公开数据集不少于 6。</li>
+<li>每个数据集都有 <code>modalities</code>、<code>size_note</code>、<code>download_policy</code>、<code>schema_summary</code>。</li>
+<li><code>download_policy</code> 默认不能是“下载进 git”。</li>
+<li>大体量数据集只能登记为 <code>manifest_only</code> 或 <code>external_cache_only</code>。</li>
+<li>如果未来加入小样本缓存，必须单独记录 checksum、来源 URL、裁剪规则和不可替代性。</li>
+</ul>
+<h3 id="7-3-field-coverage-gate">7.3 Field coverage gate</h3>
+<p>必须验证：</p>
+<ul>
+<li>每个候选任务族的 required fields 要么有来源覆盖，要么列入 <code>assumption_fields</code>。</li>
+<li>至少 3 个任务族达到 <code>ready_for_synthetic_v2_plan</code>。</li>
+<li>任务族不能只由通用焊接数据集支撑，必须至少有一个船舶制造上下文来源。</li>
+<li><code>quality_label</code> 只能标注为公开标签词汇或仿真占位，不得写成真实质量结果。</li>
+</ul>
+<h3 id="7-4-report-gate">7.4 Report gate</h3>
+<p><code>data_foundation_report</code> 必须：</p>
+<ul>
+<li>输出来源数量、公开来源数量、数据集数量和船舶强相关数量。</li>
+<li>输出字段覆盖矩阵。</li>
+<li>输出任务证据映射。</li>
+<li>输出下一步 <code>SyntheticSkillDataset v2</code> 计划建议。</li>
+<li>当 source/dataset/field/task gate 失败时抛出明确错误。</li>
+</ul>
+<hr>
+<h2 id="8-与现有代码的关系">8. 与现有代码的关系</h2>
+<p>本阶段不替换上一阶段代码，而是扩展它：</p>
+<ul>
+<li><code>PublicWeldKnowledgeBase</code> 保留为可执行来源集合。</li>
+<li>新增或扩展 <code>DatasetCard</code> 与 <code>DataFoundation</code> 对象。</li>
+<li><code>load_seed_knowledge_base()</code> 可以继续存在，但第一版正式底座应从 manifest 加载。</li>
+<li><code>scenario_report</code> 保留为候选场景证据报告。</li>
+<li>新增 <code>data_foundation_report</code> 用于资料底座验收。</li>
+<li>后续 <code>SyntheticSkillDataset v2</code> 计划从通过 gate 的 <code>TaskEvidenceMap</code> 派生。</li>
+</ul>
+<p>建议新增模块：</p>
+<pre><code>
+weldcore/knowledge/foundation.py
+weldcore/knowledge/manifest.py
+weldcore/report/data_foundation_report.py
+tests/test_data_foundation_*.py
+</code></pre>
+<hr>
+<h2 id="9-后续任务规划输出">9. 后续任务规划输出</h2>
+<p>本阶段完成后，必须形成下一阶段计划输入：</p>
+<ol>
+<li>可进入 <code>SyntheticSkillDataset v2</code> 的任务族列表。</li>
+<li>每个任务族的字段来源与假设字段。</li>
+<li>每个任务族建议生成的样本类型，例如直线、断续、短焊缝序列、姿态切换占位。</li>
+<li>哪些字段需要仿真生成，哪些字段只来自公开约束。</li>
+<li>哪些字段后续需要真机标定。</li>
+</ol>
+<p>计划输出不是“立即生成数据”，而是给下一轮实施计划提供可审查依据。</p>
+<hr>
+<h2 id="10-验收标准">10. 验收标准</h2>
+<p>完成本阶段 design/implementation 后，应满足：</p>
+<ul>
+<li><code>docs/data-foundation/</code> 有可读资料底座文档。</li>
+<li>manifest 中总来源不少于 20。</li>
+<li>公开来源不少于 15。</li>
+<li>船舶制造强相关来源不少于 8。</li>
+<li>公开数据集不少于 6。</li>
+<li>每个来源和数据集都有完整字段与使用边界。</li>
+<li>至少 3 个任务族达到 <code>ready_for_synthetic_v2_plan</code>。</li>
+<li>报告清楚说明哪些是公开约束、哪些是仿真假设、哪些需要真机验证。</li>
+<li>JSON/CSV 输出不含熔池、焊池或焊中闭环依赖字段。</li>
+<li>README 和 <code>details.md</code> 说明本阶段完成的是资料底座，不是 <code>SyntheticSkillDataset v2</code>。</li>
+<li>现有命令继续通过：</li>
+</ul>
+<pre><code>
+python -m pytest -q
+python -m weldcore.report.generate
+python -m weldcore.report.mvp_report
+python -m weldcore.report.scenario_report
+</code></pre>
+<p>如果 <code>uv</code> 已安装，必须优先使用：</p>
+<pre><code>
+uv run pytest -q
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
+uv run python -m weldcore.report.scenario_report
+</code></pre>
+<hr>
+<h2 id="11-风险与控制">11. 风险与控制</h2>
+<table><tbody>
+<tr><th>风险</th><th>控制</th></tr>
+<tr><td>公开数据集体量过大</td><td>只做 manifest，默认不下载进 git</td></tr>
+<tr><td>来源很多但字段不可用</td><td><code>covered_fields</code> / <code>missing_fields</code> / <code>usable_for</code> gate</td></tr>
+<tr><td>通用焊接数据冒充船舶场景</td><td><code>shipbuilding_relevance</code> 与任务族至少一个船舶来源 gate</td></tr>
+<tr><td>把仿真标签写成真实质量</td><td><code>quality_label</code> 必须区分 public vocabulary / simulation placeholder / real validation later</td></tr>
+<tr><td>熔池路线混入当前阶段</td><td>source/dataset/task/scenario/report 全链路禁止字段扫描</td></tr>
+<tr><td>文档与代码底座分裂</td><td>manifest 是单一事实源，Markdown 由 manifest 摘要或同步检查</td></tr>
+</tbody></table>
+<hr>
+<h2 id="12-推荐执行顺序">12. 推荐执行顺序</h2>
+<ol>
+<li>建立资料底座数据模型与 manifest schema。</li>
+<li>迁移现有 9 条 seed 来源到 manifest。</li>
+<li>扩展到不少于 20 条来源和不少于 6 个公开数据集。</li>
+<li>生成字段覆盖矩阵和任务证据映射。</li>
+<li>实现 <code>data_foundation_report</code>。</li>
+<li>更新 README 与 <code>details.md</code>。</li>
+<li>基于通过 gate 的任务族，撰写 <code>SyntheticSkillDataset v2</code> 实施计划。</li>
+</ol></main>
+</div>
+</body>
+</html>
