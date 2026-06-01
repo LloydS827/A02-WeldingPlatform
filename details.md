@@ -89,8 +89,9 @@
 
 ```bash
 cd weld-experience-engine
-python -m weldcore.report.generate
-python -m weldcore.report.mvp_report
+uv sync --extra dev --extra viz
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
 ```
 
 第一条命令生成经验结构化 POC 证据。
@@ -261,9 +262,10 @@ python -m weldcore.report.mvp_report
 进入 `weld-experience-engine` 后运行：
 
 ```bash
-pytest -q
-python -m weldcore.report.generate
-python -m weldcore.report.mvp_report
+uv sync --extra dev --extra viz
+uv run pytest -q
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
 ```
 
-如果三条命令都通过，说明当前软件原型的基础验证仍然有效。
+如果上述命令都通过，说明当前软件原型的基础验证仍然有效。若本机尚未安装 `uv`，可以先安装 `uv`；临时备用方式是使用当前 Python 环境直接运行 `pytest` 和 `python -m ...`。

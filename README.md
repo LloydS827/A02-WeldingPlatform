@@ -91,20 +91,22 @@ MVP 的阶段性判断是：软件与数据结构层面的核心机制已经跑�
 
 ```bash
 cd weld-experience-engine
-pip install -e ".[dev,viz]"
-pytest -q
+uv sync --extra dev --extra viz
+uv run pytest -q
 ```
+
+如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
 生成经验结构化 POC 证据：
 
 ```bash
-python -m weldcore.report.generate
+uv run python -m weldcore.report.generate
 ```
 
 生成技能迁移 MVP 证据：
 
 ```bash
-python -m weldcore.report.mvp_report
+uv run python -m weldcore.report.mvp_report
 ```
 
 `mvp_report` 会生成：

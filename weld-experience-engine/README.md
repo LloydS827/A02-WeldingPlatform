@@ -6,10 +6,12 @@
 
 ## 运行
 
-    pip install -e ".[dev,viz]"
-    pytest -q
-    python -m weldcore.report.generate   # 出图+数据表
-    python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
+    uv sync --extra dev --extra viz
+    uv run pytest -q
+    uv run python -m weldcore.report.generate   # 出图+数据表
+    uv run python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
+
+如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
 ## 当前 POC 能力
 

@@ -79,6 +79,22 @@ When updating it:
 - Do not overstate simulation or software-prototype results as verified real welding quality.
 - If README, design docs, plan docs, or core code changes affect project status, check `details.md` before finishing.
 
+## 6. Python Environment
+
+**Prefer `uv` for Python environment and command execution.**
+
+For `weld-experience-engine`, use:
+
+```bash
+cd weld-experience-engine
+uv sync --extra dev --extra viz
+uv run pytest -q
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
+```
+
+If `uv` is not installed in the local environment, state that clearly. Use the existing Python environment as a temporary verification fallback only when needed, and do not claim `uv` verification unless the `uv` commands actually ran.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
