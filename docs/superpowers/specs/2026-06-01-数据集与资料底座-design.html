@@ -1,17 +1,4 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>数据集与资料底座 Design Spec</title>
-<style>
-:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;} .layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;max-width:1320px;margin:0 auto;padding:28px;} nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto;} nav h2{font-size:15px;margin:0 0 10px;color:var(--muted);} nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0;} main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06);} h1{font-size:34px;line-height:1.18;margin:0 0 18px;} h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px;} h3{font-size:19px;margin-top:26px;} code{background:var(--soft);padding:.12em .35em;border-radius:4px;} pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55;} pre code{background:transparent;padding:0;} table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto;} th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top;} th{background:#f0f4f9;text-align:left;} blockquote{border-left:4px solid var(--accent);margin:18px 0;padding:4px 18px;color:var(--muted);background:var(--soft);} hr{border:0;border-top:1px solid var(--line);margin:28px 0;} a{color:var(--accent);} @media(max-width:900px){.layout{display:block;padding:14px;}nav{position:relative;top:0;margin-bottom:14px;}main{padding:28px 20px;}h1{font-size:28px;}}
-</style>
-</head>
-<body>
-<div class="layout">
-<nav><h2>目录</h2><a href="#0-结论先行">0. 结论先行</a>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>数据集与资料底座 Design Spec</title><style>:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;max-width:1320px;margin:0 auto;padding:28px}nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto}nav h2{font-size:15px;margin:0 0 10px;color:var(--muted)}nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0}main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06)}h1{font-size:34px;line-height:1.18;margin:0 0 18px}h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px}h3{font-size:19px;margin-top:26px}code{background:var(--soft);padding:.12em .35em;border-radius:4px}pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55}pre code{background:transparent;padding:0}table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto}th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}th{background:#f0f4f9;text-align:left}hr{border:0;border-top:1px solid var(--line);margin:28px 0}a{color:var(--accent)}@media(max-width:900px){.layout{display:block;padding:14px}nav{position:relative;top:0;margin-bottom:14px}main{padding:28px 20px}h1{font-size:28px}}</style></head><body><div class="layout"><nav><h2>目录</h2><a href="#0-结论先行">0. 结论先行</a>
 <a href="#1-已确认关键决策">1. 已确认关键决策</a>
 <a href="#2-背景与当前缺口">2. 背景与当前缺口</a>
 <a href="#3-范围边界">3. 范围边界</a>
@@ -23,8 +10,7 @@
 <a href="#9-后续任务规划输出">9. 后续任务规划输出</a>
 <a href="#10-验收标准">10. 验收标准</a>
 <a href="#11-风险与控制">11. 风险与控制</a>
-<a href="#12-推荐执行顺序">12. 推荐执行顺序</a></nav>
-<main><h1 id="数据集与资料底座-design-spec">数据集与资料底座 Design Spec</h1>
+<a href="#12-推荐执行顺序">12. 推荐执行顺序</a></nav><main><h1 id="数据集与资料底座-design-spec">数据集与资料底座 Design Spec</h1>
 <p>日期：2026-06-01  </p>
 <p>版本：v0.1  </p>
 <p>适用项目：A02 焊接技能大师平台  </p>
@@ -149,7 +135,8 @@ docs/data-foundation/
 <tr><td><code>usable_for</code></td><td><code>scenario_selection</code> / <code>parameter_range</code> / <code>quality_label</code> / <code>benchmark</code> / <code>schema_reference</code></td></tr>
 <tr><td><code>source_refs</code></td><td>对应 spec、资料页、章节或备注</td></tr>
 <tr><td><code>assumptions</code></td><td>使用该来源时引入的假设</td></tr>
-<tr><td><code>notes</code></td><td>使用边界</td></tr>
+<tr><td><code>use_boundary</code></td><td>使用边界，必须明确“可用于什么”和“不能用于什么”</td></tr>
+<tr><td><code>notes</code></td><td>补充备注，不替代 <code>use_boundary</code></td></tr>
 </tbody></table>
 <h3 id="5-2-datasetcard">5.2 <code>DatasetCard</code></h3>
 <p><code>DatasetCard</code> 是 <code>SourceCard</code> 的数据集扩展，用于公开焊接数据集和后续小样本缓存。</p>
@@ -228,8 +215,9 @@ docs/data-foundation/
 <ul>
 <li>总来源数不少于 20。</li>
 <li>公开来源不少于 15。</li>
+<li>船舶制造强相关来源不少于 8。</li>
 <li>每条来源必须有 <code>usable_for</code>、<code>covered_fields</code>、<code>missing_fields</code>、<code>source_refs</code>、<code>assumptions</code>、<code>notes</code>。</li>
-<li>每条来源必须声明 <code>public_access</code> 与 <code>use_boundary</code>。</li>
+<li>每条来源必须声明 <code>public_access</code> 与 <code>use_boundary</code>；<code>notes</code> 只能作为补充备注，不能替代 <code>use_boundary</code>。</li>
 <li>禁止字段不得出现在 JSON 输出或当前阶段字段依赖中。</li>
 </ul>
 <h3 id="7-2-dataset-gate">7.2 Dataset gate</h3>
@@ -245,7 +233,7 @@ docs/data-foundation/
 <p>必须验证：</p>
 <ul>
 <li>每个候选任务族的 required fields 要么有来源覆盖，要么列入 <code>assumption_fields</code>。</li>
-<li>至少 3 个任务族达到 <code>ready_for_synthetic_v2_plan</code>。</li>
+<li>至少 3 个任务族达到 <code>ready_for_synthetic_v2_plan</code>，这是第一版硬 gate，不是后续建议项。</li>
 <li>任务族不能只由通用焊接数据集支撑，必须至少有一个船舶制造上下文来源。</li>
 <li><code>quality_label</code> 只能标注为公开标签词汇或仿真占位，不得写成真实质量结果。</li>
 </ul>
@@ -253,6 +241,7 @@ docs/data-foundation/
 <p><code>data_foundation_report</code> 必须：</p>
 <ul>
 <li>输出来源数量、公开来源数量、数据集数量和船舶强相关数量。</li>
+<li>当船舶强相关来源少于 8 条时失败，而不是只在报告中提示。</li>
 <li>输出字段覆盖矩阵。</li>
 <li>输出任务证据映射。</li>
 <li>输出下一步 <code>SyntheticSkillDataset v2</code> 计划建议。</li>
@@ -337,7 +326,4 @@ uv run python -m weldcore.report.scenario_report
 <li>实现 <code>data_foundation_report</code>。</li>
 <li>更新 README 与 <code>details.md</code>。</li>
 <li>基于通过 gate 的任务族，撰写 <code>SyntheticSkillDataset v2</code> 实施计划。</li>
-</ol></main>
-</div>
-</body>
-</html>
+</ol></main></div></body></html>
