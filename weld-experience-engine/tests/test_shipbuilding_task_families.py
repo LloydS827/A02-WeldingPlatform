@@ -138,3 +138,29 @@ def test_task_support_rejects_weld_pool_dependency_written_with_spaces():
 
     assert not result.passed
     assert any("out of scope" in issue for issue in result.issues)
+
+
+def test_task_support_rejects_pool_dependency_in_weld_objects():
+    kb = load_seed_knowledge_base()
+    family = ShipbuildingTaskFamily(
+        family_id="pool-object-family",
+        name="Pool object family",
+        shipbuilding_context="panel line",
+        typical_weld_objects=["weld_pool_camera_roi"],
+        joint_types=[WeldJointType.FILLET],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=["shipbuilding_context"],
+        assumption_fields=[],
+        source_ids=[
+            "vendor-hyundai-welding-cobot-shipbuilding-2024",
+            "project-260522-shipbuilding-welding-brain-plan",
+        ],
+        disposition=TaskDisposition.CANDIDATE,
+        notes="otherwise supported",
+    )
+
+    result = validate_task_family_support(family, kb)
+
+    assert not result.passed
+    assert any("out of scope" in issue for issue in result.issues)

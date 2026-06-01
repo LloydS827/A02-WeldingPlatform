@@ -72,3 +72,36 @@ def test_scenario_gate_rejects_weld_pool_dependency_written_with_spaces():
 
     assert not result.passed
     assert any("out of scope" in issue for issue in result.issues)
+
+
+def test_scenario_gate_rejects_pool_dependency_in_condition_and_ranges():
+    scenario = SimulationScenarioSpec(
+        scenario_id="scenario-pool-condition",
+        shipbuilding_task="Pool condition",
+        shipbuilding_context="panel line",
+        difficulty="easy",
+        task_disposition=TaskDisposition.CANDIDATE,
+        weld_condition={"sensor": "weld_pool_camera"},
+        parameter_ranges=[
+            ParameterRange(
+                name="熔池宽度",
+                unit="mm",
+                min_value=1.0,
+                max_value=3.0,
+                evidence_role=EvidenceRole.ASSUMPTION,
+                source_refs=["project-260522-shipbuilding-welding-brain-plan"],
+            )
+        ],
+        motion_templates=["straight"],
+        quality_placeholders=["geometry_risk_label"],
+        source_refs=[
+            "vendor-hyundai-welding-cobot-shipbuilding-2024",
+            "project-260522-shipbuilding-welding-brain-plan",
+        ],
+        assumptions=[],
+    )
+
+    result = ScenarioGateResult.from_scenario(scenario, require_candidate=True)
+
+    assert not result.passed
+    assert any("out of scope" in issue for issue in result.issues)

@@ -110,6 +110,7 @@ def validate_task_family_support(
             family.family_id,
             family.name,
             family.shipbuilding_context,
+            *family.typical_weld_objects,
             *family.required_fields,
             *family.assumption_fields,
             family.notes,

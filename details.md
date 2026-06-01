@@ -106,7 +106,7 @@ uv run python -m weldcore.report.scenario_report
 - `transfer_summary.png`：迁移轨迹图。
 - `ip_notes.md`：专利、论文、软著等成果线索。
 
-第三条命令生成仿真优先船舶焊接场景证据，包括公开资料来源、船舶焊接任务族、候选 `SimulationScenarioSpec` 和字段覆盖说明。它是 `SyntheticSkillDataset v2` 之前的知识闸门，不生成真机结论，也不纳入熔池路线。
+第三条命令生成仿真优先船舶焊接场景证据，包括公开资料来源、船舶焊接任务族、候选 `SimulationScenarioSpec` 和字段覆盖说明。默认输出目录是 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。它是 `SyntheticSkillDataset v2` 之前的知识闸门，不生成真机结论，也不纳入熔池路线。
 
 ### 5. 可选可视化和生态边界
 

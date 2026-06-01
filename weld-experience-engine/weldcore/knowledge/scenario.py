@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from enum import Enum
+import json
 from typing import Any
 
 from .shipbuilding import ShipbuildingTaskFamily, TaskDisposition
@@ -85,6 +86,8 @@ class ScenarioGateResult:
             [
                 scenario.shipbuilding_task,
                 scenario.shipbuilding_context,
+                json.dumps(scenario.weld_condition, ensure_ascii=False),
+                json.dumps([item.to_dict() for item in scenario.parameter_ranges], ensure_ascii=False),
                 *scenario.motion_templates,
                 *scenario.quality_placeholders,
                 *scenario.assumptions,
