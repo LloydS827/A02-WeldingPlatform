@@ -54,6 +54,30 @@ def test_scenario_report_blocks_when_task_gate_fails(tmp_path):
         run_scenario_report(tmp_path, knowledge_base=kb, task_families=[bad_family])
 
 
+def test_scenario_report_blocks_when_no_candidate_scenarios(tmp_path):
+    kb = load_seed_knowledge_base()
+    probe_family = ShipbuildingTaskFamily(
+        family_id="probe-family",
+        name="Probe",
+        shipbuilding_context="panel line",
+        typical_weld_objects=["probe"],
+        joint_types=[WeldJointType.FILLET],
+        positions=[WeldPosition.FLAT],
+        modeling_difficulty=1,
+        required_fields=["shipbuilding_context"],
+        assumption_fields=[],
+        source_ids=[
+            "vendor-hyundai-welding-cobot-shipbuilding-2024",
+            "project-260522-shipbuilding-welding-brain-plan",
+        ],
+        disposition=TaskDisposition.PROBE,
+        notes="supported but not candidate",
+    )
+
+    with pytest.raises(ValueError, match="Scenario gate failed"):
+        run_scenario_report(tmp_path, knowledge_base=kb, task_families=[probe_family])
+
+
 def test_scenario_report_keeps_chinese_molten_pool_only_as_boundary_text(tmp_path):
     run_scenario_report(tmp_path)
 

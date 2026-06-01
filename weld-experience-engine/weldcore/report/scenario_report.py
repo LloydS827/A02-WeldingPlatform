@@ -44,6 +44,8 @@ def run_scenario_report(
 
     ranked = rank_task_families(families, kb)
     selected = select_first_batch_candidates(families, kb, limit=3)
+    if not selected:
+        raise ValueError("Scenario gate failed: no candidate scenarios selected")
     scenarios = [scenario_from_task_family(family) for family in selected]
     scenario_gates = [
         ScenarioGateResult.from_scenario(scenario, require_candidate=True)

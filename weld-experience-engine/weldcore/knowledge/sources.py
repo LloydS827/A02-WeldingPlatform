@@ -5,6 +5,9 @@ from enum import Enum
 from typing import Any
 
 
+_FORBIDDEN_POOL_TERMS = ("molten", "molten_pool", "molten pool", "weld_pool", "weld pool", "熔池")
+
+
 class SourceType(str, Enum):
     DATASET = "dataset"
     PROCESS_GUIDE = "process_guide"
@@ -91,6 +94,9 @@ class PublicWeldKnowledgeBase:
             seen.add(source.source_id)
             if not source.is_complete():
                 issues.append(f"{source.source_id}: incomplete traceability fields")
+            text = str(source.to_dict()).lower()
+            if any(term in text for term in _FORBIDDEN_POOL_TERMS):
+                issues.append(f"{source.source_id}: molten-pool dependency is out of scope")
         return issues
 
     def by_id(self) -> dict[str, PublicWeldSource]:

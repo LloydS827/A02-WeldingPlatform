@@ -75,6 +75,28 @@ def test_knowledge_base_rejects_duplicate_source_id():
     assert any("duplicate source_id" in issue for issue in issues)
 
 
+def test_knowledge_base_rejects_molten_pool_source_content():
+    source = PublicWeldSource(
+        source_id="pool-source",
+        source_type=SourceType.PROCESS_GUIDE,
+        title="Complete source",
+        url="https://example.com",
+        publisher="example",
+        shipbuilding_relevance="example relevance",
+        covered_fields=["molten_pool_width"],
+        missing_fields=["field_b"],
+        usable_for=[UsableFor.SCENARIO_SELECTION],
+        source_refs=["unit-test"],
+        assumptions=["example assumption"],
+        notes="example notes",
+    )
+    kb = PublicWeldKnowledgeBase([source])
+
+    issues = kb.validation_issues()
+
+    assert any("out of scope" in issue for issue in issues)
+
+
 def test_seed_knowledge_base_has_first_gate_coverage():
     kb = load_seed_knowledge_base()
 
