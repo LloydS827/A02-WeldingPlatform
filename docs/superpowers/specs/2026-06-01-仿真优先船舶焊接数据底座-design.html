@@ -5,165 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>仿真优先的船舶焊接技能数据与工艺知识底座</title>
   <style>
-    :root {
-      color-scheme: light;
-      --ink: #1f2933;
-      --muted: #65758b;
-      --line: #d8dee8;
-      --soft: #f4f7fb;
-      --accent: #0f766e;
-      --accent-dark: #115e59;
-      --code: #0f172a;
-      --paper: #ffffff;
-      --warm: #f9faf7;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: linear-gradient(180deg, #eef5f4 0, #f7f8fb 340px, #f7f8fb 100%);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      line-height: 1.72;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(220px, 300px) minmax(0, 920px);
-      gap: 32px;
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 32px 24px 56px;
-    }
-    nav {
-      position: sticky;
-      top: 24px;
-      align-self: start;
-      max-height: calc(100vh - 48px);
-      overflow: auto;
-      padding: 20px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,255,255,.88);
-      box-shadow: 0 8px 26px rgba(15, 23, 42, .06);
-    }
-    nav h2 {
-      margin: 0 0 12px;
-      font-size: 15px;
-      letter-spacing: 0;
-      color: var(--accent-dark);
-    }
-    nav a {
-      display: block;
-      color: #334155;
-      text-decoration: none;
-      font-size: 13px;
-      line-height: 1.38;
-      padding: 7px 0;
-      border-bottom: 1px solid #edf1f5;
-    }
-    nav a:hover { color: var(--accent); }
-    nav .toc-l3 { padding-left: 12px; color: var(--muted); }
-    nav .toc-l4, nav .toc-l5, nav .toc-l6 { padding-left: 24px; color: var(--muted); }
-    main {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 44px 56px 64px;
-      box-shadow: 0 18px 48px rgba(15, 23, 42, .08);
-    }
-    h1 {
-      margin: 0 0 18px;
-      color: #102a43;
-      font-size: 34px;
-      line-height: 1.22;
-      letter-spacing: 0;
-    }
-    h2 {
-      margin: 42px 0 14px;
-      padding-top: 12px;
-      border-top: 1px solid var(--line);
-      color: #102a43;
-      font-size: 24px;
-      line-height: 1.32;
-      letter-spacing: 0;
-    }
-    h3 {
-      margin: 30px 0 12px;
-      color: var(--accent-dark);
-      font-size: 19px;
-      line-height: 1.35;
-      letter-spacing: 0;
-    }
-    h4 { margin: 24px 0 8px; font-size: 16px; color: #334155; }
-    p { margin: 10px 0 14px; }
-    ul, ol { margin: 10px 0 18px 24px; padding: 0; }
-    li { margin: 6px 0; }
-    a { color: var(--accent-dark); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-    code {
-      padding: 2px 5px;
-      border-radius: 5px;
-      background: #e8f1f0;
-      color: #0f3f3a;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .92em;
-    }
-    pre {
-      overflow-x: auto;
-      padding: 16px 18px;
-      border-radius: 8px;
-      background: var(--code);
-      color: #e5edf7;
-      line-height: 1.55;
-    }
-    pre code { padding: 0; background: transparent; color: inherit; }
-    blockquote {
-      margin: 18px 0;
-      padding: 10px 16px;
-      border-left: 4px solid var(--accent);
-      background: var(--warm);
-      color: #334155;
-    }
-    hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
-    .table-wrap { overflow-x: auto; margin: 18px 0 24px; border: 1px solid var(--line); border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; min-width: 680px; background: #fff; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid #e7ecf2; vertical-align: top; text-align: left; }
-    th { background: #edf7f6; color: #123f3c; font-weight: 700; }
-    tr:last-child td { border-bottom: 0; }
-    .meta {
-      margin: 0 0 28px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    @media (max-width: 900px) {
-      .layout { display: block; padding: 16px; }
-      nav { position: relative; top: 0; max-height: none; margin-bottom: 16px; }
-      main { padding: 28px 22px 40px; }
-      h1 { font-size: 26px; }
-      h2 { font-size: 21px; }
-    }
-    @media print {
-      body { background: #fff; }
-      .layout { display: block; padding: 0; }
-      nav { display: none; }
-      main { border: 0; box-shadow: none; padding: 0; }
-      a { color: inherit; }
-    }
+    :root { --ink:#1f2933; --muted:#65758b; --line:#d8dee8; --accent:#0f766e; --accent-dark:#115e59; --code:#0f172a; --paper:#fff; --warm:#f9faf7; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#eef5f4 0,#f7f8fb 340px,#f7f8fb 100%); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; line-height:1.72; }
+    .layout { display:grid; grid-template-columns:minmax(220px,300px) minmax(0,920px); gap:32px; max-width:1280px; margin:0 auto; padding:32px 24px 56px; }
+    nav { position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto; padding:20px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.9); box-shadow:0 8px 26px rgba(15,23,42,.06); }
+    nav h2 { margin:0 0 12px; font-size:15px; color:var(--accent-dark); letter-spacing:0; }
+    nav a { display:block; color:#334155; text-decoration:none; font-size:13px; line-height:1.38; padding:7px 0; border-bottom:1px solid #edf1f5; }
+    nav a:hover { color:var(--accent); } nav .toc-l3 { padding-left:12px; color:var(--muted); } nav .toc-l4,nav .toc-l5,nav .toc-l6 { padding-left:24px; color:var(--muted); }
+    main { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:44px 56px 64px; box-shadow:0 18px 48px rgba(15,23,42,.08); }
+    h1 { margin:0 0 18px; color:#102a43; font-size:34px; line-height:1.22; letter-spacing:0; }
+    h2 { margin:42px 0 14px; padding-top:12px; border-top:1px solid var(--line); color:#102a43; font-size:24px; line-height:1.32; letter-spacing:0; }
+    h3 { margin:30px 0 12px; color:var(--accent-dark); font-size:19px; line-height:1.35; letter-spacing:0; }
+    h4 { margin:24px 0 8px; font-size:16px; color:#334155; } p { margin:10px 0 14px; } ul,ol { margin:10px 0 18px 24px; padding:0; } li { margin:6px 0; }
+    a { color:var(--accent-dark); text-decoration-thickness:1px; text-underline-offset:3px; } code { padding:2px 5px; border-radius:5px; background:#e8f1f0; color:#0f3f3a; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em; }
+    pre { overflow-x:auto; padding:16px 18px; border-radius:8px; background:var(--code); color:#e5edf7; line-height:1.55; } pre code { padding:0; background:transparent; color:inherit; }
+    hr { border:0; border-top:1px solid var(--line); margin:28px 0; } .table-wrap { overflow-x:auto; margin:18px 0 24px; border:1px solid var(--line); border-radius:8px; } table { width:100%; border-collapse:collapse; min-width:680px; background:#fff; } th,td { padding:10px 12px; border-bottom:1px solid #e7ecf2; vertical-align:top; text-align:left; } th { background:#edf7f6; color:#123f3c; font-weight:700; } tr:last-child td { border-bottom:0; }
+    @media (max-width:900px) { .layout { display:block; padding:16px; } nav { position:relative; top:0; max-height:none; margin-bottom:16px; } main { padding:28px 22px 40px; } h1 { font-size:26px; } h2 { font-size:21px; } }
+    @media print { body { background:#fff; } .layout { display:block; padding:0; } nav { display:none; } main { border:0; box-shadow:none; padding:0; } a { color:inherit; } }
   </style>
 </head>
-<body>
-  <div class="layout">
-    <nav aria-label="目录">
-      <h2>目录</h2>
-      <a class="toc-l2" href="#0-结论先行">0. 结论先行</a>
+<body><div class="layout"><nav aria-label="目录"><h2>目录</h2><a class="toc-l2" href="#0-结论先行">0. 结论先行</a>
 <a class="toc-l2" href="#1-已确认关键决策">1. 已确认关键决策</a>
 <a class="toc-l2" href="#2-背景与边界">2. 背景与边界</a>
 <a class="toc-l3" href="#21-本阶段做什么">2.1 本阶段做什么</a>
 <a class="toc-l3" href="#22-本阶段不做什么">2.2 本阶段不做什么</a>
 <a class="toc-l2" href="#3-船舶制造任务调研原则">3. 船舶制造任务调研原则</a>
 <a class="toc-l2" href="#4-典型任务路线">4. 典型任务路线</a>
-<a class="toc-l3" href="#41-task-a平直角焊缝--加筋板角焊最先做">4.1 Task A：平直角焊缝 / 加筋板角焊，最先做</a>
-<a class="toc-l3" href="#42-task-b双层底双壳结构中的直线角焊与立向段中等难度">4.2 Task B：双层底/双壳结构中的直线角焊与立向段，中等难度</a>
-<a class="toc-l3" href="#43-task-c船体板拼对接焊--简化坡口焊后续做">4.3 Task C：船体板拼对接焊 / 简化坡口焊，后续做</a>
-<a class="toc-l3" href="#44-暂缓任务">4.4 暂缓任务</a>
+<a class="toc-l3" href="#41-调研依据">4.1 调研依据</a>
+<a class="toc-l3" href="#42-船舶焊接任务族拆分">4.2 船舶焊接任务族拆分</a>
+<a class="toc-l3" href="#43-第一批场景选择规则">4.3 第一批场景选择规则</a>
+<a class="toc-l3" href="#44-建议的初始候选顺序">4.4 建议的初始候选顺序</a>
+<a class="toc-l3" href="#45-暂缓任务">4.5 暂缓任务</a>
 <a class="toc-l2" href="#5-数据与知识底座设计">5. 数据与知识底座设计</a>
 <a class="toc-l3" href="#51-publicweldknowledgebase">5.1 <code>PublicWeldKnowledgeBase</code></a>
 <a class="toc-l3" href="#52-simulationscenariospec">5.2 <code>SimulationScenarioSpec</code></a>
@@ -184,10 +57,7 @@
 <a class="toc-l3" href="#102-数据验收">10.2 数据验收</a>
 <a class="toc-l3" href="#103-代码验收">10.3 代码验收</a>
 <a class="toc-l2" href="#11-后续实施拆解建议">11. 后续实施拆解建议</a>
-<a class="toc-l2" href="#12-当前设计自审">12. 当前设计自审</a>
-    </nav>
-    <main>
-      <h1 id="仿真优先的船舶焊接技能数据与工艺知识底座--设计-spec">仿真优先的船舶焊接技能数据与工艺知识底座 — 设计 Spec</h1>
+<a class="toc-l2" href="#12-当前设计自审">12. 当前设计自审</a></nav><main><h1 id="仿真优先的船舶焊接技能数据与工艺知识底座--设计-spec">仿真优先的船舶焊接技能数据与工艺知识底座 — 设计 Spec</h1>
 <p>日期：2026-06-01 版本：v0.1 适用项目：A02 焊接技能大师平台 阶段：技能迁移 MVP 第一轮完成后的路线调整</p>
 <hr>
 <h2 id="0-结论先行">0. 结论先行</h2>
@@ -253,57 +123,46 @@
 </ul>
 <hr>
 <h2 id="4-典型任务路线">4. 典型任务路线</h2>
-<p>本阶段建议按以下顺序选择任务。</p>
-<h3 id="41-task-a平直角焊缝--加筋板角焊最先做">4.1 Task A：平直角焊缝 / 加筋板角焊，最先做</h3>
-<p>对应船舶制造中的板材 + 加筋件、纵骨/横骨、平面小组立等场景。</p>
-<p>选择理由：</p>
+<p>本阶段不直接锁定“Task A/B/C”。典型任务必须先经过船舶制造焊接任务调研，再进入场景确认。上一版中的平直角焊、双层底/双壳、板拼对接只能作为候选方向，不能直接作为已确认任务。</p>
+<h3 id="41-调研依据">4.1 调研依据</h3>
+<p>初步调研显示，船舶焊接自动化不是单一“直线焊缝”问题，而是按制造阶段、构件对象、焊接位置和可达空间分化：</p>
 <ul>
-<li>是船体分段和面板结构中的高频焊接对象。</li>
-<li>可用直线中心线、平焊/横向角焊、单道或简化双道表达。</li>
-<li>与现有 straight-flat MVP 接近，迁移成本低。</li>
-<li>不依赖熔池，也不需要复杂坡口填充体积建模。</li>
+<li>HD Hyundai Mipo 的公开案例强调 subassembly welding、机器人/人工并行输送线、block welding tight compartments、焊接轨迹/可达性/碰撞/节拍仿真。</li>
+<li>KOBELCO shipbuilding 资料按 stage 梳理了 horizontal fillet、vertical upward、inner double-hull fillet、bottom shell / tank top / side shell butt 等船舶焊接对象。</li>
+<li>KRANENDONK panel welding gantry 资料强调 large stiffened panels、CAD seam detection、torch angles、travel speeds、stitch patterns 和 collision-free robot programs。</li>
+<li>既有项目总规也把焊缝对象拆成接头形式、坡口类型、焊接位置、层道策略、轨迹对象和质量对象。</li>
 </ul>
-<p>仿真字段：</p>
-<ul>
-<li>接头类型：fillet / tee joint。</li>
-<li>焊接位置：flat / horizontal。</li>
-<li>几何：焊脚高度、板厚、焊缝长度、构件夹角。</li>
-<li>工艺：电流、电压、焊接速度、送丝速度、摆动模板可选。</li>
-<li>质量占位：焊脚尺寸、余高、咬边、未熔合风险标签。</li>
-</ul>
-<h3 id="42-task-b双层底双壳结构中的直线角焊与立向段中等难度">4.2 Task B：双层底/双壳结构中的直线角焊与立向段，中等难度</h3>
-<p>对应船舶 double bottom、double hull、block cell 内部的长直线焊缝和局部立向/横向焊缝。</p>
-<p>选择理由：</p>
-<ul>
-<li>船舶制造特征更强，区别于普通平板焊。</li>
-<li>仍可先用多段直线和姿态切换模拟，不需要完整 3D 舱室建模。</li>
-<li>可验证 <code>WeldCondition</code> 对焊接位置、可达性占位和分段任务的表达能力。</li>
-</ul>
-<p>仿真字段：</p>
-<ul>
-<li>接头类型：fillet / lap / tee。</li>
-<li>焊接位置：flat / horizontal / vertical-up 占位。</li>
-<li>几何：长焊缝、短焊缝、交叉节点、分段顺序。</li>
-<li>工艺：不同位置下的速度、角度、摆动模板和参数窗口。</li>
-<li>质量占位：焊缝连续性、节点过渡、姿态超限风险。</li>
-</ul>
-<h3 id="43-task-c船体板拼对接焊--简化坡口焊后续做">4.3 Task C：船体板拼对接焊 / 简化坡口焊，后续做</h3>
-<p>对应板材拼接、分段装配中的对接焊或简化 V 型坡口。</p>
-<p>选择理由：</p>
-<ul>
-<li>更接近厚板船体制造的工艺核心。</li>
-<li>需要坡口宽度、角度、钝边、根部间隙等字段。</li>
-<li>可以为多层多道规则打基础，但不在第一轮就做完整厚板多层多道。</li>
-</ul>
-<p>仿真字段：</p>
-<ul>
-<li>接头类型：butt。</li>
-<li>坡口：I / V 简化模型。</li>
-<li>几何：板厚、坡口宽度、根部间隙、焊缝长度。</li>
-<li>工艺：打底/填充/盖面占位、电流电压窗口、焊速窗口。</li>
-<li>质量占位：未焊透、未熔合、余高、咬边风险标签。</li>
-</ul>
-<h3 id="44-暂缓任务">4.4 暂缓任务</h3>
+<p>因此，本阶段先形成“船舶焊接任务族表”，再从中选 2-3 个仿真场景。不能仅凭代码已有 straight-flat 能力倒推任务选择。</p>
+<h3 id="42-船舶焊接任务族拆分">4.2 船舶焊接任务族拆分</h3>
+<p>任务族表至少覆盖以下维度：</p>
+<div class="table-wrap"><table><thead><tr><th>任务族</th><th>船舶制造环节</th><th>典型焊缝对象</th><th>接头/位置</th><th>仿真建模难度</th><th>当前处置</th></tr></thead><tbody>
+<tr><td>平面板拼接</td><td>钢板预处理、平面分段、panel line</td><td>bottom shell、tank top、deck、side shell 的板-板拼接</td><td>butt，flat / horizontal</td><td>中</td><td>候选，需区分 SAW/FCW/GMAW 工艺边界</td></tr>
+<tr><td>加筋板/纵骨角焊</td><td>小组立、panel stiffener mounting、robot panel welding</td><td>stiffener-to-plate、longitudinal-to-panel、web-to-panel</td><td>fillet / tee，flat / horizontal</td><td>低</td><td>优先候选，但需补焊脚、断续/连续焊、torch angle 字段</td></tr>
+<tr><td>微型面板/腹板/隔板焊接</td><td>micro panel、web、bulkhead subassembly</td><td>web、bulkhead、bracket、small stiffened structures</td><td>fillet / lap / tee，多短焊缝</td><td>中</td><td>候选，需补多焊缝序列和节点过渡</td></tr>
+<tr><td>双层底/双壳内部角焊</td><td>double bottom、double hull、block cell</td><td>inner double-hull fillet、double-bottom inside fillet</td><td>fillet，horizontal / vertical-up</td><td>中高</td><td>候选，需补狭小空间、姿态切换、可达性占位</td></tr>
+<tr><td>立向/仰位船体焊缝</td><td>block assembly、erection stage</td><td>side shell vertical butt、overhead butt、vertical-up fillet</td><td>butt / fillet，vertical / overhead</td><td>高</td><td>暂缓为探针，不作为第一批仿真主任务</td></tr>
+<tr><td>厚板坡口多层多道</td><td>分段装配、总组/搭载</td><td>V/X/K 坡口、厚板对接、长焊缝</td><td>butt groove，多层多道</td><td>高</td><td>后续路线图，第一批只做简化字段占位</td></tr>
+<tr><td>曲面与空间复杂焊缝</td><td>曲面外板、复杂节点</td><td>curved seams、cross nodes、bracket intersections</td><td>多接头、多姿态</td><td>很高</td><td>暂缓，不进入当前阶段</td></tr>
+</tbody></table></div>
+<h3 id="43-第一批场景选择规则">4.3 第一批场景选择规则</h3>
+<p>第一批仿真场景必须通过以下选择规则：</p>
+<ol>
+<li>必须能明确对应船舶制造环节，例如 panel line、小组立、subassembly、double bottom/double hull、block assembly。</li>
+<li>必须有至少 2 个公开来源支持该任务族存在，来源可以是船厂案例、焊材/设备厂商资料、标准/论文或既有项目总规。</li>
+<li>必须能转成 <code>SimulationScenarioSpec</code> 字段，不要求马上有完整机器人程序。</li>
+<li>必须明确哪些字段来自公开约束，哪些字段是仿真假设，哪些字段后续需要真机标定。</li>
+<li>必须不依赖熔池图像、熔池形态或焊中闭环数据。</li>
+</ol>
+<h3 id="44-建议的初始候选顺序">4.4 建议的初始候选顺序</h3>
+<p>只有在完成 4.2 的任务族表和 4.3 的选择规则后，才允许确认第一批任务。当前推荐的候选顺序是：</p>
+<div class="table-wrap"><table><thead><tr><th>优先级</th><th>候选方向</th><th>原因</th><th>进入仿真的前置条件</th></tr></thead><tbody>
+<tr><td>P1</td><td>加筋板/纵骨角焊</td><td>船舶制造特征强，几何可控，机器人面板焊接资料较多</td><td>补齐焊脚、构件高度、连续/断续焊、torch angle、travel speed 字段</td></tr>
+<tr><td>P2</td><td>平面板拼接 / 简化对接焊</td><td>船体板材高频对象，可连接现有 straight-flat 能力</td><td>区分板拼 butt 与普通 straight-flat，补坡口/边界和工艺方法字段</td></tr>
+<tr><td>P3</td><td>微型面板/腹板/隔板多短焊缝</td><td>更贴近 subassembly，能验证多焊缝序列</td><td>补 weld seam list、节点过渡、焊缝顺序和可达性占位</td></tr>
+<tr><td>P4</td><td>双层底/双壳内部角焊</td><td>船舶场景强，现代/相关资料常提 confined space/block welding</td><td>先完成 P1/P3，再引入姿态切换、狭小空间和多段可达性占位</td></tr>
+</tbody></table></div>
+<p>最终第一批可以从 P1/P2/P3 中选 2-3 个；P4 更适合做第二轮增强或探针。</p>
+<h3 id="45-暂缓任务">4.5 暂缓任务</h3>
 <p>以下任务暂缓：</p>
 <ul>
 <li>高复杂多层多道全自动规划。</li>
@@ -318,9 +177,7 @@
 <h3 id="51-publicweldknowledgebase">5.1 <code>PublicWeldKnowledgeBase</code></h3>
 <p>保存公开资料与公开数据集的目录。</p>
 <p>字段建议：</p>
-<div class="table-wrap"><table>
-<thead><tr><th>字段</th><th>说明</th></tr></thead>
-<tbody>
+<div class="table-wrap"><table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
 <tr><td><code>source_id</code></td><td>来源编号</td></tr>
 <tr><td><code>source_type</code></td><td>dataset / process_guide / vendor_case / standard / paper</td></tr>
 <tr><td><code>title</code></td><td>来源标题</td></tr>
@@ -336,9 +193,7 @@
 <h3 id="52-simulationscenariospec">5.2 <code>SimulationScenarioSpec</code></h3>
 <p>把资料底座转成仿真任务定义。</p>
 <p>字段建议：</p>
-<div class="table-wrap"><table>
-<thead><tr><th>字段</th><th>说明</th></tr></thead>
-<tbody>
+<div class="table-wrap"><table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
 <tr><td><code>scenario_id</code></td><td>仿真场景编号</td></tr>
 <tr><td><code>shipbuilding_task</code></td><td>船舶制造任务名</td></tr>
 <tr><td><code>shipbuilding_context</code></td><td>对应船舶制造环节，例如小组立、双层底/双壳结构、分段板拼</td></tr>
@@ -391,6 +246,14 @@
 <li>KOBELCO Shipbuilding welding industry page</li>
 </ul>
 <p><a href="https://www.kobelco.co.jp/english/products/welding/industries/shipbuilding.html">https://www.kobelco.co.jp/english/products/welding/industries/shipbuilding.html</a></p>
+<ul>
+<li>Siemens 关于 HD Hyundai Mipo autonomous welding robot development 的案例资料。</li>
+</ul>
+<p><a href="https://resources.sw.siemens.com/en-US/case-study-hd-hyundai-mipo/">https://resources.sw.siemens.com/en-US/case-study-hd-hyundai-mipo/</a></p>
+<ul>
+<li>KRANENDONK shipbuilding panel welding gantry 资料。</li>
+</ul>
+<p><a href="https://www.kranendonk.com/solutions/shipbuilding/panel-welding-gantry/">https://www.kranendonk.com/solutions/shipbuilding/panel-welding-gantry/</a></p>
 <ul>
 <li>HD Hyundai / Hyundai Heavy Industries 相关公开机器人焊接案例、报道和技术资料。</li>
 </ul>
@@ -452,7 +315,7 @@
 <p>职责：</p>
 <ul>
 <li>将任务族转成 <code>SimulationScenarioSpec</code>。</li>
-<li>生成 2-3 个默认船舶任务。</li>
+<li>生成 2-3 个经公开资料支撑的船舶候选场景草案。</li>
 <li>为每个任务绑定来源和假设。</li>
 </ul>
 <p>边界：</p>
@@ -485,13 +348,11 @@
 </ul>
 <hr>
 <h2 id="9-错误处理与风险控制">9. 错误处理与风险控制</h2>
-<div class="table-wrap"><table>
-<thead><tr><th>风险</th><th>处理</th></tr></thead>
-<tbody>
+<div class="table-wrap"><table><thead><tr><th>风险</th><th>处理</th></tr></thead><tbody>
 <tr><td>公开资料与船舶任务不匹配</td><td>标注为通用焊接参考，不作为船舶任务依据</td></tr>
 <tr><td>公开数据集缺少轨迹或电参</td><td>只用其质量标签/图像/缺陷字段，轨迹由仿真生成</td></tr>
 <tr><td>参数范围冲突</td><td>保留多个来源，仿真场景使用保守范围并记录假设</td></tr>
-<tr><td>船舶任务过复杂</td><td>从平直角焊开始，复杂场景只进入路线图</td></tr>
+<tr><td>船舶任务过复杂</td><td>先完成任务族表和选择规则，再从低复杂度候选中选择；复杂场景只进入路线图</td></tr>
 <tr><td>仿真被误读为真机结论</td><td>报告与 <code>details.md</code> 均明确“仿真机制验证，不等于真实质量验证”</td></tr>
 <tr><td>熔池路线重新膨胀</td><td>本阶段交付物、典型任务、仿真字段、质量标签和报告证据均不得依赖熔池图像、熔池形态、熔池控制或焊中闭环数据；如提及熔池，仅限在“明确排除/未来不纳入本阶段”说明中出现</td></tr>
 </tbody></table></div>
@@ -532,26 +393,22 @@ uv run python -m weldcore.report.mvp_report</code></pre>
 <p>进入 <code>superpowers:writing-plans</code> 后，建议按以下任务拆解：</p>
 <ol>
 <li>建立公开资料目录格式与首批来源清单。</li>
-<li>建立 <code>SimulationScenarioSpec</code> 数据结构。</li>
-<li>实现船舶 Task A：平直角焊缝/加筋板角焊。</li>
-<li>实现船舶 Task B：双层底/双壳结构直线角焊与立向段占位。</li>
-<li>实现船舶 Task C：简化板拼对接/坡口焊。</li>
-<li>扩展 <code>simlite</code> 多任务生成。</li>
-<li>扩展报告，输出来源覆盖度和仿真证据。</li>
+<li>建立船舶焊接任务族表与任务选择评分规则。</li>
+<li>建立 <code>SimulationScenarioSpec</code> 数据结构，包含 <code>shipbuilding_context</code> 与 <code>evidence_role</code>。</li>
+<li>生成 2-3 个候选 <code>SimulationScenarioSpec</code> 草案，但不在资料底座通过前批量生成样本。</li>
+<li>扩展报告，输出来源覆盖度、任务族表、候选场景和证据角色。</li>
+<li>在计划后段预留 <code>simlite</code> 多任务生成任务，必须以前置调研闸门通过为条件。</li>
 <li>更新 README 与 <code>details.md</code>。</li>
 </ol>
 <hr>
 <h2 id="12-当前设计自审">12. 当前设计自审</h2>
 <p>对照用户修正：</p>
 <ul>
-<li>是否从船舶制造典型任务出发：是，任务选择以船体板、加筋板、双层底/双壳、板拼对接为主。</li>
-<li>是否参考现代/相关机器人公司路线：是，已把 Hyundai Welding、HD Hyundai/HHI、KOBELCO 等列入任务调研来源。</li>
-<li>是否从易到难：是，先 Task A 平直角焊，再 Task B 分段/舱内结构，再 Task C 简化坡口对接。</li>
+<li>是否从船舶制造典型任务出发：是，第四部分已改为先建立船舶焊接任务族表，再选择具体场景。</li>
+<li>是否参考现代/相关机器人公司路线：是，已把 Hyundai Welding、HD Hyundai/HHI、KOBELCO、Siemens HD Hyundai Mipo 案例、KRANENDONK 等列入任务调研来源。</li>
+<li>是否避免主观锁定任务：是，平直角焊、双层底/双壳、板拼对接等只作为候选方向，需通过来源与字段覆盖闸门后确认。</li>
+<li>是否从易到难：是，按建模难度、船舶制造环节和字段完整度排序，而不是直接固定 Task A/B/C。</li>
 <li>是否排除熔池：是，本阶段明确不做熔池图像、熔池识别和闭环控制。</li>
 <li>是否保留真机与专家但不依赖：是，真机/专家只作为后续校准、验证和审查。</li>
 <li>是否避免把仿真夸大为真实焊接质量：是，报告和台账都要明确边界。</li>
-</ul>
-    </main>
-  </div>
-</body>
-</html>
+</ul></main></div></body></html>
