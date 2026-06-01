@@ -1,12 +1,14 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
 from weldcore.knowledge.foundation import DataFoundation
-from weldcore.report.data_foundation_report import run_data_foundation_report
+from weldcore.report.data_foundation_report import (
+    DEFAULT_DOCS_REPORT_DIR,
+    run_data_foundation_report,
+)
 
 
 FORBIDDEN_ROUTE_TERMS = (
@@ -84,17 +86,30 @@ def test_data_foundation_report_blocks_invalid_foundation(tmp_path):
         run_data_foundation_report(tmp_path, foundation=foundation)
 
 
-def test_data_foundation_report_json_outputs_do_not_contain_forbidden_terms(tmp_path):
+def test_data_foundation_report_json_and_csv_outputs_do_not_contain_forbidden_terms(
+    tmp_path,
+):
     run_data_foundation_report(tmp_path)
 
-    for filename in ["sources.json", "datasets.json", "task_evidence_map.json"]:
+    for filename in [
+        "sources.json",
+        "datasets.json",
+        "task_evidence_map.json",
+        "field_coverage.csv",
+    ]:
         text = _json_text(tmp_path / filename)
         assert not any(term in text for term in FORBIDDEN_ROUTE_TERMS)
 
 
-def test_data_foundation_report_module_entrypoint_refreshes_default_docs(tmp_path):
+def test_data_foundation_report_default_docs_dir_points_to_repo_docs():
+    assert DEFAULT_DOCS_REPORT_DIR.name == "reports"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.name == "data-foundation"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "docs"
+
+
+def test_data_foundation_report_module_entrypoint_refreshes_temp_docs(tmp_path):
     outdir = tmp_path / "cli-out"
-    docs_report_dir = Path("..") / "docs" / "data-foundation" / "reports"
+    docs_report_dir = tmp_path / "cli-docs"
 
     result = subprocess.run(
         [
@@ -103,6 +118,8 @@ def test_data_foundation_report_module_entrypoint_refreshes_default_docs(tmp_pat
             "weldcore.report.data_foundation_report",
             "--outdir",
             str(outdir),
+            "--docs-report-dir",
+            str(docs_report_dir),
         ],
         check=True,
         cwd=".",
