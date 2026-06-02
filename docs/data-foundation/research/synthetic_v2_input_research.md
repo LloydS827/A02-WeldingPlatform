@@ -89,7 +89,7 @@
 
 下一步数据结构应以 EvidenceBinding 为核心，字段必须可追溯到来源、证据角色和值状态。第一版只做输入规范，不做生成器批量输出和质量合格声明。
 
-- 进入第一层字段：`field_path`、`field_group`、`source_ids`、`primary_source_category`、`source_categories`、`simulation_role`、`evidence_role`、`value_status`、`requires_real_validation_later`、`first_batch_required`。
+- 进入第一层字段：`field_path`、`field_group`、`source_ids`、`source_category`、`source_categories`、`simulation_role`、`evidence_role`、`value_status`、`requires_real_validation_later`、`first_batch_required`。
 - 公开约束 vs 仿真假设：同一个字段可同时有公开资料约束和仿真假设，但值必须分层记录。
 - 后续真实验证：所有质量、参数合格性、标准适用性和船级相关字段。
 - 不纳入：无来源字段、无法区分假设与实测的字段、把标准入口当标准正文的字段。
