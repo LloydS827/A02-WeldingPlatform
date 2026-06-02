@@ -12,6 +12,7 @@ QUALITY_BOUNDARY_MARKERS = (
     "simulation_score_placeholder",
     "requires_real_validation_later",
 )
+METADATA_PROCEDURE_FIELDS = {"input_id", "taxonomy_ref", "evidence_bindings"}
 
 
 class SyntheticEvidenceRole(str, Enum):
@@ -183,7 +184,20 @@ class SyntheticInputFoundation:
                 field_path = f"procedure_fields.{field_name}"
                 if field_name not in simulation_input.procedure_fields:
                     issues.append(f"{input_id}: missing {field_path}")
-                self._require_binding(issues, input_id, binding_by_path, field_path)
+
+            procedure_fields_requiring_binding = {
+                field_name
+                for field_name in simulation_input.procedure_fields
+                if field_name not in METADATA_PROCEDURE_FIELDS
+            }
+            procedure_fields_requiring_binding.update(required_procedure_fields)
+            for field_name in sorted(procedure_fields_requiring_binding):
+                self._require_binding(
+                    issues,
+                    input_id,
+                    binding_by_path,
+                    f"procedure_fields.{field_name}",
+                )
 
             self._require_spec_bindings(
                 issues,

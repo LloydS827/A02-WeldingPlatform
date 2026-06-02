@@ -274,6 +274,20 @@ def test_optional_procedure_field_is_not_required():
     assert result.passed
 
 
+def test_present_optional_procedure_field_without_binding_is_rejected():
+    spec = valid_input(
+        procedure_fields={
+            **valid_input().procedure_fields,
+            "wire_feed": 5.2,
+        },
+    )
+
+    result = foundation_with(spec).validate()
+
+    assert not result.passed
+    assert any("procedure_fields.wire_feed" in issue for issue in result.issues)
+
+
 def test_missing_geometry_business_field_evidence_binding_is_rejected():
     spec = valid_input(
         geometry_spec={
