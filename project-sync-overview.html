@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>焊接技能大师平台 - 项目同步总览</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18202a;
+      --muted: #5a6675;
+      --line: #d9dee6;
+      --paper: #f7f8fa;
+      --panel: #ffffff;
+      --navy: #18324a;
+      --steel: #60788e;
+      --green: #2f7d59;
+      --amber: #ad7628;
+      --red: #a34b44;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.55;
+    }
+
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 34px 28px 28px;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 22px;
+      line-height: 1.25;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .header-inner {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      max-width: 920px;
+      color: #dce5ee;
+      font-size: 17px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid rgba(255, 255, 255, .26);
+      border-radius: 6px;
+      color: #edf3f7;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .card p,
+    li,
+    td {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 980px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      border-left: 4px solid var(--steel);
+      background: #f8fafc;
+      padding: 12px;
+      min-height: 92px;
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--ink);
+      font-size: 26px;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--green);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      min-height: 104px;
+    }
+
+    .step .num {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--ink);
+      font-size: 14px;
+      background: #eef2f6;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    ul {
+      margin: 10px 0 0 18px;
+      padding: 0;
+    }
+
+    li + li {
+      margin-top: 7px;
+    }
+
+    .tag {
+      display: inline-block;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .ok {
+      color: var(--green);
+      background: #e8f4ee;
+    }
+
+    .watch {
+      color: var(--amber);
+      background: #f7eedf;
+    }
+
+    .risk {
+      color: var(--red);
+      background: #f7e8e6;
+    }
+
+    .note {
+      border-left: 4px solid var(--amber);
+      background: #fff8eb;
+      padding: 13px 14px;
+      color: #654a22;
+      font-size: 14px;
+      margin-top: 14px;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      padding-top: 8px;
+    }
+
+    a {
+      color: #1f5f92;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 920px) {
+      .grid.cols-2,
+      .grid.cols-3,
+      .metric-row,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        padding: 28px 18px 24px;
+      }
+
+      main,
+      .header-inner {
+        width: min(100% - 24px, 1180px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>焊接技能大师平台<br>项目同步总览</h1>
+      <p class="subtitle">面向机器人、工艺、工程、软件与项目团队的阶段同步页。目的：统一“为什么做、现在做到哪里、下一步怎么协同”。</p>
+      <div class="meta">
+        <span class="pill">更新时间：2026-06-02</span>
+        <span class="pill">当前阶段：MVP + 仿真优先资料底座第一轮完成</span>
+        <span class="pill">主路径：公开资料约束 + 轻量仿真 + 可追溯报告</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>1. 背景</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>业务背景</h3>
+          <p>船舶制造焊接任务多、工况变化多、自动化落地难。仅靠口头经验和静态工艺卡，难以支撑机器人复用、评测和持续迭代。</p>
+        </div>
+        <div class="card">
+          <h3>项目目标</h3>
+          <p>把焊接技能大师的动作、参数、判断和适用边界，转成可记录、可分析、可复现、可迁移的数据资产。</p>
+        </div>
+        <div class="card">
+          <h3>当前路线</h3>
+          <p>先用仿真和公开资料建立数据闭环与证据闭环；真机和专家经验作为后续标定、验证和审查，不作为当前主路径。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. 要解决的核心问题</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>问题</th>
+            <th>为什么重要</th>
+            <th>当前应对</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>经验如何结构化</td>
+            <td>没有结构化，就无法沉淀技能包，也无法复用和评测。</td>
+            <td>用轨迹、姿态、速度、摆动模板、过程参数等字段表达技能。</td>
+          </tr>
+          <tr>
+            <td>技能如何迁移</td>
+            <td>船舶焊缝条件变化频繁，技能必须能适配相近任务。</td>
+            <td>用 `SkillDataset -> WeldSkillPackage -> TransferExperiment` 跑通最小闭环。</td>
+          </tr>
+          <tr>
+            <td>仿真参数从哪里来</td>
+            <td>纯拍脑袋的仿真样本没有工程说服力。</td>
+            <td>建立资料底座 gate，用公开资料、数据集、字段覆盖和任务证据约束仿真。</td>
+          </tr>
+          <tr>
+            <td>如何避免过度承诺</td>
+            <td>仿真和公开资料不能等同于真实焊接质量验证。</td>
+            <td>报告明确标注来源、假设、边界和后续需真机验证的字段。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>3. 总体思路</h2>
+      <p class="lead">路线从“先等真机数据”调整为“先把可控的数据与证据底座做实”。这样成本可控、节奏可控，也能提前让机器人、工艺和工程团队看到可讨论的任务族、字段和报告。</p>
+      <div class="flow">
+        <div class="step">
+          <div class="num">01</div>
+          <h3>船舶任务族</h3>
+          <p>从船舶制造典型任务出发，而不是从通用直线焊倒推。</p>
+        </div>
+        <div class="step">
+          <div class="num">02</div>
+          <h3>公开资料</h3>
+          <p>整理厂商案例、工艺指南、标准入口和公开数据集。</p>
+        </div>
+        <div class="step">
+          <div class="num">03</div>
+          <h3>字段覆盖</h3>
+          <p>标注哪些字段有来源，哪些仍是假设。</p>
+        </div>
+        <div class="step">
+          <div class="num">04</div>
+          <h3>仿真样本</h3>
+          <p>生成可追溯的 `SyntheticSkillDataset v2` 小批量样本。</p>
+        </div>
+        <div class="step">
+          <div class="num">05</div>
+          <h3>技能包迁移</h3>
+          <p>提取技能包，做相近任务迁移和评测。</p>
+        </div>
+        <div class="step">
+          <div class="num">06</div>
+          <h3>真机标定</h3>
+          <p>后续用真实焊接、检测和专家审查校准关键字段。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. 已完成事项</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3><span class="tag ok">已完成</span> 经验结构化 POC</h3>
+          <ul>
+            <li>把合成“大师轨迹”拆解为结构化工艺参数。</li>
+            <li>支持轨迹重组、误差评估和失效边界分析。</li>
+            <li>证明“动作经验可以进入数据结构”。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag ok">已完成</span> 技能迁移 MVP</h3>
+          <ul>
+            <li>建立 `SkillDataset`、`SkillSample`、`WeldSkillPackage`、`TransferExperiment`。</li>
+            <li>跑通仿真样本、技能包提取、迁移规则和评测报告。</li>
+            <li>证明“技能包可以迁移到相近焊缝条件”。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag ok">已完成</span> 仿真优先知识闸门</h3>
+          <ul>
+            <li>从船舶制造任务族选择候选仿真场景。</li>
+            <li>明确不以真机采集和专家访谈作为当前主路径。</li>
+            <li>本阶段不纳入焊中闭环或熔池路线。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag ok">已完成</span> 资料底座 gate</h3>
+          <ul>
+            <li>建立 `docs/data-foundation/` 中文资料卡、manifest 和报告。</li>
+            <li>用测试校验来源、数据集、字段覆盖和任务证据。</li>
+            <li>输出 `SyntheticSkillDataset v2` 规划输入。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>5. 当前证据</h2>
+      <p class="lead">以下数字来自资料底座报告和自动化测试，不代表真实焊接质量结论。</p>
+      <div class="metric-row">
+        <div class="metric"><strong>83</strong><span>自动化测试通过</span></div>
+        <div class="metric"><strong>20</strong><span>资料来源总数</span></div>
+        <div class="metric"><strong>19</strong><span>公开资料来源</span></div>
+        <div class="metric"><strong>8</strong><span>强船舶相关来源</span></div>
+        <div class="metric"><strong>6</strong><span>公开数据集</span></div>
+        <div class="metric"><strong>3</strong><span>ready 任务族</span></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ready 任务族</th>
+            <th>适合验证什么</th>
+            <th>注意事项</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>加筋板/纵骨角焊</td>
+            <td>面板线、角焊、焊枪角度、行走速度、构件几何。</td>
+            <td>焊脚、板厚等字段仍需明确假设或后续标定。</td>
+          </tr>
+          <tr>
+            <td>平面板拼接/简化对接焊</td>
+            <td>板拼、坡口、过程参数和现有 straight-flat 能力衔接。</td>
+            <td>参数值必须保留 WPS 待验证标记。</td>
+          </tr>
+          <tr>
+            <td>微型面板/腹板/隔板多短焊缝</td>
+            <td>小组立、多焊缝序列、机器人姿态和任务顺序。</td>
+            <td>先做任务序列 schema，不直接声称产线能力。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>6. 各团队关注点</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>团队</th>
+            <th>当前需要参与的内容</th>
+            <th>不需要现在解决的内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>工艺团队</td>
+            <td>确认任务族、接头形式、关键参数字段、哪些字段必须 WPS 或评定后才能定值。</td>
+            <td>不要求一次性给出所有真实工艺参数。</td>
+          </tr>
+          <tr>
+            <td>机器人团队</td>
+            <td>确认轨迹、姿态、可达性、碰撞、节拍和多焊缝序列字段是否够用。</td>
+            <td>不要求当前完成真实机器人程序和产线控制接口。</td>
+          </tr>
+          <tr>
+            <td>工程团队</td>
+            <td>确认船舶制造环节、构件对象、典型场景优先级和现场约束。</td>
+            <td>不要求当前组织大规模真机采集。</td>
+          </tr>
+          <tr>
+            <td>软件团队</td>
+            <td>维护 `SkillDataset`、资料底座 gate、报告生成、测试和后续小批量生成流程。</td>
+            <td>不急于开发完整生产级平台 UI。</td>
+          </tr>
+          <tr>
+            <td>项目团队</td>
+            <td>把阶段成果表述为“数据结构和证据闭环跑通”，避免对外过度承诺。</td>
+            <td>不把仿真报告写成真实焊接质量验收结论。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>7. 后续事项</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3><span class="tag watch">下一步</span> SyntheticSkillDataset v2 小批量设计</h3>
+          <ul>
+            <li>优先选 2-3 个 ready 任务族。</li>
+            <li>定义样本 schema、字段来源、假设字段和报告格式。</li>
+            <li>先小批量生成，验证流程和评测协议。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag watch">下一步</span> 任务族继续收敛</h3>
+          <ul>
+            <li>围绕加筋板、板拼、多短焊缝、双层底内部角焊补证据。</li>
+            <li>把工程语境转成仿真可用字段。</li>
+            <li>明确哪些任务暂缓到第二轮。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag watch">后续</span> 真机与专家审查</h3>
+          <ul>
+            <li>把真机采集作为标定和验证，不作为当前主路径。</li>
+            <li>把专家经验转成字段、规则和人工复核点。</li>
+            <li>建立仿真结果与真实检测结果的对齐机制。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="tag watch">后续</span> 工程化平台</h3>
+          <ul>
+            <li>在数据闭环稳定后再进入平台界面和集成接口。</li>
+            <li>优先保留报告、版本、来源追溯和评测协议。</li>
+            <li>逐步对接机器人、焊机、传感器和生产系统。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>8. 边界与风险</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3><span class="tag risk">不能说</span> 真实质量已验证</h3>
+          <p>当前证据来自软件原型、仿真样本、公开资料和 manifest gate，不能替代焊材、焊机、工艺评定和检测结果。</p>
+        </div>
+        <div class="card">
+          <h3><span class="tag risk">不能混淆</span> 资料底座与批量数据</h3>
+          <p>资料底座 gate 已完成，但 `SyntheticSkillDataset v2` 还没有进入批量生产阶段。</p>
+        </div>
+        <div class="card">
+          <h3><span class="tag risk">本阶段排除</span> 焊中闭环路线</h3>
+          <p>当前阶段不做熔池图像、熔池控制、声纹归因或实时闭环控制。</p>
+        </div>
+      </div>
+      <div class="note">推荐对外表述：我们已经跑通焊接技能结构化、迁移评测、仿真优先知识闸门和资料底座 gate，可进入 `SyntheticSkillDataset v2` 小批量设计；真实焊接质量仍需后续真机标定和工艺验证。</div>
+    </section>
+
+    <section class="section">
+      <h2>9. 关键交付物</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>交付物</th>
+            <th>用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="README.md">README.md</a></td>
+            <td>项目总览、运行方式、阶段判断。</td>
+          </tr>
+          <tr>
+            <td><a href="details.md">details.md</a></td>
+            <td>面向非技术读者的项目进展台账。</td>
+          </tr>
+          <tr>
+            <td><a href="docs/data-foundation/reports/data_foundation_evidence.md">data_foundation_evidence.md</a></td>
+            <td>资料来源、数据集、任务证据和使用边界。</td>
+          </tr>
+          <tr>
+            <td><a href="docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md">synthetic_skilldataset_v2_plan_input.md</a></td>
+            <td>下一阶段 `SyntheticSkillDataset v2` 的规划输入。</td>
+          </tr>
+          <tr>
+            <td><a href="weld-experience-engine/">weld-experience-engine/</a></td>
+            <td>POC、MVP、场景闸门和资料底座 gate 的可运行代码。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p class="footer">本页用于团队同步。若项目阶段、任务路线、验证结论或关键交付物变化，应同步更新本页、README 和 details.md。</p>
+  </main>
+</body>
+</html>
