@@ -347,6 +347,42 @@ def test_quality_field_without_boundary_is_rejected():
     assert any("quality fields require" in issue for issue in result.issues)
 
 
+def test_procedure_quality_fields_without_boundary_are_rejected():
+    quality_procedure_paths = {
+        "procedure_fields.quality_label",
+        "procedure_fields.defect_label",
+        "procedure_fields.inspection_reference",
+    }
+    base_input = valid_input()
+    spec = valid_input(
+        procedure_fields={
+            **base_input.procedure_fields,
+            "quality_label": "acceptable",
+            "defect_label": "none",
+            "inspection_reference": "visual",
+        },
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=item.field_path,
+                source_id=item.source_id,
+                evidence_role=item.evidence_role,
+                value_status=(
+                    SyntheticValueStatus.ASSUMED
+                    if item.field_path in quality_procedure_paths
+                    else item.value_status
+                ),
+                notes=item.notes,
+            )
+            for item in base_input.evidence_bindings
+        ],
+    )
+
+    result = foundation_with(spec).validate()
+
+    assert not result.passed
+    assert any("procedure_fields.quality_label" in issue for issue in result.issues)
+
+
 def test_unbound_geometry_field_issue_contains_specific_field_path():
     spec = valid_input(
         evidence_bindings=[

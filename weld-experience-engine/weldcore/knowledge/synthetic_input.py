@@ -218,6 +218,13 @@ class SyntheticInputFoundation:
                 issues,
                 input_id,
                 binding_by_path,
+                simulation_input.procedure_fields,
+                "procedure_fields",
+            )
+            self._validate_quality_boundaries(
+                issues,
+                input_id,
+                binding_by_path,
                 simulation_input.quality_spec,
                 "quality_spec",
             )
