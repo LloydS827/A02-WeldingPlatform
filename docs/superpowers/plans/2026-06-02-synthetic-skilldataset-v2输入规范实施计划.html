@@ -8,12 +8,23 @@
 <a href="#2.-success-criteria">2. Success Criteria</a>
 <a href="#task-0:-baseline-safety-check">Task 0: Baseline Safety Check</a>
 <a href="#codex/synthetic-v2-input-spec">codex/synthetic-v2-input-spec</a>
-<a href="#task-1:-synthetic-input-data-models">Task 1: Synthetic Input Data Models</a>
-<a href="#task-2:-input-spec-manifests">Task 2: Input-Spec Manifests</a>
-<a href="#task-3:-synthetic-input-report">Task 3: Synthetic Input Report</a>
-<a href="#task-4:-documentation-updates">Task 4: Documentation Updates</a>
-<a href="#task-5:-end-to-end-verification">Task 5: End-to-End Verification</a>
-<a href="#task-6:-completion-handoff">Task 6: Completion Handoff</a></nav><main><h1 id="syntheticskilldataset-v2-输入规范-implementation-plan">SyntheticSkillDataset v2 输入规范 Implementation Plan</h1>
+<a href="#task-1:-research-and-field-inventory-gate">Task 1: Research and Field Inventory Gate</a>
+<a href="#syntheticskilldataset-v2-输入规范前置调研">SyntheticSkillDataset v2 输入规范前置调研</a>
+<a href="#结论">结论</a>
+<a href="#1.-船舶焊接任务分类">1. 船舶焊接任务分类</a>
+<a href="#2.-焊缝、接头、位置、坡口和层道知识">2. 焊缝、接头、位置、坡口和层道知识</a>
+<a href="#3.-工艺参数和-wps/pqr-相关字段">3. 工艺参数和 WPS/PQR 相关字段</a>
+<a href="#4.-质量、缺陷和检查词汇">4. 质量、缺陷和检查词汇</a>
+<a href="#5.-公开数据集与-schema-参考">5. 公开数据集与 schema 参考</a>
+<a href="#6.-仿真优先路线对字段的约束">6. 仿真优先路线对字段的约束</a>
+<a href="#7.-进入数据结构设计的字段原则">7. 进入数据结构设计的字段原则</a>
+<a href="#8.-暂不进入第一版的内容">8. 暂不进入第一版的内容</a>
+<a href="#task-2:-synthetic-input-data-models">Task 2: Synthetic Input Data Models</a>
+<a href="#task-3:-input-spec-manifests">Task 3: Input-Spec Manifests</a>
+<a href="#task-4:-synthetic-input-report">Task 4: Synthetic Input Report</a>
+<a href="#task-5:-documentation-updates">Task 5: Documentation Updates</a>
+<a href="#task-6:-end-to-end-verification">Task 6: End-to-End Verification</a>
+<a href="#task-7:-completion-handoff">Task 7: Completion Handoff</a></nav><main><h1 id="syntheticskilldataset-v2-输入规范-implementation-plan">SyntheticSkillDataset v2 输入规范 Implementation Plan</h1>
 <p>&gt; <strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
 <p><strong>Goal:</strong> Build an executable input-spec layer that turns shipbuilding welding task taxonomy, industry-standard procedure fields, evidence bindings, and simulation input specs into gates and reports for the next <code>SyntheticSkillDataset v2</code> generation step.</p>
 <p><strong>Architecture:</strong> Extend the existing manifest-first data foundation instead of replacing it. Add focused knowledge models, JSON manifest loaders, validation gates, and one report command; stop before generating synthetic samples. Keep all real-quality, WPS/PQR, and molten-pool boundaries explicit.</p>
@@ -24,12 +35,16 @@
 <ul><li><code>docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md</code></li><li>HTML reading copy: <code>docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.html</code></li></ul>
 <p>This plan implements the <strong>input-spec layer only</strong>.</p>
 <p>It does:</p>
-<ul><li>Create <code>TaskTaxonomyEntry</code>, <code>WeldProcedureField</code>, <code>EvidenceBinding</code>, <code>SimulationInputSpec</code>, and <code>SyntheticSkillDatasetV2PlanInput</code>.</li><li>Create machine-readable manifests for task taxonomy, procedure fields, and first-batch simulation inputs.</li><li>Load those manifests into executable Python objects.</li><li>Enforce taxonomy, required-field, evidence-binding, assumption, real-validation, and forbidden-field gates.</li><li>Generate a <code>synthetic_v2_input_report</code>.</li><li>Update project docs to say this completes the input specification, not bulk synthetic dataset generation.</li></ul>
+<ul><li>Produce a pre-modeling research and field-inventory gate from industry materials, standards references, public datasets, and the project&#x27;s simulation-first route.</li><li>Create <code>TaskTaxonomyEntry</code>, <code>WeldProcedureField</code>, <code>EvidenceBinding</code>, <code>SimulationInputSpec</code>, and <code>SyntheticSkillDatasetV2PlanInput</code>.</li><li>Create machine-readable manifests for task taxonomy, procedure fields, and first-batch simulation inputs.</li><li>Load those manifests into executable Python objects.</li><li>Enforce taxonomy, required-field, evidence-binding, assumption, real-validation, and forbidden-field gates.</li><li>Generate a <code>synthetic_v2_input_report</code>.</li><li>Update project docs to say this completes the input specification, not bulk synthetic dataset generation.</li></ul>
 <p>It does not:</p>
 <ul><li>Generate <code>SkillDataset</code> samples.</li><li>Implement simulator geometry or trajectories.</li><li>Download public datasets.</li><li>Implement WPS/PQR, real robot control, welding machine control, or real quality validation.</li><li>Add molten-pool, weld-pool, or in-process closed-loop fields.</li></ul>
 <hr>
 <h2 id="1.-file-structure">1. File Structure</h2>
 <h3 id="data-foundation-manifests">Data Foundation Manifests</h3>
+<ul><li>Create: <code>docs/data-foundation/research/synthetic_v2_input_research.md</code></li></ul>
+<p>- Human-readable research synthesis before model design.</p>
+<ul><li>Create: <code>docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv</code></li></ul>
+<p>- Field-by-field mapping from industry knowledge to planned input schema.</p>
 <ul><li>Create: <code>docs/data-foundation/manifests/task_taxonomy.json</code></li></ul>
 <p>- Wide shipbuilding welding task taxonomy.</p>
 <ul><li>Create: <code>docs/data-foundation/manifests/procedure_fields.json</code></li></ul>
@@ -53,6 +68,8 @@
 <hr>
 <h2 id="2.-success-criteria">2. Success Criteria</h2>
 <p>Complete means all of these are true:</p>
+<ul><li>The research gate is completed before model implementation:</li></ul>
+<p>- <code>synthetic_v2_input_research.md</code> summarizes shipbuilding welding task classification, weld/joint/position/groove/layer-pass concepts, process variables, quality/defect vocabulary, public datasets, and simulation-first constraints. - <code>synthetic_v2_field_gap_matrix.csv</code> maps each proposed schema field to source category, source ids, simulation role, evidence role, and validation status. - The research output explicitly distinguishes industry/standard knowledge, public dataset schema, project-internal assumptions, simulation assumptions, and fields requiring later real validation.</p>
 <ul><li><code>task_taxonomy.json</code> contains at least 7 task families:</li></ul>
 <p>- 3 with <code>readiness = &quot;ready_for_synthetic_v2_plan&quot;</code>. - at least 1 with <code>readiness = &quot;needs_more_sources&quot;</code>. - at least 3 with <code>readiness = &quot;defer&quot;</code>.</p>
 <ul><li><code>procedure_fields.json</code> covers at least these field groups:</li></ul>
@@ -96,10 +113,122 @@ uv run pytest -q
 <ul><li>[ ] <strong>Step 4: Commit nothing</strong></li></ul>
 <p>No commit for this task.</p>
 <hr>
-<h2 id="task-1:-synthetic-input-data-models">Task 1: Synthetic Input Data Models</h2>
+<h2 id="task-1:-research-and-field-inventory-gate">Task 1: Research and Field Inventory Gate</h2>
 <p><strong>Files:</strong></p>
-<ul><li>Create: <code>weld-experience-engine/weldcore/knowledge/synthetic_input.py</code></li><li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_models.py</code></li></ul>
+<ul><li>Create: <code>docs/data-foundation/research/synthetic_v2_input_research.md</code></li><li>Create: <code>docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv</code></li><li>Read: <code>docs/data-foundation/manifests/sources.json</code></li><li>Read: <code>docs/data-foundation/manifests/datasets.json</code></li><li>Read: <code>docs/data-foundation/manifests/field_coverage.csv</code></li><li>Read: <code>docs/data-foundation/manifests/task_evidence_map.json</code></li><li>Read: <code>docs/data-foundation/source-cards/*.md</code></li><li>Read: <code>docs/project/船舶焊接工艺大脑平台整体规划方案.html</code></li></ul>
+<ul><li>[ ] <strong>Step 1: Review existing data foundation materials</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+rg -n &quot;joint_type|weld_position|groove_geometry|layer_pass|current|voltage|travel_speed|quality_label|defect_label|inspection_reference|WPS|PQR|标准|船级|坡口|层道|焊缝|接头&quot; \
+  docs/data-foundation docs/project docs/superpowers/specs
+</code></pre>
+<p>Expected: locate the existing project and data-foundation evidence for the fields that will become <code>TaskTaxonomyEntry</code>, <code>WeldProcedureField</code>, <code>EvidenceBinding</code>, and <code>SimulationInputSpec</code>.</p>
+<ul><li>[ ] <strong>Step 2: Inspect machine-readable manifests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+python3 - &lt;&lt;&#x27;PY&#x27;
+import json
+from pathlib import Path
+
+root = Path(&quot;docs/data-foundation/manifests&quot;)
+for name in [&quot;sources.json&quot;, &quot;datasets.json&quot;, &quot;task_evidence_map.json&quot;]:
+    data = json.loads((root / name).read_text(encoding=&quot;utf-8&quot;))
+    print(name, len(data))
+print(&quot;field_coverage.csv lines&quot;, sum(1 for _ in (root / &quot;field_coverage.csv&quot;).open(encoding=&quot;utf-8&quot;)))
+PY
+</code></pre>
+<p>Expected:</p>
+<ul><li><code>sources.json</code> has at least 20 sources.</li><li><code>datasets.json</code> has at least 6 datasets.</li><li><code>task_evidence_map.json</code> has at least 3 ready task families.</li><li><code>field_coverage.csv</code> has existing coverage rows.</li></ul>
+<ul><li>[ ] <strong>Step 3: Identify research categories</strong></li></ul>
+<p>Create these category headings in <code>synthetic_v2_input_research.md</code>:</p>
+<pre><code>
+# SyntheticSkillDataset v2 输入规范前置调研
+
+## 结论
+
+## 1. 船舶焊接任务分类
+
+## 2. 焊缝、接头、位置、坡口和层道知识
+
+## 3. 工艺参数和 WPS/PQR 相关字段
+
+## 4. 质量、缺陷和检查词汇
+
+## 5. 公开数据集与 schema 参考
+
+## 6. 仿真优先路线对字段的约束
+
+## 7. 进入数据结构设计的字段原则
+
+## 8. 暂不进入第一版的内容
+</code></pre>
+<p>Keep the report focused on fields and generation input. Do not write an encyclopedia-style literature review.</p>
+<ul><li>[ ] <strong>Step 4: Fill research synthesis</strong></li></ul>
+<p>For each section, write concise findings:</p>
+<ul><li>Which existing source ids support the topic.</li><li>Which fields should enter the first input-spec layer.</li><li>Which values are public constraints versus simulation assumptions.</li><li>Which fields require later real validation.</li><li>Which fields are excluded from this stage.</li></ul>
+<p>Required boundary statements:</p>
+<ul><li>This research is not WPS/PQR.</li><li>This research does not prove real welding quality.</li><li>Public datasets provide schema, vocabulary, or benchmark references only.</li><li>Molten-pool, weld-pool, and in-process closed-loop fields remain out of scope.</li></ul>
+<ul><li>[ ] <strong>Step 5: Create field gap matrix</strong></li></ul>
+<p>Create <code>docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv</code> with this header:</p>
+<pre><code>
+field_path,field_group,industry_meaning,source_category,source_ids,simulation_role,evidence_role,value_status,first_batch_required,notes
+</code></pre>
+<p>Include at least these rows:</p>
+<ul><li><code>task_taxonomy.manufacturing_stage</code></li><li><code>task_taxonomy.weld_object</code></li><li><code>task_taxonomy.joint_type</code></li><li><code>task_taxonomy.weld_position</code></li><li><code>task_taxonomy.groove_geometry</code></li><li><code>task_taxonomy.layer_pass</code></li><li><code>procedure_fields.welding_process</code></li><li><code>procedure_fields.plate_thickness_mm</code></li><li><code>procedure_fields.current</code></li><li><code>procedure_fields.voltage</code></li><li><code>procedure_fields.travel_speed</code></li><li><code>procedure_fields.trajectory</code></li><li><code>procedure_fields.torch_angle</code></li><li><code>procedure_fields.quality_label</code></li><li><code>procedure_fields.defect_label</code></li><li><code>procedure_fields.inspection_reference</code></li><li><code>geometry_spec.groove_geometry</code></li><li><code>motion_spec.motion_template</code></li><li><code>process_spec.current</code></li><li><code>quality_spec.quality_label</code></li></ul>
+<p><code>source_ids</code> may be semicolon-separated. Use only source ids already present in <code>docs/data-foundation/manifests/sources.json</code>.</p>
+<ul><li>[ ] <strong>Step 6: Verify source ids in gap matrix</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+python3 - &lt;&lt;&#x27;PY&#x27;
+import csv
+import json
+from pathlib import Path
+
+root = Path(&quot;docs/data-foundation&quot;)
+sources = {
+    item[&quot;source_id&quot;]
+    for item in json.loads((root / &quot;manifests&quot; / &quot;sources.json&quot;).read_text(encoding=&quot;utf-8&quot;))
+}
+bad = []
+has_public_dataset_schema = False
+with (root / &quot;research&quot; / &quot;synthetic_v2_field_gap_matrix.csv&quot;).open(encoding=&quot;utf-8&quot;, newline=&quot;&quot;) as handle:
+    for row in csv.DictReader(handle):
+        if row[&quot;source_category&quot;] == &quot;public_dataset_schema&quot;:
+            has_public_dataset_schema = True
+        for source_id in [item.strip() for item in row[&quot;source_ids&quot;].split(&quot;;&quot;) if item.strip()]:
+            if source_id not in sources:
+                bad.append((row[&quot;field_path&quot;], source_id))
+if bad:
+    raise SystemExit(f&quot;unknown source ids: {bad}&quot;)
+if not has_public_dataset_schema:
+    raise SystemExit(&quot;field gap matrix must include at least one public_dataset_schema row&quot;)
+print(&quot;all field gap source ids are known&quot;)
+PY
+</code></pre>
+<p>Expected:</p>
+<pre><code>
+all field gap source ids are known
+</code></pre>
+<ul><li>[ ] <strong>Step 7: Verify research boundary text</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+rg -n &quot;不是 WPS/PQR|不证明真实焊接质量|schema|vocabulary|benchmark|不纳入|out of scope&quot; \
+  docs/data-foundation/research/synthetic_v2_input_research.md
+</code></pre>
+<p>Expected: matches for the required boundary statements.</p>
+<ul><li>[ ] <strong>Step 8: Commit</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git add docs/data-foundation/research/synthetic_v2_input_research.md \
+  docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv
+git commit -m &quot;docs: add synthetic v2 input research gate&quot;
+</code></pre>
+<hr>
+<h2 id="task-2:-synthetic-input-data-models">Task 2: Synthetic Input Data Models</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Create: <code>weld-experience-engine/weldcore/knowledge/synthetic_input.py</code></li><li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_models.py</code></li><li>Read first: <code>docs/data-foundation/research/synthetic_v2_input_research.md</code></li><li>Read first: <code>docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv</code></li></ul>
 <ul><li>[ ] <strong>Step 1: Write failing model tests</strong></li></ul>
+<p>Do not start this task until Task 1 is committed. Use the research report and field gap matrix as the field source of truth for model names, required fields, evidence roles, and validation boundaries.</p>
 <p>Create <code>weld-experience-engine/tests/test_synthetic_input_models.py</code>:</p>
 <pre><code>
 import pytest
@@ -856,10 +985,11 @@ git add weld-experience-engine/weldcore/knowledge/synthetic_input.py \
 git commit -m &quot;feat(knowledge): add synthetic v2 input models&quot;
 </code></pre>
 <hr>
-<h2 id="task-2:-input-spec-manifests">Task 2: Input-Spec Manifests</h2>
+<h2 id="task-3:-input-spec-manifests">Task 3: Input-Spec Manifests</h2>
 <p><strong>Files:</strong></p>
-<ul><li>Create: <code>docs/data-foundation/manifests/task_taxonomy.json</code></li><li>Create: <code>docs/data-foundation/manifests/procedure_fields.json</code></li><li>Create: <code>docs/data-foundation/manifests/synthetic_v2_inputs.json</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code></li></ul>
+<ul><li>Create: <code>docs/data-foundation/manifests/task_taxonomy.json</code></li><li>Create: <code>docs/data-foundation/manifests/procedure_fields.json</code></li><li>Create: <code>docs/data-foundation/manifests/synthetic_v2_inputs.json</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code></li><li>Read first: <code>docs/data-foundation/research/synthetic_v2_input_research.md</code></li><li>Read first: <code>docs/data-foundation/research/synthetic_v2_field_gap_matrix.csv</code></li></ul>
 <ul><li>[ ] <strong>Step 1: Write failing manifest loader tests</strong></li></ul>
+<p>Do not create manifests from memory. Derive field groups, source ids, assumption fields, and validation statuses from the Task 1 research outputs.</p>
 <p>Append to <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code>:</p>
 <pre><code>
 from weldcore.knowledge.synthetic_manifest import load_synthetic_input_foundation
@@ -1177,7 +1307,7 @@ git add docs/data-foundation/manifests/task_taxonomy.json \
 git commit -m &quot;feat(knowledge): add synthetic v2 input manifests&quot;
 </code></pre>
 <hr>
-<h2 id="task-3:-synthetic-input-report">Task 3: Synthetic Input Report</h2>
+<h2 id="task-4:-synthetic-input-report">Task 4: Synthetic Input Report</h2>
 <p><strong>Files:</strong></p>
 <ul><li>Create: <code>weld-experience-engine/weldcore/report/synthetic_v2_input_report.py</code></li><li>Create: <code>docs/data-foundation/reports/synthetic_v2_input_evidence.md</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_v2_input_report.py</code></li></ul>
 <ul><li>[ ] <strong>Step 1: Write failing report tests</strong></li></ul>
@@ -1435,7 +1565,7 @@ git commit -m &quot;feat(report): add synthetic v2 input evidence report&quot;
 </code></pre>
 <p>Do not commit <code>weld-experience-engine/synthetic_v2_input_report_out/</code> unless the repo already tracks equivalent runtime outputs.</p>
 <hr>
-<h2 id="task-4:-documentation-updates">Task 4: Documentation Updates</h2>
+<h2 id="task-5:-documentation-updates">Task 5: Documentation Updates</h2>
 <p><strong>Files:</strong></p>
 <ul><li>Modify: <code>README.md</code></li><li>Modify: <code>details.md</code></li><li>Modify: <code>weld-experience-engine/README.md</code></li></ul>
 <ul><li>[ ] <strong>Step 1: Update root README</strong></li></ul>
@@ -1470,7 +1600,7 @@ git add README.md details.md weld-experience-engine/README.md
 git commit -m &quot;docs: document synthetic v2 input gate&quot;
 </code></pre>
 <hr>
-<h2 id="task-5:-end-to-end-verification">Task 5: End-to-End Verification</h2>
+<h2 id="task-6:-end-to-end-verification">Task 6: End-to-End Verification</h2>
 <p><strong>Files:</strong></p>
 <ul><li>Read only unless verification exposes a bug.</li></ul>
 <ul><li>[ ] <strong>Step 1: Run full tests</strong></li></ul>
@@ -1517,7 +1647,7 @@ git commit -m &quot;docs: refresh synthetic v2 input evidence&quot;
 </code></pre>
 <p>If nothing changed, commit nothing.</p>
 <hr>
-<h2 id="task-6:-completion-handoff">Task 6: Completion Handoff</h2>
+<h2 id="task-7:-completion-handoff">Task 7: Completion Handoff</h2>
 <p><strong>Files:</strong></p>
 <ul><li>Read only.</li></ul>
 <ul><li>[ ] <strong>Step 1: Summarize implemented artifacts</strong></li></ul>

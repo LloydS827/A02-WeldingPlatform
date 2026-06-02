@@ -468,10 +468,11 @@ SyntheticSkillDatasetV2PlanInput
 
 ## 14. 后续实施计划入口
 
-用户审核本 spec 后，下一步应进入 implementation plan。计划建议拆成 5 个任务：
+用户审核本 spec 后，下一步应进入 implementation plan。计划建议拆成 6 个任务：
 
-1. 新增 `TaskTaxonomy`、`WeldProcedureFieldSet`、`EvidenceBinding` 数据模型。
-2. 从现有资料底座 manifest 派生第一版输入规范 manifest。
-3. 新增 `SimulationInputSpec` loader 和 gate。
-4. 新增 synthetic v2 输入报告。
-5. 更新 `details.md` 和 README，说明当前完成的是输入规范，不是 synthetic v2 批量生成。
+1. 先完成 `SyntheticSkillDataset v2` 输入规范前置调研，汇总船舶焊接任务分类、焊缝/接头/位置/坡口/层道、工艺参数、质量缺陷词汇、公开数据集 schema 和仿真路线约束，并形成字段差距矩阵。
+2. 新增 `TaskTaxonomy`、`WeldProcedureFieldSet`、`EvidenceBinding` 数据模型。
+3. 从现有资料底座 manifest 和前置调研产物派生第一版输入规范 manifest。
+4. 新增 `SimulationInputSpec` loader 和 gate。
+5. 新增 synthetic v2 输入报告。
+6. 更新 `details.md` 和 README，说明当前完成的是输入规范，不是 synthetic v2 批量生成。

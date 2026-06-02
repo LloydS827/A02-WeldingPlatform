@@ -1,15 +1,38 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SyntheticSkillDataset v2 输入规范与船舶焊接任务分类框架</title><style>:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;max-width:1320px;margin:0 auto;padding:28px}nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto}nav h2{font-size:15px;margin:0 0 10px;color:var(--muted)}nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0}main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06)}h1{font-size:34px;line-height:1.18;margin:0 0 18px}h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px}h3{font-size:19px;margin-top:26px}code{background:var(--soft);padding:.12em .35em;border-radius:4px}pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55}pre code{background:transparent;padding:0}table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto}th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}th{background:#f0f4f9;text-align:left}hr{border:0;border-top:1px solid var(--line);margin:28px 0}a{color:var(--accent)}@media(max-width:900px){.layout{display:block;padding:14px}nav{position:relative;top:0;margin-bottom:14px}main{padding:28px 20px}h1{font-size:28px}}</style></head><body><div class="layout"><nav><h2>目录</h2><a href="#0.-结论先行">0. 结论先行</a>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SyntheticSkillDataset v2 输入规范与船舶焊接任务分类框架</title><style>:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;max-width:1380px;margin:0 auto;padding:28px}nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto}nav h2{font-size:15px;margin:0 0 10px;color:var(--muted)}nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0}main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06)}h1{font-size:34px;line-height:1.18;margin:0 0 18px}h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px}h3{font-size:19px;margin-top:26px}code{background:var(--soft);padding:.12em .35em;border-radius:4px}pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55}pre code{background:transparent;padding:0}table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto}th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}th{background:#f0f4f9;text-align:left}hr{border:0;border-top:1px solid var(--line);margin:28px 0}a{color:var(--accent)}@media(max-width:900px){.layout{display:block;padding:14px}nav{position:relative;top:0;margin-bottom:14px}main{padding:28px 20px}h1{font-size:28px}}</style></head><body><div class="layout"><nav><h2>目录</h2><a href="#0.-结论先行">0. 结论先行</a>
 <a href="#1.-已确认关键决策">1. 已确认关键决策</a>
 <a href="#2.-背景与当前缺口">2. 背景与当前缺口</a>
 <a href="#3.-范围边界">3. 范围边界</a>
+<a href="#3.1-本阶段做什么">3.1 本阶段做什么</a>
+<a href="#3.2-本阶段不做什么">3.2 本阶段不做什么</a>
 <a href="#4.-方案取舍">4. 方案取舍</a>
+<a href="#4.1-方案-a：轻量任务字段表">4.1 方案 A：轻量任务字段表</a>
+<a href="#4.2-方案-b：任务分类框架-+-字段来源映射">4.2 方案 B：任务分类框架 + 字段来源映射</a>
+<a href="#4.3-方案-c：准-wps/pqr-输入模板">4.3 方案 C：准 WPS/PQR 输入模板</a>
 <a href="#5.-船舶焊接任务分类框架">5. 船舶焊接任务分类框架</a>
+<a href="#5.1-第一版任务族">5.1 第一版任务族</a>
 <a href="#6.-行业标准关键字段集">6. 行业标准关键字段集</a>
+<a href="#6.1-任务与接头字段">6.1 任务与接头字段</a>
+<a href="#6.2-几何与材料字段">6.2 几何与材料字段</a>
+<a href="#6.3-工艺参数字段">6.3 工艺参数字段</a>
+<a href="#6.4-运动与姿态字段">6.4 运动与姿态字段</a>
+<a href="#6.5-质量与检查字段">6.5 质量与检查字段</a>
 <a href="#7.-字段来源与证据角色">7. 字段来源与证据角色</a>
+<a href="#7.1-证据角色">7.1 证据角色</a>
+<a href="#7.2-绑定规则">7.2 绑定规则</a>
+<a href="#7.3-最小结构">7.3 最小结构</a>
 <a href="#8.-仿真生成输入规范">8. 仿真生成输入规范</a>
+<a href="#8.1-顶层字段">8.1 顶层字段</a>
+<a href="#8.2-变体规则">8.2 变体规则</a>
 <a href="#9.-第一批-synthetic-v2-任务选择">9. 第一批 synthetic v2 任务选择</a>
+<a href="#9.1-选择规则">9.1 选择规则</a>
+<a href="#9.2-第一批建议">9.2 第一批建议</a>
+<a href="#9.3-暂缓任务">9.3 暂缓任务</a>
 <a href="#10.-与现有代码和资料的关系">10. 与现有代码和资料的关系</a>
 <a href="#11.-gate-设计">11. Gate 设计</a>
+<a href="#11.1-分类-gate">11.1 分类 gate</a>
+<a href="#11.2-标准字段-gate">11.2 标准字段 gate</a>
+<a href="#11.3-来源绑定-gate">11.3 来源绑定 gate</a>
+<a href="#11.4-禁止字段-gate">11.4 禁止字段 gate</a>
 <a href="#12.-报告设计">12. 报告设计</a>
 <a href="#13.-成功标准">13. 成功标准</a>
 <a href="#14.-后续实施计划入口">14. 后续实施计划入口</a></nav><main><h1 id="syntheticskilldataset-v2-输入规范与船舶焊接任务分类框架-—-设计-spec">SyntheticSkillDataset v2 输入规范与船舶焊接任务分类框架 — 设计 Spec</h1>
@@ -269,5 +292,5 @@ SyntheticSkillDatasetV2PlanInput
 <ul><li>任务分类框架覆盖 <code>ready_for_synthetic_v2_plan</code>、<code>needs_more_sources</code>、<code>defer</code> 三类任务。</li><li>字段集覆盖行业标准和工艺文件中的关键字段。</li><li>第一批任务能从宽分类框架中被解释性选出。</li><li>所有关键字段都有来源/假设/验证状态。</li><li>质量相关字段不会被误写成真实质量结论。</li><li><code>SimulationInputSpec</code> 能直接指导后续生成器实现。</li><li>现有 <code>SkillDataset</code>、<code>WeldSkillPackage</code>、<code>TransferExperiment</code> 链路不被替换。</li><li>本阶段仍排除熔池路线。</li></ul>
 <hr>
 <h2 id="14.-后续实施计划入口">14. 后续实施计划入口</h2>
-<p>用户审核本 spec 后，下一步应进入 implementation plan。计划建议拆成 5 个任务：</p>
-<ol><li>新增 <code>TaskTaxonomy</code>、<code>WeldProcedureFieldSet</code>、<code>EvidenceBinding</code> 数据模型。</li><li>从现有资料底座 manifest 派生第一版输入规范 manifest。</li><li>新增 <code>SimulationInputSpec</code> loader 和 gate。</li><li>新增 synthetic v2 输入报告。</li><li>更新 <code>details.md</code> 和 README，说明当前完成的是输入规范，不是 synthetic v2 批量生成。</li></ol></main></div></body></html>
+<p>用户审核本 spec 后，下一步应进入 implementation plan。计划建议拆成 6 个任务：</p>
+<ol><li>先完成 <code>SyntheticSkillDataset v2</code> 输入规范前置调研，汇总船舶焊接任务分类、焊缝/接头/位置/坡口/层道、工艺参数、质量缺陷词汇、公开数据集 schema 和仿真路线约束，并形成字段差距矩阵。</li><li>新增 <code>TaskTaxonomy</code>、<code>WeldProcedureFieldSet</code>、<code>EvidenceBinding</code> 数据模型。</li><li>从现有资料底座 manifest 和前置调研产物派生第一版输入规范 manifest。</li><li>新增 <code>SimulationInputSpec</code> loader 和 gate。</li><li>新增 synthetic v2 输入报告。</li><li>更新 <code>details.md</code> 和 README，说明当前完成的是输入规范，不是 synthetic v2 批量生成。</li></ol></main></div></body></html>
