@@ -187,9 +187,9 @@ uv run python -m weldcore.report.data_foundation_report
 
 ## 下一步计划
 
-### 第一优先级：基于资料底座的 `SyntheticSkillDataset v2` 小批量设计
+### 第一优先级：`SyntheticSkillDataset v2` 输入规范与小批量设计
 
-先使用已经通过资料底座 gate 的来源、公开数据集、字段覆盖矩阵和任务证据映射，选择少量 ready 任务进入 `SyntheticSkillDataset v2` 的样本设计。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
+先使用已经通过资料底座 gate 的来源、公开数据集、字段覆盖矩阵和任务证据映射，建立面向 `SyntheticSkillDataset v2` 的输入规范。这个输入规范需要先定义船舶焊接任务分类框架、行业标准关键字段、字段来源和仿真假设边界，再选择少量 ready 任务进入样本设计。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
 
 ### 第二优先级：继续收敛船舶焊接任务族
 
@@ -223,6 +223,7 @@ uv run python -m weldcore.report.data_foundation_report
 - `docs/plans/2026-05-31-焊接技能迁移MVP实施计划.md`：技能迁移 MVP 实施计划。
 - `docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.md`：仿真优先路线设计。
 - `docs/superpowers/plans/2026-06-01-仿真优先船舶焊接数据底座实施计划.md`：仿真优先知识闸门实施计划。
+- `docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md`：`SyntheticSkillDataset v2` 输入规范与船舶焊接任务分类框架设计。
 - `docs/data-foundation/`：资料底座中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
 - `weld-experience-engine/data_foundation_report_out/`：资料底座报告命令生成的运行时输出目录。
 - `docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。
