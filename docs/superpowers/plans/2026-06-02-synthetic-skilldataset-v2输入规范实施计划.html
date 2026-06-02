@@ -1,0 +1,1531 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SyntheticSkillDataset v2 输入规范 Implementation Plan</title><style>:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;max-width:1380px;margin:0 auto;padding:28px}nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto}nav h2{font-size:15px;margin:0 0 10px;color:var(--muted)}nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0}main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06)}h1{font-size:34px;line-height:1.18;margin:0 0 18px}h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px}h3{font-size:19px;margin-top:26px}code{background:var(--soft);padding:.12em .35em;border-radius:4px}pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55}pre code{background:transparent;padding:0}table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto}th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}th{background:#f0f4f9;text-align:left}hr{border:0;border-top:1px solid var(--line);margin:28px 0}a{color:var(--accent)}@media(max-width:900px){.layout{display:block;padding:14px}nav{position:relative;top:0;margin-bottom:14px}main{padding:28px 20px}h1{font-size:28px}}</style></head><body><div class="layout"><nav><h2>目录</h2><a href="#0.-scope-boundary">0. Scope Boundary</a>
+<a href="#1.-file-structure">1. File Structure</a>
+<a href="#data-foundation-manifests">Data Foundation Manifests</a>
+<a href="#python-knowledge-layer">Python Knowledge Layer</a>
+<a href="#report">Report</a>
+<a href="#tests">Tests</a>
+<a href="#documentation">Documentation</a>
+<a href="#2.-success-criteria">2. Success Criteria</a>
+<a href="#task-0:-baseline-safety-check">Task 0: Baseline Safety Check</a>
+<a href="#codex/synthetic-v2-input-spec">codex/synthetic-v2-input-spec</a>
+<a href="#task-1:-synthetic-input-data-models">Task 1: Synthetic Input Data Models</a>
+<a href="#task-2:-input-spec-manifests">Task 2: Input-Spec Manifests</a>
+<a href="#task-3:-synthetic-input-report">Task 3: Synthetic Input Report</a>
+<a href="#task-4:-documentation-updates">Task 4: Documentation Updates</a>
+<a href="#task-5:-end-to-end-verification">Task 5: End-to-End Verification</a>
+<a href="#task-6:-completion-handoff">Task 6: Completion Handoff</a></nav><main><h1 id="syntheticskilldataset-v2-输入规范-implementation-plan">SyntheticSkillDataset v2 输入规范 Implementation Plan</h1>
+<p>&gt; <strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+<p><strong>Goal:</strong> Build an executable input-spec layer that turns shipbuilding welding task taxonomy, industry-standard procedure fields, evidence bindings, and simulation input specs into gates and reports for the next <code>SyntheticSkillDataset v2</code> generation step.</p>
+<p><strong>Architecture:</strong> Extend the existing manifest-first data foundation instead of replacing it. Add focused knowledge models, JSON manifest loaders, validation gates, and one report command; stop before generating synthetic samples. Keep all real-quality, WPS/PQR, and molten-pool boundaries explicit.</p>
+<p><strong>Tech Stack:</strong> Python 3.10+, dataclasses, enum, json/csv/pathlib, pytest, existing <code>weldcore.knowledge</code> and <code>weldcore.report</code> conventions, Markdown/HTML docs.</p>
+<hr>
+<h2 id="0.-scope-boundary">0. Scope Boundary</h2>
+<p>Design spec:</p>
+<ul><li><code>docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md</code></li><li>HTML reading copy: <code>docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.html</code></li></ul>
+<p>This plan implements the <strong>input-spec layer only</strong>.</p>
+<p>It does:</p>
+<ul><li>Create <code>TaskTaxonomyEntry</code>, <code>WeldProcedureField</code>, <code>EvidenceBinding</code>, <code>SimulationInputSpec</code>, and <code>SyntheticSkillDatasetV2PlanInput</code>.</li><li>Create machine-readable manifests for task taxonomy, procedure fields, and first-batch simulation inputs.</li><li>Load those manifests into executable Python objects.</li><li>Enforce taxonomy, required-field, evidence-binding, assumption, real-validation, and forbidden-field gates.</li><li>Generate a <code>synthetic_v2_input_report</code>.</li><li>Update project docs to say this completes the input specification, not bulk synthetic dataset generation.</li></ul>
+<p>It does not:</p>
+<ul><li>Generate <code>SkillDataset</code> samples.</li><li>Implement simulator geometry or trajectories.</li><li>Download public datasets.</li><li>Implement WPS/PQR, real robot control, welding machine control, or real quality validation.</li><li>Add molten-pool, weld-pool, or in-process closed-loop fields.</li></ul>
+<hr>
+<h2 id="1.-file-structure">1. File Structure</h2>
+<h3 id="data-foundation-manifests">Data Foundation Manifests</h3>
+<ul><li>Create: <code>docs/data-foundation/manifests/task_taxonomy.json</code></li></ul>
+<p>- Wide shipbuilding welding task taxonomy.</p>
+<ul><li>Create: <code>docs/data-foundation/manifests/procedure_fields.json</code></li></ul>
+<p>- Industry-standard key procedure field definitions.</p>
+<ul><li>Create: <code>docs/data-foundation/manifests/synthetic_v2_inputs.json</code></li></ul>
+<p>- First-batch simulation input specs and evidence bindings.</p>
+<h3 id="python-knowledge-layer">Python Knowledge Layer</h3>
+<ul><li>Create: <code>weld-experience-engine/weldcore/knowledge/synthetic_input.py</code></li></ul>
+<p>- Data models and validation gates.</p>
+<ul><li>Create: <code>weld-experience-engine/weldcore/knowledge/synthetic_manifest.py</code></li></ul>
+<p>- Manifest loader for the new input-spec layer.</p>
+<ul><li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li></ul>
+<p>- Export new models and loader.</p>
+<h3 id="report">Report</h3>
+<ul><li>Create: <code>weld-experience-engine/weldcore/report/synthetic_v2_input_report.py</code></li></ul>
+<p>- Generates JSON/CSV/Markdown evidence artifacts.</p>
+<h3 id="tests">Tests</h3>
+<ul><li>Create: <code>weld-experience-engine/tests/test_synthetic_input_models.py</code></li><li>Create: <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code></li><li>Create: <code>weld-experience-engine/tests/test_synthetic_v2_input_report.py</code></li></ul>
+<h3 id="documentation">Documentation</h3>
+<ul><li>Modify: <code>README.md</code></li><li>Modify: <code>details.md</code></li><li>Modify: <code>weld-experience-engine/README.md</code></li><li>Create/update report copies under <code>docs/data-foundation/reports/</code>.</li></ul>
+<hr>
+<h2 id="2.-success-criteria">2. Success Criteria</h2>
+<p>Complete means all of these are true:</p>
+<ul><li><code>task_taxonomy.json</code> contains at least 7 task families:</li></ul>
+<p>- 3 with <code>readiness = &quot;ready_for_synthetic_v2_plan&quot;</code>. - at least 1 with <code>readiness = &quot;needs_more_sources&quot;</code>. - at least 3 with <code>readiness = &quot;defer&quot;</code>.</p>
+<ul><li><code>procedure_fields.json</code> covers at least these field groups:</li></ul>
+<p>- task/joint fields. - geometry/material fields. - process parameter fields. - motion/posture fields. - quality/inspection fields.</p>
+<ul><li>Each <code>SimulationInputSpec</code> references an existing taxonomy entry with <code>ready_for_synthetic_v2_plan</code>.</li><li>First-batch inputs exist for:</li></ul>
+<p>- <code>stiffened-panel-fillet</code> - <code>panel-butt</code> - <code>micro-panel-web-bulkhead</code></p>
+<ul><li>Every required key field has at least one <code>EvidenceBinding</code>.</li><li>Metadata/index fields such as <code>input_id</code>, <code>taxonomy_ref</code>, and <code>evidence_bindings</code> do not require self-binding.</li><li>Every <code>simulation_assumption</code> appears in the report.</li><li>Every quality-related input either uses public label vocabulary, simulation score placeholder, or <code>requires_real_validation_later</code>.</li><li>Gate rejects any current-stage JSON/CSV field containing <code>熔池</code>, <code>molten_pool</code>, <code>molten pool</code>, <code>weld_pool</code>, or <code>weld pool</code>.</li><li>Report outputs include:</li></ul>
+<p>- <code>synthetic_v2_input_report_out/task_taxonomy.json</code> - <code>synthetic_v2_input_report_out/procedure_fields.json</code> - <code>synthetic_v2_input_report_out/simulation_inputs.json</code> - <code>synthetic_v2_input_report_out/evidence_bindings.csv</code> - <code>synthetic_v2_input_report_out/evidence.md</code></p>
+<ul><li>Committed report copies are refreshed under:</li></ul>
+<p>- <code>docs/data-foundation/reports/synthetic_v2_input_evidence.md</code></p>
+<ul><li>README and <code>details.md</code> say this completes the input-spec layer, not <code>SyntheticSkillDataset v2</code> bulk generation.</li><li>Commands pass:</li></ul>
+<p>- <code>cd weld-experience-engine &amp;&amp; uv run pytest -q</code> - <code>cd weld-experience-engine &amp;&amp; uv run python -m weldcore.report.synthetic_v2_input_report</code> - Existing report commands still pass: - <code>uv run python -m weldcore.report.generate</code> - <code>uv run python -m weldcore.report.mvp_report</code> - <code>uv run python -m weldcore.report.scenario_report</code> - <code>uv run python -m weldcore.report.data_foundation_report</code></p>
+<hr>
+<h2 id="task-0:-baseline-safety-check">Task 0: Baseline Safety Check</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Read only.</li></ul>
+<ul><li>[ ] <strong>Step 1: Confirm branch and worktree</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git status --short --branch
+</code></pre>
+<p>Expected:</p>
+<pre><code>
+## codex/synthetic-v2-input-spec
+</code></pre>
+<p>If unrelated user changes exist, do not revert them. Work around them or stop only if they block the task.</p>
+<ul><li>[ ] <strong>Step 2: Confirm uv is available</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+command -v uv || true
+</code></pre>
+<p>Expected: a path such as <code>/Users/lloyd/.local/bin/uv</code>.</p>
+<p>If <code>uv</code> is unavailable, use fallback commands with <code>python -m pytest</code> and <code>python -m weldcore...</code>, and state that fallback clearly.</p>
+<ul><li>[ ] <strong>Step 3: Run baseline tests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest -q
+</code></pre>
+<p>Expected: all tests pass.</p>
+<ul><li>[ ] <strong>Step 4: Commit nothing</strong></li></ul>
+<p>No commit for this task.</p>
+<hr>
+<h2 id="task-1:-synthetic-input-data-models">Task 1: Synthetic Input Data Models</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Create: <code>weld-experience-engine/weldcore/knowledge/synthetic_input.py</code></li><li>Modify: <code>weld-experience-engine/weldcore/knowledge/__init__.py</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_models.py</code></li></ul>
+<ul><li>[ ] <strong>Step 1: Write failing model tests</strong></li></ul>
+<p>Create <code>weld-experience-engine/tests/test_synthetic_input_models.py</code>:</p>
+<pre><code>
+import pytest
+
+from weldcore.knowledge.synthetic_input import (
+    EvidenceBinding,
+    SyntheticEvidenceRole,
+    SyntheticReadiness,
+    SimulationInputSpec,
+    SyntheticSkillDatasetV2PlanInput,
+    SyntheticInputFoundation,
+    TaskTaxonomyEntry,
+    SyntheticValueStatus,
+    WeldProcedureField,
+)
+
+
+def test_task_taxonomy_entry_serializes_readiness():
+    entry = TaskTaxonomyEntry(
+        family_id=&quot;stiffened-panel-fillet&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;stiffener-to-panel&quot;,
+        joint_type=&quot;fillet&quot;,
+        weld_position=&quot;horizontal&quot;,
+        groove_geometry=&quot;none&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;First-batch candidate.&quot;,
+    )
+
+    data = entry.to_dict()
+
+    assert data[&quot;readiness&quot;] == &quot;ready_for_synthetic_v2_plan&quot;
+    assert data[&quot;joint_type&quot;] == &quot;fillet&quot;
+
+
+def test_plan_input_records_first_batch_and_deferred_families():
+    plan_input = SyntheticSkillDatasetV2PlanInput(
+        plan_id=&quot;synthetic-v2-plan-input-001&quot;,
+        first_batch_input_ids=[
+            &quot;input-stiffened-panel-fillet-001&quot;,
+            &quot;input-panel-butt-001&quot;,
+            &quot;input-micro-panel-web-bulkhead-001&quot;,
+        ],
+        deferred_family_ids=[
+            &quot;double-bottom-inner-fillet&quot;,
+            &quot;vertical-overhead-hull-weld&quot;,
+        ],
+        notes=[
+            &quot;Input-spec layer only; bulk sample generation is a later plan.&quot;
+        ],
+    )
+
+    data = plan_input.to_dict()
+
+    assert data[&quot;first_batch_input_ids&quot;][0] == &quot;input-stiffened-panel-fillet-001&quot;
+    assert &quot;double-bottom-inner-fillet&quot; in data[&quot;deferred_family_ids&quot;]
+
+
+def test_simulation_input_requires_key_field_bindings():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    fields = [
+        WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True),
+        WeldProcedureField(&quot;weld_position&quot;, &quot;task_joint&quot;, required=True),
+        WeldProcedureField(&quot;current&quot;, &quot;process&quot;, required=True),
+    ]
+    input_spec = SimulationInputSpec(
+        input_id=&quot;input-panel-butt-001&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;, &quot;weld_position&quot;: &quot;flat&quot;, &quot;current&quot;: &quot;unknown&quot;},
+        geometry_spec={&quot;groove_geometry&quot;: &quot;v_groove_placeholder&quot;},
+        motion_spec={&quot;motion_template&quot;: &quot;straight&quot;},
+        process_spec={&quot;current&quot;: &quot;unknown&quot;},
+        quality_spec={&quot;quality_label&quot;: &quot;requires_real_validation_later&quot;},
+        variant_policy={&quot;length_variation&quot;: [100.0, 150.0]},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Task field constraint.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.weld_position&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Position field constraint.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.current&quot;,
+                source_id=&quot;standard-aws-swps-public-page&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.REQUIRES_REAL_VALIDATION_LATER,
+                notes=&quot;Do not treat as project WPS.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;geometry_spec.groove_geometry&quot;,
+                source_id=&quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+                evidence_role=SyntheticEvidenceRole.PROJECT_INTERNAL,
+                value_status=SyntheticValueStatus.ASSUMED,
+                notes=&quot;Geometry placeholder for synthetic input.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;motion_spec.motion_template&quot;,
+                source_id=&quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.SHIPBUILDING_CASE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Motion structure reference only.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;process_spec.current&quot;,
+                source_id=&quot;standard-aws-swps-public-page&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.REQUIRES_REAL_VALIDATION_LATER,
+                notes=&quot;Process value requires later WPS validation.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;quality_spec.quality_label&quot;,
+                source_id=&quot;guide-twi-weld-defects&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.REQUIRES_REAL_VALIDATION_LATER,
+                notes=&quot;Quality label vocabulary only.&quot;,
+            ),
+        ],
+        generation_boundary=[
+            &quot;Synthetic input only; not WPS/PQR or real quality validation.&quot;
+        ],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=fields,
+        simulation_inputs=[input_spec],
+        valid_source_ids={
+            &quot;vendor-kobelco-shipbuilding-welding&quot;,
+            &quot;standard-aws-swps-public-page&quot;,
+            &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+            &quot;case-siemens-hd-hyundai-mipo-autonomous-welding&quot;,
+            &quot;guide-twi-weld-defects&quot;,
+        },
+    )
+
+    gate = foundation.validate()
+
+    assert gate.passed
+    assert gate.issues == []
+
+
+def test_gate_rejects_deferred_task_input():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;curved-spatial-complex-weld&quot;,
+        manufacturing_stage=&quot;curved_hull&quot;,
+        weld_object=&quot;curved seam&quot;,
+        joint_type=&quot;complex&quot;,
+        weld_position=&quot;multi_position&quot;,
+        groove_geometry=&quot;complex&quot;,
+        layer_pass=&quot;unknown&quot;,
+        access_context=&quot;curved_surface&quot;,
+        motion_structure=&quot;curved_seam&quot;,
+        readiness=SyntheticReadiness.DEFER,
+        modeling_difficulty=&quot;hard&quot;,
+        notes=&quot;Deferred.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;bad-input&quot;,
+        taxonomy_ref=&quot;curved-spatial-complex-weld&quot;,
+        procedure_fields={},
+        geometry_spec={},
+        motion_spec={},
+        process_spec={},
+        quality_spec={},
+        variant_policy={},
+        evidence_bindings=[],
+        generation_boundary=[],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[],
+        simulation_inputs=[input_spec],
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;not ready_for_synthetic_v2_plan&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_current_stage_pool_route_fields():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;stiffened-panel-fillet&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;stiffener-to-panel&quot;,
+        joint_type=&quot;fillet&quot;,
+        weld_position=&quot;horizontal&quot;,
+        groove_geometry=&quot;none&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;bad-pool-input&quot;,
+        taxonomy_ref=&quot;stiffened-panel-fillet&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;fillet&quot;},
+        geometry_spec={&quot;molten_pool_image&quot;: &quot;not_allowed&quot;},
+        motion_spec={},
+        process_spec={},
+        quality_spec={},
+        variant_policy={},
+        evidence_bindings=[],
+        generation_boundary=[],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[],
+        simulation_inputs=[input_spec],
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;forbidden pool-route&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_missing_business_field_binding():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;missing-business-binding&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;},
+        geometry_spec={&quot;groove_geometry&quot;: &quot;v_groove_placeholder&quot;},
+        motion_spec={},
+        process_spec={},
+        quality_spec={},
+        variant_policy={},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Task evidence.&quot;,
+            )
+        ],
+        generation_boundary=[&quot;Input-spec only.&quot;],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True)],
+        simulation_inputs=[input_spec],
+        valid_source_ids={&quot;vendor-kobelco-shipbuilding-welding&quot;},
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;missing evidence binding for geometry_spec&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_unknown_evidence_source_id():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;bad-source&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;},
+        geometry_spec={},
+        motion_spec={},
+        process_spec={},
+        quality_spec={},
+        variant_policy={},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;not-a-real-source&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Bad source.&quot;,
+            )
+        ],
+        generation_boundary=[&quot;Input-spec only.&quot;],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True)],
+        simulation_inputs=[input_spec],
+        valid_source_ids={&quot;vendor-kobelco-shipbuilding-welding&quot;},
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;unknown evidence source_id&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_quality_field_without_boundary():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;bad-quality&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;},
+        geometry_spec={},
+        motion_spec={},
+        process_spec={},
+        quality_spec={&quot;defect_label&quot;: &quot;porosity&quot;},
+        variant_policy={},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Task evidence.&quot;,
+            )
+        ],
+        generation_boundary=[&quot;Input-spec only.&quot;],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True)],
+        simulation_inputs=[input_spec],
+        valid_source_ids={&quot;vendor-kobelco-shipbuilding-welding&quot;},
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;quality fields require&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_partially_unbound_business_fields():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;partial-business-binding&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;},
+        geometry_spec={
+            &quot;groove_geometry&quot;: &quot;v_groove_placeholder&quot;,
+            &quot;plate_thickness_mm&quot;: &quot;assumed&quot;,
+        },
+        motion_spec={},
+        process_spec={},
+        quality_spec={},
+        variant_policy={},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Task evidence.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;geometry_spec.groove_geometry&quot;,
+                source_id=&quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+                evidence_role=SyntheticEvidenceRole.PROJECT_INTERNAL,
+                value_status=SyntheticValueStatus.ASSUMED,
+                notes=&quot;Geometry placeholder.&quot;,
+            ),
+        ],
+        generation_boundary=[&quot;Input-spec only.&quot;],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True)],
+        simulation_inputs=[input_spec],
+        valid_source_ids={
+            &quot;vendor-kobelco-shipbuilding-welding&quot;,
+            &quot;project-260522-shipbuilding-welding-brain-plan&quot;,
+        },
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;geometry_spec.plate_thickness_mm&quot; in issue for issue in gate.issues)
+
+
+def test_gate_rejects_mixed_quality_field_without_own_boundary():
+    taxonomy = TaskTaxonomyEntry(
+        family_id=&quot;panel-butt&quot;,
+        manufacturing_stage=&quot;panel_line&quot;,
+        weld_object=&quot;panel butt seam&quot;,
+        joint_type=&quot;butt&quot;,
+        weld_position=&quot;flat&quot;,
+        groove_geometry=&quot;v_groove_placeholder&quot;,
+        layer_pass=&quot;single_pass&quot;,
+        access_context=&quot;open_panel&quot;,
+        motion_structure=&quot;single_seam&quot;,
+        readiness=SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN,
+        modeling_difficulty=&quot;easy&quot;,
+        notes=&quot;Ready.&quot;,
+    )
+    input_spec = SimulationInputSpec(
+        input_id=&quot;mixed-quality&quot;,
+        taxonomy_ref=&quot;panel-butt&quot;,
+        procedure_fields={&quot;joint_type&quot;: &quot;butt&quot;},
+        geometry_spec={},
+        motion_spec={},
+        process_spec={},
+        quality_spec={
+            &quot;quality_label&quot;: &quot;requires_real_validation_later&quot;,
+            &quot;defect_label&quot;: &quot;porosity&quot;,
+        },
+        variant_policy={},
+        evidence_bindings=[
+            EvidenceBinding(
+                field_path=&quot;procedure_fields.joint_type&quot;,
+                source_id=&quot;vendor-kobelco-shipbuilding-welding&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.CONSTRAINED,
+                notes=&quot;Task evidence.&quot;,
+            ),
+            EvidenceBinding(
+                field_path=&quot;quality_spec.quality_label&quot;,
+                source_id=&quot;guide-twi-weld-defects&quot;,
+                evidence_role=SyntheticEvidenceRole.PUBLIC_PROCESS_REFERENCE,
+                value_status=SyntheticValueStatus.REQUIRES_REAL_VALIDATION_LATER,
+                notes=&quot;Quality boundary.&quot;,
+            ),
+        ],
+        generation_boundary=[&quot;Input-spec only.&quot;],
+    )
+    foundation = SyntheticInputFoundation(
+        task_taxonomy=[taxonomy],
+        procedure_fields=[WeldProcedureField(&quot;joint_type&quot;, &quot;task_joint&quot;, required=True)],
+        simulation_inputs=[input_spec],
+        valid_source_ids={
+            &quot;vendor-kobelco-shipbuilding-welding&quot;,
+            &quot;guide-twi-weld-defects&quot;,
+        },
+    )
+
+    gate = foundation.validate()
+
+    assert not gate.passed
+    assert any(&quot;quality_spec.defect_label&quot; in issue for issue in gate.issues)
+</code></pre>
+<ul><li>[ ] <strong>Step 2: Run tests to verify failure</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_input_models.py -v
+</code></pre>
+<p>Expected: FAIL with <code>ModuleNotFoundError</code> or import errors for <code>weldcore.knowledge.synthetic_input</code>.</p>
+<ul><li>[ ] <strong>Step 3: Implement minimal models</strong></li></ul>
+<p>Create <code>weld-experience-engine/weldcore/knowledge/synthetic_input.py</code>:</p>
+<pre><code>
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any
+
+
+FORBIDDEN_POOL_TERMS = (&quot;molten_pool&quot;, &quot;molten pool&quot;, &quot;weld_pool&quot;, &quot;weld pool&quot;, &quot;熔池&quot;)
+METADATA_FIELD_PATHS = {&quot;input_id&quot;, &quot;taxonomy_ref&quot;, &quot;evidence_bindings&quot;}
+BUSINESS_SPEC_KEYS = (&quot;geometry_spec&quot;, &quot;motion_spec&quot;, &quot;process_spec&quot;, &quot;quality_spec&quot;)
+QUALITY_KEYS = (&quot;quality_label&quot;, &quot;defect_label&quot;, &quot;inspection_reference&quot;)
+QUALITY_BOUNDARY_VALUES = (
+    &quot;public_label_vocabulary&quot;,
+    &quot;simulation_score_placeholder&quot;,
+    &quot;requires_real_validation_later&quot;,
+)
+
+
+class SyntheticReadiness(str, Enum):
+    READY_FOR_SYNTHETIC_V2_PLAN = &quot;ready_for_synthetic_v2_plan&quot;
+    NEEDS_MORE_SOURCES = &quot;needs_more_sources&quot;
+    DEFER = &quot;defer&quot;
+
+
+class SyntheticEvidenceRole(str, Enum):
+    SHIPBUILDING_CASE = &quot;shipbuilding_case&quot;
+    PUBLIC_PROCESS_REFERENCE = &quot;public_process_reference&quot;
+    PUBLIC_DATASET_SCHEMA = &quot;public_dataset_schema&quot;
+    PROJECT_INTERNAL = &quot;project_internal&quot;
+    SIMULATION_ASSUMPTION = &quot;simulation_assumption&quot;
+    SIMULATION_OUTPUT = &quot;simulation_output&quot;
+    REQUIRES_REAL_VALIDATION_LATER = &quot;requires_real_validation_later&quot;
+
+
+class SyntheticValueStatus(str, Enum):
+    CONSTRAINED = &quot;constrained&quot;
+    ASSUMED = &quot;assumed&quot;
+    GENERATED = &quot;generated&quot;
+    UNKNOWN = &quot;unknown&quot;
+    REQUIRES_REAL_VALIDATION_LATER = &quot;requires_real_validation_later&quot;
+
+
+def _jsonable(value: Any) -&gt; Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _jsonable(item) for key, item in value.items()}
+    return value
+
+
+def _has_forbidden_pool_term(value: Any) -&gt; bool:
+    text = str(value).lower()
+    return any(term in text for term in FORBIDDEN_POOL_TERMS)
+
+
+def _has_quality_boundary(value: Any) -&gt; bool:
+    text = str(value).lower()
+    return any(marker in text for marker in QUALITY_BOUNDARY_VALUES)
+
+
+def _field_paths(prefix: str, value: dict[str, Any]) -&gt; set[str]:
+    return {f&quot;{prefix}.{key}&quot; for key in value}
+
+
+@dataclass(frozen=True)
+class TaskTaxonomyEntry:
+    family_id: str
+    manufacturing_stage: str
+    weld_object: str
+    joint_type: str
+    weld_position: str
+    groove_geometry: str
+    layer_pass: str
+    access_context: str
+    motion_structure: str
+    readiness: SyntheticReadiness
+    modeling_difficulty: str
+    notes: str
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class WeldProcedureField:
+    field_name: str
+    field_group: str
+    required: bool
+    description: str = &quot;&quot;
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class EvidenceBinding:
+    field_path: str
+    source_id: str
+    evidence_role: SyntheticEvidenceRole
+    value_status: SyntheticValueStatus
+    notes: str
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class SimulationInputSpec:
+    input_id: str
+    taxonomy_ref: str
+    procedure_fields: dict[str, Any]
+    geometry_spec: dict[str, Any]
+    motion_spec: dict[str, Any]
+    process_spec: dict[str, Any]
+    quality_spec: dict[str, Any]
+    variant_policy: dict[str, Any]
+    evidence_bindings: list[EvidenceBinding]
+    generation_boundary: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return {key: _jsonable(value) for key, value in asdict(self).items()}
+
+    def bound_field_paths(self) -&gt; set[str]:
+        return {binding.field_path for binding in self.evidence_bindings}
+
+
+@dataclass(frozen=True)
+class SyntheticSkillDatasetV2PlanInput:
+    plan_id: str
+    first_batch_input_ids: list[str]
+    deferred_family_ids: list[str]
+    notes: list[str]
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class SyntheticInputGateResult:
+    passed: bool
+    issues: list[str]
+
+
+@dataclass
+class SyntheticInputFoundation:
+    task_taxonomy: list[TaskTaxonomyEntry]
+    procedure_fields: list[WeldProcedureField]
+    simulation_inputs: list[SimulationInputSpec]
+    valid_source_ids: set[str] | None = None
+
+    def validate(self) -&gt; SyntheticInputGateResult:
+        issues: list[str] = []
+        taxonomy_by_id = {entry.family_id: entry for entry in self.task_taxonomy}
+        required_fields = {field.field_name for field in self.procedure_fields if field.required}
+
+        for input_spec in self.simulation_inputs:
+            task = taxonomy_by_id.get(input_spec.taxonomy_ref)
+            if task is None:
+                issues.append(f&quot;{input_spec.input_id}: unknown taxonomy_ref {input_spec.taxonomy_ref}&quot;)
+            elif task.readiness != SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN:
+                issues.append(f&quot;{input_spec.input_id}: {task.family_id} is not ready_for_synthetic_v2_plan&quot;)
+
+            if _has_forbidden_pool_term(input_spec.to_dict()):
+                issues.append(f&quot;{input_spec.input_id}: forbidden pool-route field is out of scope&quot;)
+
+            bound = input_spec.bound_field_paths()
+            for binding in input_spec.evidence_bindings:
+                if self.valid_source_ids is not None and binding.source_id not in self.valid_source_ids:
+                    issues.append(
+                        f&quot;{input_spec.input_id}: unknown evidence source_id {binding.source_id}&quot;
+                    )
+
+            for field_name in required_fields:
+                if field_name in METADATA_FIELD_PATHS:
+                    continue
+                if field_name not in input_spec.procedure_fields:
+                    issues.append(f&quot;{input_spec.input_id}: missing required procedure field {field_name}&quot;)
+                    continue
+                field_path = f&quot;procedure_fields.{field_name}&quot;
+                if field_path not in bound:
+                    issues.append(f&quot;{input_spec.input_id}: missing evidence binding for {field_path}&quot;)
+
+            for spec_key in BUSINESS_SPEC_KEYS:
+                value = getattr(input_spec, spec_key)
+                for field_path in _field_paths(spec_key, value):
+                    if field_path not in bound:
+                        issues.append(f&quot;{input_spec.input_id}: missing evidence binding for {field_path}&quot;)
+
+            binding_by_path = {binding.field_path: binding for binding in input_spec.evidence_bindings}
+            for key, value in input_spec.quality_spec.items():
+                if key not in QUALITY_KEYS:
+                    continue
+                field_path = f&quot;quality_spec.{key}&quot;
+                binding = binding_by_path.get(field_path)
+                if not _has_quality_boundary(value) and (
+                    binding is None
+                    or binding.value_status != SyntheticValueStatus.REQUIRES_REAL_VALIDATION_LATER
+                ):
+                    issues.append(f&quot;{input_spec.input_id}: quality fields require boundary for {field_path}&quot;)
+
+        return SyntheticInputGateResult(not issues, issues)
+</code></pre>
+<ul><li>[ ] <strong>Step 4: Export models</strong></li></ul>
+<p>Modify <code>weld-experience-engine/weldcore/knowledge/__init__.py</code> to export the new types.</p>
+<p>Minimal acceptable content:</p>
+<pre><code>
+from .synthetic_input import (
+    EvidenceBinding,
+    SyntheticEvidenceRole,
+    SyntheticReadiness,
+    SimulationInputSpec,
+    SyntheticInputFoundation,
+    SyntheticInputGateResult,
+    SyntheticSkillDatasetV2PlanInput,
+    TaskTaxonomyEntry,
+    SyntheticValueStatus,
+    WeldProcedureField,
+)
+</code></pre>
+<p>If the file already exports other symbols, add these imports without removing existing exports.</p>
+<ul><li>[ ] <strong>Step 5: Run tests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_input_models.py -v
+</code></pre>
+<p>Expected: PASS.</p>
+<ul><li>[ ] <strong>Step 6: Commit</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git add weld-experience-engine/weldcore/knowledge/synthetic_input.py \
+  weld-experience-engine/weldcore/knowledge/__init__.py \
+  weld-experience-engine/tests/test_synthetic_input_models.py
+git commit -m &quot;feat(knowledge): add synthetic v2 input models&quot;
+</code></pre>
+<hr>
+<h2 id="task-2:-input-spec-manifests">Task 2: Input-Spec Manifests</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Create: <code>docs/data-foundation/manifests/task_taxonomy.json</code></li><li>Create: <code>docs/data-foundation/manifests/procedure_fields.json</code></li><li>Create: <code>docs/data-foundation/manifests/synthetic_v2_inputs.json</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code></li></ul>
+<ul><li>[ ] <strong>Step 1: Write failing manifest loader tests</strong></li></ul>
+<p>Append to <code>weld-experience-engine/tests/test_synthetic_input_manifests.py</code>:</p>
+<pre><code>
+from weldcore.knowledge.synthetic_manifest import load_synthetic_input_foundation
+from weldcore.knowledge.synthetic_input import SyntheticReadiness
+
+
+def test_manifest_loads_expected_task_counts():
+    foundation = load_synthetic_input_foundation()
+
+    readiness_counts = {}
+    for entry in foundation.task_taxonomy:
+        readiness_counts[entry.readiness] = readiness_counts.get(entry.readiness, 0) + 1
+
+    assert len(foundation.task_taxonomy) &gt;= 7
+    assert readiness_counts[SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN] &gt;= 3
+    assert readiness_counts[SyntheticReadiness.NEEDS_MORE_SOURCES] &gt;= 1
+    assert readiness_counts[SyntheticReadiness.DEFER] &gt;= 3
+
+
+def test_manifest_first_batch_inputs_pass_gate():
+    foundation = load_synthetic_input_foundation()
+
+    gate = foundation.validate()
+
+    assert gate.passed, gate.issues
+    assert {item.taxonomy_ref for item in foundation.simulation_inputs} == {
+        &quot;stiffened-panel-fillet&quot;,
+        &quot;panel-butt&quot;,
+        &quot;micro-panel-web-bulkhead&quot;,
+    }
+
+
+def test_manifest_includes_procedure_field_groups():
+    foundation = load_synthetic_input_foundation()
+
+    groups = {field.field_group for field in foundation.procedure_fields}
+
+    assert {
+        &quot;task_joint&quot;,
+        &quot;geometry_material&quot;,
+        &quot;process&quot;,
+        &quot;motion_posture&quot;,
+        &quot;quality_inspection&quot;,
+    }.issubset(groups)
+</code></pre>
+<ul><li>[ ] <strong>Step 2: Run tests to verify failure</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_input_manifests.py -v
+</code></pre>
+<p>Expected: FAIL with import error or missing manifest loader.</p>
+<ul><li>[ ] <strong>Step 3: Create task taxonomy manifest</strong></li></ul>
+<p>Create <code>docs/data-foundation/manifests/task_taxonomy.json</code> with at least:</p>
+<pre><code>
+[
+  {
+    &quot;family_id&quot;: &quot;stiffened-panel-fillet&quot;,
+    &quot;manufacturing_stage&quot;: &quot;panel_line&quot;,
+    &quot;weld_object&quot;: &quot;stiffener-to-panel&quot;,
+    &quot;joint_type&quot;: &quot;fillet&quot;,
+    &quot;weld_position&quot;: &quot;horizontal&quot;,
+    &quot;groove_geometry&quot;: &quot;none&quot;,
+    &quot;layer_pass&quot;: &quot;single_pass&quot;,
+    &quot;access_context&quot;: &quot;open_panel&quot;,
+    &quot;motion_structure&quot;: &quot;single_seam&quot;,
+    &quot;readiness&quot;: &quot;ready_for_synthetic_v2_plan&quot;,
+    &quot;modeling_difficulty&quot;: &quot;easy&quot;,
+    &quot;notes&quot;: &quot;First-batch panel line fillet input.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;panel-butt&quot;,
+    &quot;manufacturing_stage&quot;: &quot;panel_line&quot;,
+    &quot;weld_object&quot;: &quot;panel butt seam&quot;,
+    &quot;joint_type&quot;: &quot;butt&quot;,
+    &quot;weld_position&quot;: &quot;flat&quot;,
+    &quot;groove_geometry&quot;: &quot;v_groove_placeholder&quot;,
+    &quot;layer_pass&quot;: &quot;single_pass&quot;,
+    &quot;access_context&quot;: &quot;open_panel&quot;,
+    &quot;motion_structure&quot;: &quot;single_seam&quot;,
+    &quot;readiness&quot;: &quot;ready_for_synthetic_v2_plan&quot;,
+    &quot;modeling_difficulty&quot;: &quot;easy&quot;,
+    &quot;notes&quot;: &quot;First-batch simplified shipbuilding panel butt input.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;micro-panel-web-bulkhead&quot;,
+    &quot;manufacturing_stage&quot;: &quot;subassembly&quot;,
+    &quot;weld_object&quot;: &quot;micro-panel web and bulkhead seams&quot;,
+    &quot;joint_type&quot;: &quot;fillet&quot;,
+    &quot;weld_position&quot;: &quot;multi_position&quot;,
+    &quot;groove_geometry&quot;: &quot;none&quot;,
+    &quot;layer_pass&quot;: &quot;single_pass&quot;,
+    &quot;access_context&quot;: &quot;subassembly&quot;,
+    &quot;motion_structure&quot;: &quot;multi_short_seam&quot;,
+    &quot;readiness&quot;: &quot;ready_for_synthetic_v2_plan&quot;,
+    &quot;modeling_difficulty&quot;: &quot;medium&quot;,
+    &quot;notes&quot;: &quot;First-batch multi-short-seam input.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;double-bottom-inner-fillet&quot;,
+    &quot;manufacturing_stage&quot;: &quot;block_assembly&quot;,
+    &quot;weld_object&quot;: &quot;double-bottom inner fillet&quot;,
+    &quot;joint_type&quot;: &quot;fillet&quot;,
+    &quot;weld_position&quot;: &quot;horizontal&quot;,
+    &quot;groove_geometry&quot;: &quot;none&quot;,
+    &quot;layer_pass&quot;: &quot;single_pass&quot;,
+    &quot;access_context&quot;: &quot;confined_compartment&quot;,
+    &quot;motion_structure&quot;: &quot;multi_short_seam&quot;,
+    &quot;readiness&quot;: &quot;needs_more_sources&quot;,
+    &quot;modeling_difficulty&quot;: &quot;medium&quot;,
+    &quot;notes&quot;: &quot;Needs reachability and confined-space evidence before generation.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;vertical-overhead-hull-weld&quot;,
+    &quot;manufacturing_stage&quot;: &quot;erection&quot;,
+    &quot;weld_object&quot;: &quot;vertical or overhead hull seam&quot;,
+    &quot;joint_type&quot;: &quot;butt_or_fillet&quot;,
+    &quot;weld_position&quot;: &quot;vertical_up_or_overhead&quot;,
+    &quot;groove_geometry&quot;: &quot;unknown&quot;,
+    &quot;layer_pass&quot;: &quot;unknown&quot;,
+    &quot;access_context&quot;: &quot;hull_block&quot;,
+    &quot;motion_structure&quot;: &quot;single_or_multi_seam&quot;,
+    &quot;readiness&quot;: &quot;defer&quot;,
+    &quot;modeling_difficulty&quot;: &quot;hard&quot;,
+    &quot;notes&quot;: &quot;Deferred due to position-specific procedure and posture constraints.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;thick-plate-groove-multipass&quot;,
+    &quot;manufacturing_stage&quot;: &quot;block_assembly&quot;,
+    &quot;weld_object&quot;: &quot;thick plate groove weld&quot;,
+    &quot;joint_type&quot;: &quot;groove&quot;,
+    &quot;weld_position&quot;: &quot;multi_position&quot;,
+    &quot;groove_geometry&quot;: &quot;v_x_or_k_groove&quot;,
+    &quot;layer_pass&quot;: &quot;multi_layer_multi_pass&quot;,
+    &quot;access_context&quot;: &quot;open_or_block&quot;,
+    &quot;motion_structure&quot;: &quot;multi_layer_multi_pass&quot;,
+    &quot;readiness&quot;: &quot;defer&quot;,
+    &quot;modeling_difficulty&quot;: &quot;hard&quot;,
+    &quot;notes&quot;: &quot;Deferred; close to WPS/PQR and multipass planning.&quot;
+  },
+  {
+    &quot;family_id&quot;: &quot;curved-spatial-complex-weld&quot;,
+    &quot;manufacturing_stage&quot;: &quot;curved_hull&quot;,
+    &quot;weld_object&quot;: &quot;curved spatial seam&quot;,
+    &quot;joint_type&quot;: &quot;complex&quot;,
+    &quot;weld_position&quot;: &quot;multi_position&quot;,
+    &quot;groove_geometry&quot;: &quot;complex&quot;,
+    &quot;layer_pass&quot;: &quot;unknown&quot;,
+    &quot;access_context&quot;: &quot;curved_surface&quot;,
+    &quot;motion_structure&quot;: &quot;curved_seam&quot;,
+    &quot;readiness&quot;: &quot;defer&quot;,
+    &quot;modeling_difficulty&quot;: &quot;hard&quot;,
+    &quot;notes&quot;: &quot;Deferred; curved topology is outside first input-spec implementation.&quot;
+  }
+]
+</code></pre>
+<ul><li>[ ] <strong>Step 4: Create procedure field manifest</strong></li></ul>
+<p>Create <code>docs/data-foundation/manifests/procedure_fields.json</code> with at least:</p>
+<pre><code>
+[
+  {&quot;field_name&quot;: &quot;welding_process&quot;, &quot;field_group&quot;: &quot;task_joint&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;GMAW/FCAW/SAW/manual/hybrid or explicit unknown.&quot;},
+  {&quot;field_name&quot;: &quot;joint_type&quot;, &quot;field_group&quot;: &quot;task_joint&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;butt/fillet/tee/lap/groove/complex.&quot;},
+  {&quot;field_name&quot;: &quot;weld_position&quot;, &quot;field_group&quot;: &quot;task_joint&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;flat/horizontal/vertical-up/overhead/multi-position.&quot;},
+  {&quot;field_name&quot;: &quot;weld_object&quot;, &quot;field_group&quot;: &quot;task_joint&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Shipbuilding structure and seam object.&quot;},
+  {&quot;field_name&quot;: &quot;manufacturing_stage&quot;, &quot;field_group&quot;: &quot;task_joint&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Shipbuilding production stage.&quot;},
+  {&quot;field_name&quot;: &quot;plate_thickness_mm&quot;, &quot;field_group&quot;: &quot;geometry_material&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Plate thickness; may be assumed if marked.&quot;},
+  {&quot;field_name&quot;: &quot;groove_geometry&quot;, &quot;field_group&quot;: &quot;geometry_material&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Groove type, root gap, bevel angle, land, or none.&quot;},
+  {&quot;field_name&quot;: &quot;current&quot;, &quot;field_group&quot;: &quot;process&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Current field or explicit unknown.&quot;},
+  {&quot;field_name&quot;: &quot;voltage&quot;, &quot;field_group&quot;: &quot;process&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Voltage field or explicit unknown.&quot;},
+  {&quot;field_name&quot;: &quot;travel_speed&quot;, &quot;field_group&quot;: &quot;process&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Travel speed field for motion and heat-input placeholder.&quot;},
+  {&quot;field_name&quot;: &quot;trajectory&quot;, &quot;field_group&quot;: &quot;motion_posture&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;TCP trajectory input or generation instruction.&quot;},
+  {&quot;field_name&quot;: &quot;torch_angle&quot;, &quot;field_group&quot;: &quot;motion_posture&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Work/travel angle or explicit unknown.&quot;},
+  {&quot;field_name&quot;: &quot;quality_label&quot;, &quot;field_group&quot;: &quot;quality_inspection&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Public label vocabulary, simulation placeholder, or real-validation marker.&quot;},
+  {&quot;field_name&quot;: &quot;inspection_reference&quot;, &quot;field_group&quot;: &quot;quality_inspection&quot;, &quot;required&quot;: true, &quot;description&quot;: &quot;Inspection reference entry, not acceptance result.&quot;}
+]
+</code></pre>
+<ul><li>[ ] <strong>Step 5: Create first-batch input manifest</strong></li></ul>
+<p>Create <code>docs/data-foundation/manifests/synthetic_v2_inputs.json</code>.</p>
+<p>Each entry must include <code>input_id</code>, <code>taxonomy_ref</code>, <code>procedure_fields</code>, <code>geometry_spec</code>, <code>motion_spec</code>, <code>process_spec</code>, <code>quality_spec</code>, <code>variant_policy</code>, <code>evidence_bindings</code>, and <code>generation_boundary</code>.</p>
+<p>Use three entries:</p>
+<ul><li><code>input-stiffened-panel-fillet-001</code></li><li><code>input-panel-butt-001</code></li><li><code>input-micro-panel-web-bulkhead-001</code></li></ul>
+<p>Each required <code>procedure_fields.&lt;field_name&gt;</code> must have at least one binding. Each non-empty business spec dictionary must also have bindings for its concrete top-level field paths, for example <code>geometry_spec.groove_geometry</code>, <code>motion_spec.motion_template</code>, <code>process_spec.current</code>, and <code>quality_spec.quality_label</code>. Do not introduce nested path recursion in this first implementation; if nested objects are needed later, add a separate schema revision. Use existing source ids from <code>sources.json</code>; do not invent external sources.</p>
+<p>Example binding:</p>
+<pre><code>
+{
+  &quot;field_path&quot;: &quot;procedure_fields.joint_type&quot;,
+  &quot;source_id&quot;: &quot;vendor-kranendonk-panel-welding-gantry&quot;,
+  &quot;evidence_role&quot;: &quot;shipbuilding_case&quot;,
+  &quot;value_status&quot;: &quot;constrained&quot;,
+  &quot;notes&quot;: &quot;Used as task and field evidence only; not process validation.&quot;
+}
+</code></pre>
+<p>All quality-related values must include one of these boundary markers: <code>public_label_vocabulary</code>, <code>simulation_score_placeholder</code>, or <code>requires_real_validation_later</code>. For first-batch inputs, prefer <code>requires_real_validation_later</code> unless the value is only a public label vocabulary reference.</p>
+<ul><li>[ ] <strong>Step 6: Implement manifest loader</strong></li></ul>
+<p>Create <code>weld-experience-engine/weldcore/knowledge/synthetic_manifest.py</code>:</p>
+<pre><code>
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from .manifest import DEFAULT_FOUNDATION_ROOT
+from .manifest import load_data_foundation
+from .synthetic_input import (
+    EvidenceBinding,
+    SyntheticEvidenceRole,
+    SyntheticReadiness,
+    SimulationInputSpec,
+    SyntheticInputFoundation,
+    TaskTaxonomyEntry,
+    SyntheticValueStatus,
+    WeldProcedureField,
+)
+
+
+def _load_json(path: Path) -&gt; Any:
+    with path.open(&quot;r&quot;, encoding=&quot;utf-8&quot;) as handle:
+        return json.load(handle)
+
+
+def _taxonomy_from_dict(data: dict[str, Any]) -&gt; TaskTaxonomyEntry:
+    return TaskTaxonomyEntry(
+        family_id=data[&quot;family_id&quot;],
+        manufacturing_stage=data[&quot;manufacturing_stage&quot;],
+        weld_object=data[&quot;weld_object&quot;],
+        joint_type=data[&quot;joint_type&quot;],
+        weld_position=data[&quot;weld_position&quot;],
+        groove_geometry=data[&quot;groove_geometry&quot;],
+        layer_pass=data[&quot;layer_pass&quot;],
+        access_context=data[&quot;access_context&quot;],
+        motion_structure=data[&quot;motion_structure&quot;],
+        readiness=SyntheticReadiness(data[&quot;readiness&quot;]),
+        modeling_difficulty=data[&quot;modeling_difficulty&quot;],
+        notes=data[&quot;notes&quot;],
+    )
+
+
+def _procedure_field_from_dict(data: dict[str, Any]) -&gt; WeldProcedureField:
+    return WeldProcedureField(
+        field_name=data[&quot;field_name&quot;],
+        field_group=data[&quot;field_group&quot;],
+        required=bool(data[&quot;required&quot;]),
+        description=data.get(&quot;description&quot;, &quot;&quot;),
+    )
+
+
+def _binding_from_dict(data: dict[str, Any]) -&gt; EvidenceBinding:
+    return EvidenceBinding(
+        field_path=data[&quot;field_path&quot;],
+        source_id=data[&quot;source_id&quot;],
+        evidence_role=SyntheticEvidenceRole(data[&quot;evidence_role&quot;]),
+        value_status=SyntheticValueStatus(data[&quot;value_status&quot;]),
+        notes=data[&quot;notes&quot;],
+    )
+
+
+def _input_from_dict(data: dict[str, Any]) -&gt; SimulationInputSpec:
+    return SimulationInputSpec(
+        input_id=data[&quot;input_id&quot;],
+        taxonomy_ref=data[&quot;taxonomy_ref&quot;],
+        procedure_fields=dict(data[&quot;procedure_fields&quot;]),
+        geometry_spec=dict(data[&quot;geometry_spec&quot;]),
+        motion_spec=dict(data[&quot;motion_spec&quot;]),
+        process_spec=dict(data[&quot;process_spec&quot;]),
+        quality_spec=dict(data[&quot;quality_spec&quot;]),
+        variant_policy=dict(data[&quot;variant_policy&quot;]),
+        evidence_bindings=[_binding_from_dict(item) for item in data[&quot;evidence_bindings&quot;]],
+        generation_boundary=list(data[&quot;generation_boundary&quot;]),
+    )
+
+
+def load_synthetic_input_foundation(root: str | Path | None = None) -&gt; SyntheticInputFoundation:
+    foundation_root = Path(root) if root is not None else DEFAULT_FOUNDATION_ROOT
+    manifests_root = foundation_root / &quot;manifests&quot;
+    data_foundation = load_data_foundation(foundation_root)
+    valid_source_ids = {source.source_id for source in data_foundation.sources}
+    return SyntheticInputFoundation(
+        task_taxonomy=[
+            _taxonomy_from_dict(item)
+            for item in _load_json(manifests_root / &quot;task_taxonomy.json&quot;)
+        ],
+        procedure_fields=[
+            _procedure_field_from_dict(item)
+            for item in _load_json(manifests_root / &quot;procedure_fields.json&quot;)
+        ],
+        simulation_inputs=[
+            _input_from_dict(item)
+            for item in _load_json(manifests_root / &quot;synthetic_v2_inputs.json&quot;)
+        ],
+        valid_source_ids=valid_source_ids,
+    )
+</code></pre>
+<ul><li>[ ] <strong>Step 7: Export loader</strong></li></ul>
+<p>Modify <code>weld-experience-engine/weldcore/knowledge/__init__.py</code>:</p>
+<pre><code>
+from .synthetic_manifest import load_synthetic_input_foundation
+</code></pre>
+<ul><li>[ ] <strong>Step 8: Run tests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_input_manifests.py -v
+</code></pre>
+<p>Expected: PASS.</p>
+<ul><li>[ ] <strong>Step 9: Commit</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git add docs/data-foundation/manifests/task_taxonomy.json \
+  docs/data-foundation/manifests/procedure_fields.json \
+  docs/data-foundation/manifests/synthetic_v2_inputs.json \
+  weld-experience-engine/weldcore/knowledge/synthetic_manifest.py \
+  weld-experience-engine/weldcore/knowledge/__init__.py \
+  weld-experience-engine/tests/test_synthetic_input_manifests.py
+git commit -m &quot;feat(knowledge): add synthetic v2 input manifests&quot;
+</code></pre>
+<hr>
+<h2 id="task-3:-synthetic-input-report">Task 3: Synthetic Input Report</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Create: <code>weld-experience-engine/weldcore/report/synthetic_v2_input_report.py</code></li><li>Create: <code>docs/data-foundation/reports/synthetic_v2_input_evidence.md</code></li><li>Test: <code>weld-experience-engine/tests/test_synthetic_v2_input_report.py</code></li></ul>
+<ul><li>[ ] <strong>Step 1: Write failing report tests</strong></li></ul>
+<p>Create <code>weld-experience-engine/tests/test_synthetic_v2_input_report.py</code>:</p>
+<pre><code>
+import json
+
+from weldcore.report.synthetic_v2_input_report import run_synthetic_v2_input_report
+
+
+def test_synthetic_v2_input_report_writes_expected_outputs(tmp_path):
+    evidence = run_synthetic_v2_input_report(outdir=tmp_path)
+
+    assert (tmp_path / &quot;task_taxonomy.json&quot;).exists()
+    assert (tmp_path / &quot;procedure_fields.json&quot;).exists()
+    assert (tmp_path / &quot;simulation_inputs.json&quot;).exists()
+    assert (tmp_path / &quot;evidence_bindings.csv&quot;).exists()
+    assert (tmp_path / &quot;evidence.md&quot;).exists()
+    assert evidence[&quot;summary&quot;][&quot;ready_task_count&quot;] &gt;= 3
+    assert evidence[&quot;summary&quot;][&quot;simulation_input_count&quot;] == 3
+
+
+def test_synthetic_v2_input_report_markdown_keeps_boundaries(tmp_path):
+    run_synthetic_v2_input_report(outdir=tmp_path)
+
+    text = (tmp_path / &quot;evidence.md&quot;).read_text(encoding=&quot;utf-8&quot;)
+
+    assert &quot;不是 WPS/PQR&quot; in text
+    assert &quot;不证明真实焊接质量&quot; in text
+    assert &quot;SyntheticSkillDataset v2&quot; in text
+
+
+def test_synthetic_v2_input_report_json_has_no_pool_route_fields(tmp_path):
+    run_synthetic_v2_input_report(outdir=tmp_path)
+
+    combined = &quot;&quot;
+    for name in [&quot;task_taxonomy.json&quot;, &quot;procedure_fields.json&quot;, &quot;simulation_inputs.json&quot;]:
+        combined += json.dumps(
+            json.loads((tmp_path / name).read_text(encoding=&quot;utf-8&quot;)),
+            ensure_ascii=False,
+        ).lower()
+
+    forbidden = [&quot;molten_pool&quot;, &quot;molten pool&quot;, &quot;weld_pool&quot;, &quot;weld pool&quot;, &quot;熔池&quot;]
+    assert not any(term in combined for term in forbidden)
+</code></pre>
+<ul><li>[ ] <strong>Step 2: Run tests to verify failure</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_v2_input_report.py -v
+</code></pre>
+<p>Expected: FAIL with missing module.</p>
+<ul><li>[ ] <strong>Step 3: Implement report command</strong></li></ul>
+<p>Create <code>weld-experience-engine/weldcore/report/synthetic_v2_input_report.py</code>:</p>
+<pre><code>
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from pathlib import Path
+from typing import Any
+
+from ..knowledge.manifest import DEFAULT_FOUNDATION_ROOT
+from ..knowledge.synthetic_input import SyntheticReadiness, SyntheticInputFoundation
+from ..knowledge.synthetic_manifest import load_synthetic_input_foundation
+
+
+DEFAULT_DOCS_REPORT_DIR = DEFAULT_FOUNDATION_ROOT / &quot;reports&quot;
+
+
+def _write_json(path: Path, data: Any) -&gt; None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding=&quot;utf-8&quot;)
+
+
+def _summary(foundation: SyntheticInputFoundation) -&gt; dict[str, int]:
+    return {
+        &quot;task_count&quot;: len(foundation.task_taxonomy),
+        &quot;ready_task_count&quot;: sum(
+            entry.readiness == SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN
+            for entry in foundation.task_taxonomy
+        ),
+        &quot;procedure_field_count&quot;: len(foundation.procedure_fields),
+        &quot;simulation_input_count&quot;: len(foundation.simulation_inputs),
+        &quot;evidence_binding_count&quot;: sum(
+            len(item.evidence_bindings) for item in foundation.simulation_inputs
+        ),
+    }
+
+
+def run_synthetic_v2_input_report(
+    outdir: str | Path = &quot;synthetic_v2_input_report_out&quot;,
+    foundation: SyntheticInputFoundation | None = None,
+    docs_report_dir: str | Path | None = None,
+) -&gt; dict[str, Any]:
+    outpath = Path(outdir)
+    outpath.mkdir(parents=True, exist_ok=True)
+    data = foundation or load_synthetic_input_foundation()
+    gate = data.validate()
+    if not gate.passed:
+        raise ValueError(&quot;Synthetic v2 input gate failed: &quot; + &quot;; &quot;.join(gate.issues))
+
+    summary = _summary(data)
+    taxonomy = [entry.to_dict() for entry in data.task_taxonomy]
+    fields = [field.to_dict() for field in data.procedure_fields]
+    inputs = [item.to_dict() for item in data.simulation_inputs]
+    evidence = {
+        &quot;summary&quot;: summary,
+        &quot;task_taxonomy&quot;: taxonomy,
+        &quot;procedure_fields&quot;: fields,
+        &quot;simulation_inputs&quot;: inputs,
+    }
+
+    _write_json(outpath / &quot;task_taxonomy.json&quot;, taxonomy)
+    _write_json(outpath / &quot;procedure_fields.json&quot;, fields)
+    _write_json(outpath / &quot;simulation_inputs.json&quot;, inputs)
+    _write_bindings_csv(outpath / &quot;evidence_bindings.csv&quot;, data)
+    _write_evidence_markdown(outpath / &quot;evidence.md&quot;, data, summary)
+
+    if docs_report_dir is not None:
+        docs_path = Path(docs_report_dir)
+        docs_path.mkdir(parents=True, exist_ok=True)
+        _write_evidence_markdown(
+            docs_path / &quot;synthetic_v2_input_evidence.md&quot;,
+            data,
+            summary,
+        )
+
+    print(&quot;=== SyntheticSkillDataset v2 输入规范摘要 ===&quot;)
+    print(f&quot;任务分类数: {summary[&#x27;task_count&#x27;]}&quot;)
+    print(f&quot;ready 任务数: {summary[&#x27;ready_task_count&#x27;]}&quot;)
+    print(f&quot;标准字段数: {summary[&#x27;procedure_field_count&#x27;]}&quot;)
+    print(f&quot;首批输入数: {summary[&#x27;simulation_input_count&#x27;]}&quot;)
+    print(f&quot;证据绑定数: {summary[&#x27;evidence_binding_count&#x27;]}&quot;)
+    print(f&quot;报告目录: {outpath}&quot;)
+    return evidence
+
+
+def _write_bindings_csv(path: Path, foundation: SyntheticInputFoundation) -&gt; None:
+    with path.open(&quot;w&quot;, encoding=&quot;utf-8&quot;, newline=&quot;&quot;) as handle:
+        writer = csv.writer(handle)
+        writer.writerow([&quot;input_id&quot;, &quot;taxonomy_ref&quot;, &quot;field_path&quot;, &quot;source_id&quot;, &quot;evidence_role&quot;, &quot;value_status&quot;, &quot;notes&quot;])
+        for input_spec in foundation.simulation_inputs:
+            for binding in input_spec.evidence_bindings:
+                writer.writerow([
+                    input_spec.input_id,
+                    input_spec.taxonomy_ref,
+                    binding.field_path,
+                    binding.source_id,
+                    binding.evidence_role.value,
+                    binding.value_status.value,
+                    binding.notes,
+                ])
+
+
+def _write_evidence_markdown(
+    path: Path,
+    foundation: SyntheticInputFoundation,
+    summary: dict[str, int],
+) -&gt; None:
+    lines = [
+        &quot;# SyntheticSkillDataset v2 输入规范证据报告&quot;,
+        &quot;&quot;,
+        &quot;## 结论&quot;,
+        &quot;&quot;,
+        &quot;- 本报告是 SyntheticSkillDataset v2 的输入规范证据，不是 WPS/PQR。&quot;,
+        &quot;- 本报告不证明真实焊接质量，不替代船厂 WPS、工艺评定、检测或船级审查。&quot;,
+        &quot;- 第一批输入只能用于后续 synthetic 样本生成、结构化、迁移和评测机制验证。&quot;,
+        &quot;&quot;,
+        &quot;## 汇总&quot;,
+        &quot;&quot;,
+        f&quot;- 任务分类数：{summary[&#x27;task_count&#x27;]}&quot;,
+        f&quot;- ready 任务数：{summary[&#x27;ready_task_count&#x27;]}&quot;,
+        f&quot;- 标准字段数：{summary[&#x27;procedure_field_count&#x27;]}&quot;,
+        f&quot;- 首批输入数：{summary[&#x27;simulation_input_count&#x27;]}&quot;,
+        f&quot;- 证据绑定数：{summary[&#x27;evidence_binding_count&#x27;]}&quot;,
+        &quot;&quot;,
+        &quot;## 任务分类&quot;,
+        &quot;&quot;,
+        &quot;| family_id | readiness | joint_type | weld_position | groove_geometry | layer_pass | motion_structure |&quot;,
+        &quot;| --- | --- | --- | --- | --- | --- | --- |&quot;,
+    ]
+    for entry in foundation.task_taxonomy:
+        lines.append(
+            f&quot;| {entry.family_id} | {entry.readiness.value} | {entry.joint_type} | {entry.weld_position} | {entry.groove_geometry} | {entry.layer_pass} | {entry.motion_structure} |&quot;
+        )
+
+    lines.extend([
+        &quot;&quot;,
+        &quot;## 首批输入&quot;,
+        &quot;&quot;,
+        &quot;| input_id | taxonomy_ref | assumption fields | real-validation fields |&quot;,
+        &quot;| --- | --- | --- | --- |&quot;,
+    ])
+    for input_spec in foundation.simulation_inputs:
+        assumed = [
+            binding.field_path
+            for binding in input_spec.evidence_bindings
+            if binding.value_status.value == &quot;assumed&quot;
+        ]
+        real_validation = [
+            binding.field_path
+            for binding in input_spec.evidence_bindings
+            if binding.value_status.value == &quot;requires_real_validation_later&quot;
+        ]
+        lines.append(
+            f&quot;| {input_spec.input_id} | {input_spec.taxonomy_ref} | {&#x27;, &#x27;.join(assumed) or &#x27;无&#x27;} | {&#x27;, &#x27;.join(real_validation) or &#x27;无&#x27;} |&quot;
+        )
+
+    path.write_text(&quot;\\n&quot;.join(lines) + &quot;\\n&quot;, encoding=&quot;utf-8&quot;)
+
+
+def main() -&gt; None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(&quot;--outdir&quot;, default=&quot;synthetic_v2_input_report_out&quot;)
+    parser.add_argument(&quot;--no-docs-copy&quot;, action=&quot;store_true&quot;)
+    args = parser.parse_args()
+    docs_dir = None if args.no_docs_copy else DEFAULT_DOCS_REPORT_DIR
+    run_synthetic_v2_input_report(args.outdir, docs_report_dir=docs_dir)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<ul><li>[ ] <strong>Step 4: Run report tests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest tests/test_synthetic_v2_input_report.py -v
+</code></pre>
+<p>Expected: PASS.</p>
+<ul><li>[ ] <strong>Step 5: Generate report artifacts</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run python -m weldcore.report.synthetic_v2_input_report
+</code></pre>
+<p>Expected:</p>
+<pre><code>
+=== SyntheticSkillDataset v2 输入规范摘要 ===
+任务分类数: 7
+ready 任务数: 3
+标准字段数: ...
+首批输入数: 3
+证据绑定数: ...
+报告目录: synthetic_v2_input_report_out
+</code></pre>
+<ul><li>[ ] <strong>Step 6: Commit</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git add weld-experience-engine/weldcore/report/synthetic_v2_input_report.py \
+  weld-experience-engine/tests/test_synthetic_v2_input_report.py \
+  docs/data-foundation/reports/synthetic_v2_input_evidence.md
+git commit -m &quot;feat(report): add synthetic v2 input evidence report&quot;
+</code></pre>
+<p>Do not commit <code>weld-experience-engine/synthetic_v2_input_report_out/</code> unless the repo already tracks equivalent runtime outputs.</p>
+<hr>
+<h2 id="task-4:-documentation-updates">Task 4: Documentation Updates</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Modify: <code>README.md</code></li><li>Modify: <code>details.md</code></li><li>Modify: <code>weld-experience-engine/README.md</code></li></ul>
+<ul><li>[ ] <strong>Step 1: Update root README</strong></li></ul>
+<p>Modify <code>README.md</code>:</p>
+<ul><li>Add the new input-spec layer to “当前结论” and “已完成成果”.</li><li>Add command:</li></ul>
+<pre><code>
+uv run python -m weldcore.report.synthetic_v2_input_report
+</code></pre>
+<ul><li>State clearly:</li></ul>
+<p>- This completes the <code>SyntheticSkillDataset v2</code> input-spec gate. - It does not generate bulk <code>SyntheticSkillDataset v2</code> samples. - It is not real welding quality validation.</p>
+<ul><li>[ ] <strong>Step 2: Update engine README</strong></li></ul>
+<p>Modify <code>weld-experience-engine/README.md</code>:</p>
+<ul><li>Add <code>synthetic_v2_input_report</code> command after <code>data_foundation_report</code>.</li><li>Explain output directory:</li></ul>
+<pre><code>
+synthetic_v2_input_report_out/
+</code></pre>
+<ul><li>Keep Rerun and ManiSkill optional boundary unchanged.</li></ul>
+<ul><li>[ ] <strong>Step 3: Update details.md</strong></li></ul>
+<p>Modify <code>details.md</code>:</p>
+<ul><li>Move the project state from “准备建立输入规范” to “已完成输入规范 gate” only after report implementation is complete.</li><li>Keep this boundary:</li></ul>
+<p>- Not bulk synthetic sample generation. - Not real welding quality validation. - Not WPS/PQR.</p>
+<ul><li>[ ] <strong>Step 4: Run documentation smoke checks</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+rg -n &quot;synthetic_v2_input_report|SyntheticSkillDataset v2 输入规范|真实焊接质量|WPS/PQR&quot; README.md details.md weld-experience-engine/README.md
+</code></pre>
+<p>Expected: all three docs mention the new command or boundary.</p>
+<ul><li>[ ] <strong>Step 5: Commit</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git add README.md details.md weld-experience-engine/README.md
+git commit -m &quot;docs: document synthetic v2 input gate&quot;
+</code></pre>
+<hr>
+<h2 id="task-5:-end-to-end-verification">Task 5: End-to-End Verification</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Read only unless verification exposes a bug.</li></ul>
+<ul><li>[ ] <strong>Step 1: Run full tests</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run pytest -q
+</code></pre>
+<p>Expected: all tests pass.</p>
+<ul><li>[ ] <strong>Step 2: Run all report commands</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+cd weld-experience-engine
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
+uv run python -m weldcore.report.scenario_report
+uv run python -m weldcore.report.data_foundation_report
+uv run python -m weldcore.report.synthetic_v2_input_report
+</code></pre>
+<p>Expected: all commands exit 0 and print their summary blocks.</p>
+<ul><li>[ ] <strong>Step 3: Verify forbidden fields in JSON/CSV outputs</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+rg -n &quot;熔池|molten_pool|molten pool|weld_pool|weld pool&quot; \
+  docs/data-foundation/manifests/task_taxonomy.json \
+  docs/data-foundation/manifests/procedure_fields.json \
+  docs/data-foundation/manifests/synthetic_v2_inputs.json \
+  weld-experience-engine/synthetic_v2_input_report_out/*.json \
+  weld-experience-engine/synthetic_v2_input_report_out/*.csv
+</code></pre>
+<p>Expected: no matches.</p>
+<p>Markdown boundary text may mention excluded molten-pool routes; JSON/CSV must not.</p>
+<ul><li>[ ] <strong>Step 4: Check worktree</strong></li></ul>
+<p>Run:</p>
+<pre><code>
+git status --short --branch
+</code></pre>
+<p>Expected: only intended generated docs or no changes. Do not leave untracked <code>uv.lock</code> if <code>uv</code> created it by accident and the repo does not track it.</p>
+<ul><li>[ ] <strong>Step 5: Final commit if verification changed docs</strong></li></ul>
+<p>If <code>synthetic_v2_input_report</code> refreshed committed docs after the previous commit, commit those docs:</p>
+<pre><code>
+git add docs/data-foundation/reports/synthetic_v2_input_evidence.md README.md details.md weld-experience-engine/README.md
+git commit -m &quot;docs: refresh synthetic v2 input evidence&quot;
+</code></pre>
+<p>If nothing changed, commit nothing.</p>
+<hr>
+<h2 id="task-6:-completion-handoff">Task 6: Completion Handoff</h2>
+<p><strong>Files:</strong></p>
+<ul><li>Read only.</li></ul>
+<ul><li>[ ] <strong>Step 1: Summarize implemented artifacts</strong></li></ul>
+<p>Include:</p>
+<ul><li>New models.</li><li>New manifests.</li><li>New report command.</li><li>Report outputs.</li><li>Updated docs.</li></ul>
+<ul><li>[ ] <strong>Step 2: Summarize verification evidence</strong></li></ul>
+<p>Include exact commands and outcomes:</p>
+<ul><li><code>uv run pytest -q</code></li><li>five report commands.</li><li>forbidden-field search.</li></ul>
+<ul><li>[ ] <strong>Step 3: State remaining boundary</strong></li></ul>
+<p>Say clearly:</p>
+<ul><li>The input-spec gate is implemented.</li><li>Bulk <code>SyntheticSkillDataset v2</code> generation is still the next stage.</li><li>Real welding quality validation, WPS/PQR, and molten-pool route remain out of scope.</li></ul></main></div></body></html>
