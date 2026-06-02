@@ -48,3 +48,17 @@ def test_procedure_fields_cover_required_groups():
         "motion_posture",
         "quality_inspection",
     } <= groups
+
+
+def test_each_actual_procedure_field_has_evidence_binding():
+    foundation = load_synthetic_input_foundation()
+
+    for simulation_input in foundation.simulation_inputs:
+        binding_paths = {
+            binding.field_path for binding in simulation_input.evidence_bindings
+        }
+
+        assert {
+            f"procedure_fields.{field_name}"
+            for field_name in simulation_input.procedure_fields
+        } <= binding_paths
