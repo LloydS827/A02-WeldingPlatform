@@ -6,15 +6,22 @@ from typing import Any
 
 
 FORBIDDEN_POOL_TERMS = ("molten_pool", "molten pool", "weld_pool", "weld pool", "熔池")
+QUALITY_FIELDS = ("quality_label", "defect_label", "inspection_reference")
+QUALITY_BOUNDARY_MARKERS = (
+    "public_label_vocabulary",
+    "simulation_score_placeholder",
+    "requires_real_validation_later",
+)
 
 
 class SyntheticEvidenceRole(str, Enum):
-    FIELD_COVERAGE = "field_coverage"
-    TASK_MAPPING = "task_mapping"
-    PROCEDURE_REFERENCE = "procedure_reference"
-    VOCABULARY = "vocabulary"
-    MOTION_TEMPLATE = "motion_template"
-    SCHEMA_REFERENCE = "schema_reference"
+    SHIPBUILDING_CASE = "shipbuilding_case"
+    PUBLIC_PROCESS_REFERENCE = "public_process_reference"
+    PUBLIC_DATASET_SCHEMA = "public_dataset_schema"
+    PROJECT_INTERNAL = "project_internal"
+    SIMULATION_ASSUMPTION = "simulation_assumption"
+    SIMULATION_OUTPUT = "simulation_output"
+    REQUIRES_REAL_VALIDATION_LATER = "requires_real_validation_later"
 
 
 class SyntheticReadiness(str, Enum):
@@ -24,36 +31,11 @@ class SyntheticReadiness(str, Enum):
 
 
 class SyntheticValueStatus(str, Enum):
-    PUBLIC_VOCABULARY = "public_vocabulary"
-    PROJECT_DEFINED_PLACEHOLDER = "project_defined_placeholder"
-    SIMULATION_ASSUMPTION = "simulation_assumption"
-    PUBLIC_REFERENCE_PLUS_SCHEMA = "public_reference_plus_schema"
-    PUBLIC_LABEL_VOCABULARY = "public_label_vocabulary"
-    SIMULATION_SCORE_PLACEHOLDER = "simulation_score_placeholder"
+    CONSTRAINED = "constrained"
+    ASSUMED = "assumed"
+    GENERATED = "generated"
+    UNKNOWN = "unknown"
     REQUIRES_REAL_VALIDATION_LATER = "requires_real_validation_later"
-    SCHEMA_ONLY = "schema_only"
-
-
-class WeldProcedureField(str, Enum):
-    WELDING_PROCESS = "welding_process"
-    PLATE_THICKNESS_MM = "plate_thickness_mm"
-    CURRENT = "current"
-    VOLTAGE = "voltage"
-    TRAVEL_SPEED = "travel_speed"
-    TRAJECTORY = "trajectory"
-    TORCH_ANGLE = "torch_angle"
-    QUALITY_LABEL = "quality_label"
-    DEFECT_LABEL = "defect_label"
-    INSPECTION_REFERENCE = "inspection_reference"
-
-
-REQUIRED_PROCEDURE_FIELDS = tuple(field.value for field in WeldProcedureField)
-QUALITY_FIELDS = ("quality_label", "defect_label", "inspection_reference")
-QUALITY_BOUNDARY_MARKERS = (
-    "public_label_vocabulary",
-    "simulation_score_placeholder",
-    "requires_real_validation_later",
-)
 
 
 def _jsonable(value: Any) -> Any:
@@ -66,12 +48,6 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
-def _field_name(value: Any) -> str:
-    if isinstance(value, Enum):
-        return str(value.value)
-    return str(value)
-
-
 def _has_forbidden_term(value: Any) -> bool:
     if isinstance(value, dict):
         return any(
@@ -82,6 +58,17 @@ def _has_forbidden_term(value: Any) -> bool:
         return any(_has_forbidden_term(item) for item in value)
     text = str(value).lower()
     return any(term in text for term in FORBIDDEN_POOL_TERMS)
+
+
+@dataclass(frozen=True)
+class WeldProcedureField:
+    field_name: str
+    field_group: str
+    required: bool
+    description: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -103,9 +90,13 @@ class TaskTaxonomyEntry:
     weld_object: str
     joint_type: str
     weld_position: str
+    groove_geometry: str
+    layer_pass: str
+    access_context: str
+    motion_structure: str
     readiness: SyntheticReadiness
-    groove_geometry: str | None = None
-    layer_pass: str | None = None
+    modeling_difficulty: str
+    notes: str
 
     def ready_for_plan(self) -> bool:
         return self.readiness == SyntheticReadiness.READY_FOR_SYNTHETIC_V2_PLAN
@@ -116,8 +107,10 @@ class TaskTaxonomyEntry:
 
 @dataclass(frozen=True)
 class SyntheticSkillDatasetV2PlanInput:
-    first_batch_families: list[str]
-    deferred_families: list[str]
+    plan_id: str
+    first_batch_input_ids: list[str]
+    deferred_family_ids: list[str]
+    notes: list[str]
 
     def to_dict(self) -> dict[str, Any]:
         return {key: _jsonable(value) for key, value in asdict(self).items()}
@@ -127,12 +120,14 @@ class SyntheticSkillDatasetV2PlanInput:
 class SimulationInputSpec:
     input_id: str
     taxonomy_ref: str
-    procedure_fields: dict[WeldProcedureField | str, Any]
+    procedure_fields: dict[str, Any]
     geometry_spec: dict[str, Any]
     motion_spec: dict[str, Any]
     process_spec: dict[str, Any]
     quality_spec: dict[str, Any]
+    variant_policy: dict[str, Any]
     evidence_bindings: list[EvidenceBinding]
+    generation_boundary: list[str]
 
     def to_dict(self) -> dict[str, Any]:
         return {key: _jsonable(value) for key, value in asdict(self).items()}
@@ -146,13 +141,17 @@ class SyntheticInputGateResult:
 
 @dataclass
 class SyntheticInputFoundation:
-    taxonomy: list[TaskTaxonomyEntry]
+    task_taxonomy: list[TaskTaxonomyEntry]
+    procedure_fields: list[WeldProcedureField]
     simulation_inputs: list[SimulationInputSpec]
-    plan_input: SyntheticSkillDatasetV2PlanInput
+    valid_source_ids: set[str] | None = None
 
-    def validate(self, valid_source_ids: set[str] | None = None) -> SyntheticInputGateResult:
+    def validate(self) -> SyntheticInputGateResult:
         issues: list[str] = []
-        taxonomy_by_id = {entry.family_id: entry for entry in self.taxonomy}
+        taxonomy_by_id = {entry.family_id: entry for entry in self.task_taxonomy}
+        required_procedure_fields = [
+            field.field_name for field in self.procedure_fields if field.required
+        ]
 
         for simulation_input in self.simulation_inputs:
             input_id = simulation_input.input_id
@@ -173,27 +172,18 @@ class SyntheticInputFoundation:
                     f"{input_id}: taxonomy_ref {simulation_input.taxonomy_ref} is not ready_for_synthetic_v2_plan"
                 )
 
-            if valid_source_ids is not None:
+            if self.valid_source_ids is not None:
                 for binding in simulation_input.evidence_bindings:
-                    if binding.source_id not in valid_source_ids:
+                    if binding.source_id not in self.valid_source_ids:
                         issues.append(
                             f"{input_id}: {binding.field_path} has unknown source_id {binding.source_id}"
                         )
 
-            procedure_fields = {
-                _field_name(field): value
-                for field, value in simulation_input.procedure_fields.items()
-            }
-            for field in REQUIRED_PROCEDURE_FIELDS:
-                if field not in procedure_fields:
-                    issues.append(f"{input_id}: missing procedure_fields.{field}")
-            for field in procedure_fields:
-                self._require_binding(
-                    issues,
-                    input_id,
-                    binding_by_path,
-                    f"procedure_fields.{field}",
-                )
+            for field_name in required_procedure_fields:
+                field_path = f"procedure_fields.{field_name}"
+                if field_name not in simulation_input.procedure_fields:
+                    issues.append(f"{input_id}: missing {field_path}")
+                self._require_binding(issues, input_id, binding_by_path, field_path)
 
             self._require_spec_bindings(
                 issues,
@@ -228,13 +218,6 @@ class SyntheticInputFoundation:
                 issues,
                 input_id,
                 binding_by_path,
-                procedure_fields,
-                "procedure_fields",
-            )
-            self._validate_quality_boundaries(
-                issues,
-                input_id,
-                binding_by_path,
                 simulation_input.quality_spec,
                 "quality_spec",
             )
@@ -259,12 +242,12 @@ class SyntheticInputFoundation:
         group_name: str,
         spec: dict[str, Any],
     ) -> None:
-        for field in spec:
+        for field_name in spec:
             self._require_binding(
                 issues,
                 input_id,
                 binding_by_path,
-                f"{group_name}.{_field_name(field)}",
+                f"{group_name}.{field_name}",
             )
 
     @staticmethod
@@ -275,13 +258,13 @@ class SyntheticInputFoundation:
         fields: dict[str, Any],
         group_name: str,
     ) -> None:
-        for field in QUALITY_FIELDS:
-            if field not in fields:
+        for field_name in QUALITY_FIELDS:
+            if field_name not in fields:
                 continue
 
-            field_path = f"{group_name}.{field}"
+            field_path = f"{group_name}.{field_name}"
             binding = binding_by_path.get(field_path)
-            value_text = str(fields[field]).lower()
+            value_text = str(fields[field_name]).lower()
             has_value_boundary = any(
                 marker in value_text for marker in QUALITY_BOUNDARY_MARKERS
             )
