@@ -85,7 +85,7 @@
 
 ## 7. 进入数据结构设计的字段原则
 
-来源：`field_coverage.csv`、`task_evidence_map.json`、`project-260522-shipbuilding-welding-brain-plan`、`standard-aws-swps-public-page`、`standard-aws-standards-index`。
+来源：`docs/data-foundation/manifests/field_coverage.csv`、`docs/data-foundation/manifests/task_evidence_map.json`、`project-260522-shipbuilding-welding-brain-plan`、`standard-aws-swps-public-page`、`standard-aws-standards-index`。
 
 下一步数据结构应以 EvidenceBinding 为核心，字段必须可追溯到来源、证据角色和值状态。第一版只做输入规范，不做生成器批量输出和质量合格声明。
 
