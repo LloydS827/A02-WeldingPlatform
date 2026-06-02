@@ -1,0 +1,239 @@
+[
+  {
+    "input_id": "input-stiffened-panel-fillet-001",
+    "taxonomy_ref": "stiffened-panel-fillet",
+    "procedure_fields": {
+      "welding_process": "GMAW_or_FCAW_public_reference_placeholder",
+      "joint_type": "fillet",
+      "weld_position": "flat_or_horizontal",
+      "weld_object": "stiffened_panel_longitudinal_to_plate",
+      "manufacturing_stage": "panel_line_assembly",
+      "plate_thickness_mm": "requires_project_validation_range_6_to_12",
+      "groove_geometry": "no_groove_fillet_joint",
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder",
+      "trajectory": "long_linear_seam",
+      "torch_angle": "public_robot_posture_placeholder",
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "geometry_spec": {
+      "plate_thickness_mm": "requires_project_validation_range_6_to_12",
+      "groove_geometry": "no_groove_fillet_joint",
+      "weld_length_mm": "synthetic_panel_line_segment_placeholder"
+    },
+    "motion_spec": {
+      "motion_template": "long_linear_seam_with_repeatable_torch_posture",
+      "trajectory": "straight_panel_line_path",
+      "torch_angle": "public_robot_posture_placeholder"
+    },
+    "process_spec": {
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder"
+    },
+    "quality_spec": {
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "variant_policy": {
+      "allowed_variants": ["plate_thickness_mm", "weld_length_mm", "travel_speed"],
+      "blocked_variants": ["real_quality_conclusion", "controller_program_reconstruction"],
+      "sampling_note": "Keep variants inside public-reference and project-placeholder bounds."
+    },
+    "evidence_bindings": [
+      {"field_path": "procedure_fields.welding_process", "source_id": "guide-lincoln-electric-gmaw", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Process family placeholder only."},
+      {"field_path": "procedure_fields.joint_type", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel welding automation context."},
+      {"field_path": "procedure_fields.weld_position", "source_id": "vendor-kobelco-shipbuilding-welding", "evidence_role": "public_process_reference", "value_status": "constrained", "notes": "Shipbuilding position vocabulary."},
+      {"field_path": "procedure_fields.weld_object", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Stiffened panel task object."},
+      {"field_path": "procedure_fields.manufacturing_stage", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel line stage."},
+      {"field_path": "procedure_fields.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Placeholder thickness range."},
+      {"field_path": "procedure_fields.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "constrained", "notes": "Fillet geometry definition."},
+      {"field_path": "procedure_fields.current", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public WPS variable placeholder."},
+      {"field_path": "procedure_fields.voltage", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public WPS variable placeholder."},
+      {"field_path": "procedure_fields.travel_speed", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Public automation field coverage."},
+      {"field_path": "procedure_fields.trajectory", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Linear panel-line trajectory."},
+      {"field_path": "procedure_fields.torch_angle", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Torch posture field coverage."},
+      {"field_path": "procedure_fields.quality_label", "source_id": "dataset-gdxray-weld-xray", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Vocabulary only; no real quality conclusion."},
+      {"field_path": "procedure_fields.inspection_reference", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Inspection reference placeholder."},
+      {"field_path": "geometry_spec.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Project placeholder."},
+      {"field_path": "geometry_spec.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "constrained", "notes": "Fillet geometry."},
+      {"field_path": "geometry_spec.weld_length_mm", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Segment length placeholder."},
+      {"field_path": "motion_spec.motion_template", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel-line motion template."},
+      {"field_path": "motion_spec.trajectory", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Straight path."},
+      {"field_path": "motion_spec.torch_angle", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Posture placeholder."},
+      {"field_path": "process_spec.current", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public process placeholder."},
+      {"field_path": "process_spec.voltage", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public process placeholder."},
+      {"field_path": "process_spec.travel_speed", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Public field coverage only."},
+      {"field_path": "quality_spec.quality_label", "source_id": "dataset-gdxray-weld-xray", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Public label vocabulary only."},
+      {"field_path": "quality_spec.inspection_reference", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Placeholder inspection reference."},
+      {"field_path": "quality_spec.defect_label", "source_id": "dataset-gdxray-weld-xray", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Public defect vocabulary only."}
+    ],
+    "generation_boundary": [
+      "No real production quality conclusion.",
+      "No controller program reconstruction.",
+      "Process values are placeholders requiring project validation."
+    ]
+  },
+  {
+    "input_id": "input-panel-butt-001",
+    "taxonomy_ref": "panel-butt",
+    "procedure_fields": {
+      "welding_process": "GMAW_public_reference_placeholder",
+      "joint_type": "butt",
+      "weld_position": "flat",
+      "weld_object": "flat_panel_plate_to_plate",
+      "manufacturing_stage": "panel_line_assembly",
+      "plate_thickness_mm": "requires_project_validation_range_6_to_16",
+      "groove_geometry": "square_or_single_v_groove_placeholder",
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder",
+      "trajectory": "long_straight_seam",
+      "torch_angle": "public_posture_placeholder",
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "geometry_spec": {
+      "plate_thickness_mm": "requires_project_validation_range_6_to_16",
+      "groove_geometry": "square_or_single_v_groove_placeholder",
+      "weld_length_mm": "synthetic_panel_butt_segment_placeholder"
+    },
+    "motion_spec": {
+      "motion_template": "long_straight_seam_with_low_pose_complexity",
+      "trajectory": "straight_panel_butt_path",
+      "torch_angle": "public_posture_placeholder"
+    },
+    "process_spec": {
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder"
+    },
+    "quality_spec": {
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "variant_policy": {
+      "allowed_variants": ["plate_thickness_mm", "groove_geometry", "travel_speed"],
+      "blocked_variants": ["real_quality_conclusion", "qualified_wps_claim"],
+      "sampling_note": "Treat groove and process settings as placeholders until reviewed."
+    },
+    "evidence_bindings": [
+      {"field_path": "procedure_fields.welding_process", "source_id": "guide-miller-gmaw", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Generic GMAW process reference."},
+      {"field_path": "procedure_fields.joint_type", "source_id": "vendor-kobelco-shipbuilding-welding", "evidence_role": "public_process_reference", "value_status": "constrained", "notes": "Shipbuilding joint vocabulary."},
+      {"field_path": "procedure_fields.weld_position", "source_id": "vendor-kobelco-shipbuilding-welding", "evidence_role": "public_process_reference", "value_status": "constrained", "notes": "Flat position vocabulary."},
+      {"field_path": "procedure_fields.weld_object", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel line object."},
+      {"field_path": "procedure_fields.manufacturing_stage", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel line stage."},
+      {"field_path": "procedure_fields.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Placeholder thickness."},
+      {"field_path": "procedure_fields.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Groove placeholder."},
+      {"field_path": "procedure_fields.current", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public WPS variable placeholder."},
+      {"field_path": "procedure_fields.voltage", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public WPS variable placeholder."},
+      {"field_path": "procedure_fields.travel_speed", "source_id": "guide-lincoln-electric-gmaw", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Generic travel speed field reference."},
+      {"field_path": "procedure_fields.trajectory", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel path structure."},
+      {"field_path": "procedure_fields.torch_angle", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Procedure variable placeholder."},
+      {"field_path": "procedure_fields.quality_label", "source_id": "dataset-zenodo-metal-arc-welding-10017718", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Schema reference only."},
+      {"field_path": "procedure_fields.inspection_reference", "source_id": "standard-aws-standards-index", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Standards index boundary."},
+      {"field_path": "geometry_spec.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Project placeholder."},
+      {"field_path": "geometry_spec.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Groove placeholder."},
+      {"field_path": "geometry_spec.weld_length_mm", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Segment placeholder."},
+      {"field_path": "motion_spec.motion_template", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Panel motion template."},
+      {"field_path": "motion_spec.trajectory", "source_id": "vendor-kranendonk-panel-welding-gantry", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Straight panel path."},
+      {"field_path": "motion_spec.torch_angle", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Posture placeholder."},
+      {"field_path": "process_spec.current", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public process placeholder."},
+      {"field_path": "process_spec.voltage", "source_id": "standard-aws-swps-public-page", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public process placeholder."},
+      {"field_path": "process_spec.travel_speed", "source_id": "guide-lincoln-electric-gmaw", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Public process placeholder."},
+      {"field_path": "quality_spec.quality_label", "source_id": "dataset-zenodo-metal-arc-welding-10017718", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Schema reference only."},
+      {"field_path": "quality_spec.inspection_reference", "source_id": "standard-aws-standards-index", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Validation boundary."},
+      {"field_path": "quality_spec.defect_label", "source_id": "dataset-gdxray-weld-xray", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Vocabulary only."}
+    ],
+    "generation_boundary": [
+      "No qualified WPS claim.",
+      "No real production quality conclusion.",
+      "Groove geometry remains a synthetic planning placeholder."
+    ]
+  },
+  {
+    "input_id": "input-micro-panel-web-bulkhead-001",
+    "taxonomy_ref": "micro-panel-web-bulkhead",
+    "procedure_fields": {
+      "welding_process": "GMAW_or_cobot_process_placeholder",
+      "joint_type": "fillet",
+      "weld_position": "flat_horizontal_or_limited_vertical",
+      "weld_object": "micro_panel_web_to_bulkhead",
+      "manufacturing_stage": "subassembly_or_small_block",
+      "plate_thickness_mm": "requires_project_validation_range_4_to_10",
+      "groove_geometry": "no_groove_fillet_joint",
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder",
+      "trajectory": "many_short_linear_segments",
+      "torch_angle": "cobot_posture_placeholder",
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "geometry_spec": {
+      "plate_thickness_mm": "requires_project_validation_range_4_to_10",
+      "groove_geometry": "no_groove_fillet_joint",
+      "segment_count": "synthetic_short_segment_count_placeholder"
+    },
+    "motion_spec": {
+      "motion_template": "many_short_linear_segments_with_repositioning",
+      "trajectory": "short_segment_sequence",
+      "torch_angle": "cobot_posture_placeholder"
+    },
+    "process_spec": {
+      "current": "public_reference_range_placeholder",
+      "voltage": "public_reference_range_placeholder",
+      "travel_speed": "public_reference_range_placeholder"
+    },
+    "quality_spec": {
+      "quality_label": "requires_real_validation_later: public_label_vocabulary_only",
+      "inspection_reference": "requires_real_validation_later: inspection_reference_placeholder",
+      "defect_label": "requires_real_validation_later: public_label_vocabulary_only"
+    },
+    "variant_policy": {
+      "allowed_variants": ["segment_count", "plate_thickness_mm", "travel_speed"],
+      "blocked_variants": ["real_quality_conclusion", "customer_robot_program"],
+      "sampling_note": "Generate only task-structure variants supported by public case descriptions."
+    },
+    "evidence_bindings": [
+      {"field_path": "procedure_fields.welding_process", "source_id": "vendor-hyundai-welding-cobot-shipbuilding-2024", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Shipbuilding cobot context."},
+      {"field_path": "procedure_fields.joint_type", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Small-panel autonomous welding task structure."},
+      {"field_path": "procedure_fields.weld_position", "source_id": "vendor-kobelco-shipbuilding-welding", "evidence_role": "public_process_reference", "value_status": "assumed", "notes": "Position vocabulary."},
+      {"field_path": "procedure_fields.weld_object", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Micro-panel task object."},
+      {"field_path": "procedure_fields.manufacturing_stage", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Subassembly context."},
+      {"field_path": "procedure_fields.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Placeholder thickness."},
+      {"field_path": "procedure_fields.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "constrained", "notes": "Fillet geometry definition."},
+      {"field_path": "procedure_fields.current", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "procedure_fields.voltage", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "procedure_fields.travel_speed", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "procedure_fields.trajectory", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Repeated short-seam structure."},
+      {"field_path": "procedure_fields.torch_angle", "source_id": "vendor-hyundai-welding-cobot-shipbuilding-2024", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Cobot posture placeholder."},
+      {"field_path": "procedure_fields.quality_label", "source_id": "dataset-riawelc-weld-image", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Public label vocabulary only."},
+      {"field_path": "procedure_fields.inspection_reference", "source_id": "standard-aws-standards-index", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Inspection boundary."},
+      {"field_path": "geometry_spec.plate_thickness_mm", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "assumed", "notes": "Project placeholder."},
+      {"field_path": "geometry_spec.groove_geometry", "source_id": "project-260522-shipbuilding-welding-brain-plan", "evidence_role": "project_internal", "value_status": "constrained", "notes": "Fillet geometry."},
+      {"field_path": "geometry_spec.segment_count", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Repeated short-seam placeholder."},
+      {"field_path": "motion_spec.motion_template", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Autonomous welding motion template boundary."},
+      {"field_path": "motion_spec.trajectory", "source_id": "case-siemens-hd-hyundai-mipo-autonomous-welding", "evidence_role": "shipbuilding_case", "value_status": "constrained", "notes": "Short segment sequence."},
+      {"field_path": "motion_spec.torch_angle", "source_id": "vendor-hyundai-welding-cobot-shipbuilding-2024", "evidence_role": "shipbuilding_case", "value_status": "assumed", "notes": "Cobot posture placeholder."},
+      {"field_path": "process_spec.current", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "process_spec.voltage", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "process_spec.travel_speed", "source_id": "dataset-zenodo-tandem-gmaw-17951725", "evidence_role": "public_dataset_schema", "value_status": "assumed", "notes": "Schema reference placeholder."},
+      {"field_path": "quality_spec.quality_label", "source_id": "dataset-riawelc-weld-image", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Public label vocabulary only."},
+      {"field_path": "quality_spec.inspection_reference", "source_id": "standard-aws-standards-index", "evidence_role": "public_process_reference", "value_status": "requires_real_validation_later", "notes": "Validation boundary."},
+      {"field_path": "quality_spec.defect_label", "source_id": "dataset-riawelc-weld-image", "evidence_role": "public_dataset_schema", "value_status": "requires_real_validation_later", "notes": "Public defect vocabulary only."}
+    ],
+    "generation_boundary": [
+      "No customer robot program reconstruction.",
+      "No real production quality conclusion.",
+      "Only top-level field bindings are represented in this manifest version."
+    ]
+  }
+]

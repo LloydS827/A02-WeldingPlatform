@@ -53,6 +53,7 @@ from .synthetic_input import (
     TaskTaxonomyEntry,
     WeldProcedureField,
 )
+from .synthetic_manifest import load_synthetic_input_foundation
 
 __all__ = [
     "FieldCoverageSummary",
@@ -95,6 +96,7 @@ __all__ = [
     "load_seed_knowledge_base",
     "load_seed_task_families",
     "load_data_foundation",
+    "load_synthetic_input_foundation",
     "rank_task_families",
     "score_task_family",
     "select_first_batch_candidates",
