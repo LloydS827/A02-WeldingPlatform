@@ -6,15 +6,16 @@
 
 ## 当前结论
 
-现阶段已经完成五条可运行证据链：
+现阶段已经完成六条可运行证据链：
 
 1. **经验结构化 POC**：验证“大师焊接轨迹 -> 结构化工艺参数 -> 机器人可执行轨迹”的闭环。
 2. **技能迁移 MVP**：验证“仿真样本 -> SkillDataset -> WeldSkillPackage -> TransferExperiment -> 评测报告”的最小闭环。
 3. **仿真优先知识闸门**：验证“公开资料来源 -> 船舶焊接任务族 -> 候选 SimulationScenarioSpec -> 场景证据报告”的最小闭环。
 4. **资料底座 gate**：验证“资料来源 -> 公开数据集 -> 字段覆盖矩阵 -> 任务证据映射 -> `SyntheticSkillDataset v2` 计划输入”的最小闭环。
 5. **`SyntheticSkillDataset v2` 输入规范 gate**：验证“资料底座计划输入 -> 船舶焊接任务分类 -> 行业标准字段 -> 字段来源和仿真假设 -> input-spec 证据报告”的最小闭环。
+6. **仿真输出接入与经验沉淀平台设计/实现**：验证“SimulationInputSpec -> SimulationOutputBundle -> 导入 gate -> SyntheticSkillDataset v2 -> 证据报告”的最小闭环。
 
-MVP、场景知识闸门、资料底座 gate 与 `SyntheticSkillDataset v2` 输入规范 gate 的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以作为下一阶段仿真数据生成、真机标定、专家知识整理、专利/论文材料沉淀的基础。但它还不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。输入规范 gate 完成的是 `SyntheticSkillDataset v2` 的输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 与仿真输出接入 gate 的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以作为下一阶段仿真数据生成、真机标定、专家知识整理、专利/论文材料沉淀的基础。当前新增完成的是平台侧仿真输出接入：平台能够接收 `SimulationOutputBundle`，通过导入 gate 进入 `SyntheticSkillDataset v2`，并生成证据报告。但它还不能被表述为完整 ManiSkill/Isaac 集成，也不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。输入规范 gate 完成的是 `SyntheticSkillDataset v2` 的输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
 ## 已完成成果
 
@@ -43,6 +44,10 @@ MVP、场景知识闸门、资料底座 gate 与 `SyntheticSkillDataset v2` 输�
   - 新增 `synthetic_v2_input_report`，生成 input-spec gate 证据。
   - 输出运行时证据目录 `synthetic_v2_input_report_out/`，并刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。
   - 明确该 gate 只完成输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+- 完成仿真输出接入与经验沉淀平台设计/实现：
+  - 新增 `simulation_ingest_report`，生成 `SimulationOutputBundle` 导入 gate 证据。
+  - 输出运行时证据目录 `simulation_ingest_report_out/`，并刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。
+  - 明确该 gate 完成的是平台侧仿真输出接入，当前使用 simlite/mock bundle，不要求完整 ManiSkill/Isaac 集成，不代表真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
 
 ## 目录结构
 
@@ -146,6 +151,12 @@ uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
 ```
 
+生成仿真输出接入与经验沉淀证据：
+
+```bash
+uv run python -m weldcore.report.simulation_ingest_report
+```
+
 `mvp_report` 会生成：
 
 - `mvp_report_out/evidence.json`
@@ -169,28 +180,31 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 
 `synthetic_v2_input_report` 会生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。它的运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
+`simulation_ingest_report` 会生成仿真输出接入 gate 证据。它的运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。它验证平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告；当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac，不代表真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
+
 ## 技术边界
 
 - MVP 与下一阶段数据路线优先使用轻量仿真和公开资料知识闸门，不等待真机或高保真熔池物理仿真。
 - 真机数据价值最高，但当前不作为主路径，只预留后续标定、验证和审查边界；后续应通过同一套 `SkillDataset` 接入。
 - Rerun 定位为多源时间轴记录、回放、标注和调试驾驶舱，不是生产数据库或机器人控制总线。
-- ManiSkill / SAPIEN 当前作为机器人任务、demonstration 数据和 evaluation benchmark 的范式参考，不是基础测试依赖。
+- ManiSkill / Isaac / SAPIEN 当前作为外部执行选项和机器人任务、demonstration 数据、evaluation benchmark 的范式参考，不是平台核心，也不是基础测试依赖。
 - 核心自有资产应放在 `SkillDataset`、`WeldSkillPackage`、迁移规则、评测协议和工艺语义模型上。
 
 ## 阶段判断
 
-现阶段工作可以视为“技能迁移 MVP 第一轮完成，并完成仿真优先知识闸门、资料底座 gate 和 `SyntheticSkillDataset v2` 输入规范 gate 第一轮”：
+现阶段工作可以视为“技能迁移 MVP 第一轮完成，并完成仿真优先知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate 第一轮”：
 
 - 已有可运行代码。
 - 已有自动化测试。
-- 已有 POC、MVP、场景证据、资料底座证据和 `SyntheticSkillDataset v2` 输入规范 gate 报告生成命令。
+- 已有 POC、MVP、场景证据、资料底座证据、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate 报告生成命令。
 - 已有白皮书与 IP notes 可引用材料。
-- 已明确 Rerun、ManiSkill、真机数据和专家知识的边界。
-- 已明确公开资料、资料底座和输入规范 gate 只能作为场景约束、参数参考、标签词汇来源和 `SyntheticSkillDataset v2` 输入规范，不能写成真实焊接质量验证、批量 synthetic samples 生成或 WPS/PQR。
+- 已明确 Rerun、ManiSkill、Isaac、真机数据和专家知识的边界。
+- 已明确公开资料、资料底座、输入规范 gate 和仿真输出接入 gate 只能作为场景约束、参数参考、标签词汇来源、`SyntheticSkillDataset v2` 输入规范和平台侧数据沉淀能力，不能写成真实焊接质量验证、完整 ManiSkill/Isaac 集成、批量 synthetic samples 生成或 WPS/PQR。
 
-下一阶段建议进入“基于资料底座的 `SyntheticSkillDataset v2` 小批量生成设计”：
+下一阶段建议进入“基于仿真输出接入 gate 的小批量样本设计和外部仿真执行对接评估”：
 
-1. 基于已通过 gate 的资料底座，选择 2-3 个 ready 任务进入小批量 `SyntheticSkillDataset v2` 生成设计。
+1. 基于已通过 gate 的资料底座、输入规范和仿真输出接入能力，选择 2-3 个 ready 任务进入小批量 `SyntheticSkillDataset v2` 样本设计。
 2. 继续把公开资料用于约束仿真场景字段和参数范围；不能把公开资料或仿真结果写成真实焊接质量验证。
-3. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
+3. ManiSkill/Isaac 可作为外部执行选项评估，但不替代平台核心 schema、gate、导入和证据报告能力。
 4. 本阶段不纳入熔池图像、熔池控制或焊中闭环。
+5. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
