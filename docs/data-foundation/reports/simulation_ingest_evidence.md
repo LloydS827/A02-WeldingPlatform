@@ -11,7 +11,7 @@
 - evidence_binding_count: 27
 - assumption_field_count: 14
 - real_validation_field_count: 6
-- can_extract_skill_package: True
+- can_import_simulation_dataset: True
 
 ## Bundle Summary
 
@@ -112,8 +112,8 @@
 
 ## Skill Package Readiness
 
-- `SimulationOutputBundle` 已经可以走通导入与抽取链路，说明平台可以接住仿真输出的结构化结果。
+- `SimulationOutputBundle` 已经可以走通 gate 与 `SkillDataset` import，说明平台可以接住仿真输出的结构化结果。
 - 不是 WPS/PQR，也不证明真实焊接质量。
 - 外部仿真器仍然只是可选 adapter；当前报告使用 simlite/mock bundle 验证平台接入能力。
 - 前期调研资料继续作为后续焊接知识嵌入底座。
-- 目前结论是：平台具备把仿真样本收进 skill package 的基础接口，后续再接真实来源做补强。
+- 目前结论是：平台具备后续形成 skill package 的输入基础，后面再接真实来源做补强。

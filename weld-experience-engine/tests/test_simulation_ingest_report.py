@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from weldcore.report.simulation_ingest_report import run_simulation_ingest_report
+from weldcore.report.simulation_ingest_report import main, run_simulation_ingest_report
 
 
 FORBIDDEN_POOL_TERMS = (
@@ -28,7 +28,7 @@ def test_simulation_ingest_report_writes_runtime_and_docs_outputs(tmp_path: Path
     )
 
     assert evidence["summary"]["sample_count"] >= 1
-    assert evidence["summary"]["can_extract_skill_package"] is True
+    assert evidence["summary"]["can_import_simulation_dataset"] is True
     assert evidence["sample_summary"]["trajectory_point_count"] > 0
     assert evidence["sample_summary"]["process_signal_count"] > 0
 
@@ -63,6 +63,7 @@ def test_simulation_ingest_report_writes_runtime_and_docs_outputs(tmp_path: Path
     assert "外部仿真器仍然只是可选 adapter" in markdown
     assert "当前报告使用 simlite/mock bundle 验证平台接入能力" in markdown
     assert "前期调研资料继续作为后续焊接知识嵌入底座" in markdown
+    assert "具备后续形成 skill package 的输入基础" in markdown
 
 
 def test_simulation_ingest_report_runtime_outputs_do_not_include_forbidden_terms(
@@ -84,3 +85,44 @@ def test_simulation_ingest_report_runtime_outputs_do_not_include_forbidden_terms
         encoding="utf-8"
     ).lower()
     assert not any(term in docs_markdown for term in FORBIDDEN_POOL_TERMS)
+
+
+def test_simulation_ingest_report_cli_writes_docs_copy_by_default(tmp_path: Path) -> None:
+    outdir = tmp_path / "cli-out"
+    docs_report_dir = tmp_path / "cli-docs"
+
+    main(
+        [
+            "--outdir",
+            str(outdir),
+            "--docs-report-dir",
+            str(docs_report_dir),
+        ]
+    )
+
+    assert (outdir / "run_record.json").exists()
+    assert (outdir / "bundle_manifest.json").exists()
+    assert (outdir / "dataset.json").exists()
+    assert (outdir / "evidence.md").exists()
+    assert (docs_report_dir / "simulation_ingest_evidence.md").exists()
+
+
+def test_simulation_ingest_report_cli_no_docs_copy(tmp_path: Path) -> None:
+    outdir = tmp_path / "cli-out"
+    docs_report_dir = tmp_path / "cli-docs"
+
+    main(
+        [
+            "--outdir",
+            str(outdir),
+            "--docs-report-dir",
+            str(docs_report_dir),
+            "--no-docs-copy",
+        ]
+    )
+
+    assert (outdir / "run_record.json").exists()
+    assert (outdir / "bundle_manifest.json").exists()
+    assert (outdir / "dataset.json").exists()
+    assert (outdir / "evidence.md").exists()
+    assert not (docs_report_dir / "simulation_ingest_evidence.md").exists()
