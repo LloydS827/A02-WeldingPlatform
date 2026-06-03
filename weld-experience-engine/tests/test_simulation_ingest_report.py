@@ -68,7 +68,8 @@ def test_simulation_ingest_report_writes_runtime_and_docs_outputs(tmp_path: Path
 def test_simulation_ingest_report_runtime_outputs_do_not_include_forbidden_terms(
     tmp_path: Path,
 ) -> None:
-    run_simulation_ingest_report(outdir=tmp_path, docs_report_dir=None)
+    docs_report_dir = tmp_path / "docs-reports"
+    run_simulation_ingest_report(outdir=tmp_path, docs_report_dir=docs_report_dir)
 
     for filename in [
         "run_record.json",
@@ -79,3 +80,7 @@ def test_simulation_ingest_report_runtime_outputs_do_not_include_forbidden_terms
         text = (tmp_path / filename).read_text(encoding="utf-8").lower()
         assert not any(term in text for term in FORBIDDEN_POOL_TERMS)
 
+    docs_markdown = (docs_report_dir / "simulation_ingest_evidence.md").read_text(
+        encoding="utf-8"
+    ).lower()
+    assert not any(term in docs_markdown for term in FORBIDDEN_POOL_TERMS)
