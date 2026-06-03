@@ -37,6 +37,12 @@ class WeldCondition:
     length_mm: float
     position: str = "flat"
     material: str = "unknown"
+    manufacturing_stage: str = ""
+    weld_object: str = ""
+    groove_geometry: str = ""
+    layer_pass: str = ""
+    access_context: str = ""
+    motion_structure: str = ""
 
 
 @dataclass
@@ -71,6 +77,7 @@ class SkillSample:
     events: list[WeldEvent] = field(default_factory=list)
     quality_observation: QualityObservation | None = None
     recording_artifact: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
