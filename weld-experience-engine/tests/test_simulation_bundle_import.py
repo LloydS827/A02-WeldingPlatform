@@ -53,6 +53,7 @@ def _write_bundle(
         "input_id": simulation_input.input_id,
         "taxonomy_ref": simulation_input.taxonomy_ref,
         "simulator": "simlite",
+        "simulator_version": "0.1",
         "created_at": "2026-06-03T00:00:00Z",
         "generated_at": "2026-06-03T00:00:00Z",
         "sample_count": 1,

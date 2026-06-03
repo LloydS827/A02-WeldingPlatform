@@ -54,11 +54,24 @@ def _write_valid_bundle(
 ) -> tuple[str, str]:
     _, simulation_input, taxonomy_entry = _load_input_spec()
     manifest = {
+        "bundle_id": "bundle-panel-butt-001",
+        "simulation_run_id": "run-panel-butt-001",
         "schema_version": SIMULATION_BUNDLE_SCHEMA_VERSION,
         "source_type": "simulation",
         "input_id": simulation_input.input_id,
         "taxonomy_ref": simulation_input.taxonomy_ref,
+        "simulator": "simlite",
+        "simulator_version": "0.1",
+        "created_at": "2026-06-03T00:00:00Z",
+        "generated_at": "2026-06-03T00:00:00Z",
         "sample_count": 1,
+        "artifact_refs": {
+            "trajectory": "trajectory.csv",
+            "process_signals": "process_signals.csv",
+            "evidence_bindings": "evidence_bindings.json",
+            "quality_placeholders": "quality_placeholders.json",
+        },
+        "assumption_summary": ["synthetic-only bundle for gate tests"],
         "missing_signal_notes": "one wire-feed value is not available in the source output",
     }
     if manifest_overrides:
@@ -227,6 +240,32 @@ def test_non_simulation_source_type_fails(tmp_path: Path) -> None:
 
     assert not result.passed
     assert any("source_type" in issue for issue in result.issues)
+
+
+def test_missing_required_manifest_field_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(tmp_path)
+    manifest_path = tmp_path / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.pop("simulation_run_id")
+    _write_json(manifest_path, manifest)
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("simulation_run_id" in issue for issue in result.issues)
+
+
+def test_missing_other_required_manifest_field_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(tmp_path)
+    manifest_path = tmp_path / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.pop("simulator_version")
+    _write_json(manifest_path, manifest)
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("simulator_version" in issue for issue in result.issues)
 
 
 def test_unknown_input_id_fails(tmp_path: Path) -> None:
@@ -464,6 +503,117 @@ def test_blank_process_signal_without_missing_signal_notes_fails(tmp_path: Path)
 
     assert not result.passed
     assert any("missing_signal_notes" in issue for issue in result.issues)
+
+
+def test_blank_process_signal_with_empty_missing_signal_notes_list_fails(
+    tmp_path: Path,
+) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"missing_signal_notes": []},
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "current": "",
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("missing_signal_notes" in issue for issue in result.issues)
+
+
+def test_bad_trajectory_required_numeric_value_fails_at_gate(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        trajectory_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "x": "not-a-number",
+                "y": 2.0,
+                "z": 3.0,
+                "rx": 0.1,
+                "ry": 0.2,
+                "rz": 0.3,
+                "current": 120.0,
+                "voltage": 24.0,
+                "force": 55.0,
+            }
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("trajectory.csv" in issue and "x" in issue for issue in result.issues)
+
+
+def test_bad_process_required_numeric_value_fails_at_gate(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": "not-a-number",
+                "current": 120.0,
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("process_signals.csv" in issue and "t" in issue for issue in result.issues)
+
+
+def test_bad_optional_process_numeric_value_fails_at_gate(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "current": "not-a-number",
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("process_signals.csv" in issue and "current" in issue for issue in result.issues)
+
+
+def test_artifact_refs_missing_target_file_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={
+            "artifact_refs": {
+                "trajectory": "trajectory.csv",
+                "process_signals": "process_signals.csv",
+                "evidence_bindings": "missing-evidence.json",
+                "quality_placeholders": "quality_placeholders.json",
+            }
+        },
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("artifact_refs" in issue and "missing-evidence.json" in issue for issue in result.issues)
 
 
 def test_missing_evidence_bindings_json_fails(tmp_path: Path) -> None:

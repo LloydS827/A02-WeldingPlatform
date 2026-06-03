@@ -46,6 +46,28 @@ PROCESS_REQUIRED_COLUMNS = (
     "wire_feed",
     "travel_speed",
 )
+MANIFEST_REQUIRED_FIELDS = (
+    "bundle_id",
+    "simulation_run_id",
+    "input_id",
+    "taxonomy_ref",
+    "simulator",
+    "simulator_version",
+    "sample_count",
+    "artifact_refs",
+    "assumption_summary",
+    "source_type",
+    "schema_version",
+)
+TRAJECTORY_REQUIRED_NUMERIC_FIELDS = ("t", "x", "y", "z", "rx", "ry", "rz")
+TRAJECTORY_OPTIONAL_NUMERIC_FIELDS = ("current", "voltage", "force")
+PROCESS_REQUIRED_NUMERIC_FIELDS = ("t",)
+PROCESS_OPTIONAL_NUMERIC_FIELDS = (
+    "current",
+    "voltage",
+    "wire_feed",
+    "travel_speed",
+)
 @dataclass(frozen=True)
 class SimulationBundleGateResult:
     passed: bool
@@ -96,6 +118,7 @@ def validate_simulation_bundle(
 
     if manifest is not None:
         _validate_manifest(
+            bundle_path,
             manifest,
             trajectory_rows,
             issues,
@@ -103,6 +126,20 @@ def validate_simulation_bundle(
             taxonomy_by_ref,
         )
         _validate_process_signal_notes(manifest, process_rows, issues)
+        _validate_csv_numeric_values(
+            trajectory_rows,
+            "trajectory.csv",
+            TRAJECTORY_REQUIRED_NUMERIC_FIELDS,
+            TRAJECTORY_OPTIONAL_NUMERIC_FIELDS,
+            issues,
+        )
+        _validate_csv_numeric_values(
+            process_rows,
+            "process_signals.csv",
+            PROCESS_REQUIRED_NUMERIC_FIELDS,
+            PROCESS_OPTIONAL_NUMERIC_FIELDS,
+            issues,
+        )
         if trajectory_rows is not None and process_rows is not None:
             _validate_process_sample_ids(process_rows, trajectory_rows, issues)
 
@@ -218,6 +255,7 @@ def _load_csv_rows(
 
 
 def _validate_manifest(
+    bundle_path: Path,
     manifest: Any,
     trajectory_rows: list[dict[str, str]] | None,
     issues: list[str],
@@ -227,6 +265,12 @@ def _validate_manifest(
     if not isinstance(manifest, dict):
         issues.append("manifest.json: expected json object")
         return
+
+    for field_name in MANIFEST_REQUIRED_FIELDS:
+        if field_name not in manifest or _is_blank(manifest.get(field_name)):
+            issues.append(f"manifest.json: missing required field {field_name}")
+
+    _validate_artifact_refs(bundle_path, manifest.get("artifact_refs"), issues)
 
     if manifest.get("schema_version") != SIMULATION_BUNDLE_SCHEMA_VERSION:
         issues.append("manifest.json: schema_version mismatch")
@@ -277,6 +321,33 @@ def _validate_manifest(
             issues.append("manifest.json: sample_count mismatch with trajectory.csv")
 
 
+def _validate_artifact_refs(
+    bundle_path: Path,
+    artifact_refs: Any,
+    issues: list[str],
+) -> None:
+    if not isinstance(artifact_refs, dict):
+        issues.append("manifest.json: artifact_refs must be object")
+        return
+
+    for ref_name, ref_path in artifact_refs.items():
+        if _is_blank(ref_path):
+            continue
+        if not isinstance(ref_path, str):
+            issues.append(f"manifest.json: artifact_refs.{ref_name} must be string path")
+            continue
+        path = Path(ref_path)
+        if path.is_absolute() or ".." in path.parts:
+            issues.append(
+                f"manifest.json: artifact_refs.{ref_name} must be a relative path within bundle"
+            )
+            continue
+        if not (bundle_path / path).exists():
+            issues.append(
+                f"manifest.json: artifact_refs.{ref_name} target not found: {ref_path}"
+            )
+
+
 def _validate_taxonomy_ref(
     issues: list[str],
     taxonomy_by_ref: dict[str, Any],
@@ -314,6 +385,63 @@ def _validate_process_signal_notes(
         issues.append(
             "process_signals.csv: blank signal values require missing_signal_notes"
         )
+
+
+def _validate_csv_numeric_values(
+    rows: list[dict[str, str]] | None,
+    label: str,
+    required_fields: tuple[str, ...],
+    optional_fields: tuple[str, ...],
+    issues: list[str],
+) -> None:
+    if rows is None:
+        return
+
+    for row_index, row in enumerate(rows, start=2):
+        for field_name in required_fields:
+            _validate_required_float(
+                row.get(field_name),
+                label,
+                row_index,
+                field_name,
+                issues,
+            )
+        for field_name in optional_fields:
+            _validate_optional_float(
+                row.get(field_name),
+                label,
+                row_index,
+                field_name,
+                issues,
+            )
+
+
+def _validate_required_float(
+    value: Any,
+    label: str,
+    row_index: int,
+    field_name: str,
+    issues: list[str],
+) -> None:
+    if _is_blank(value):
+        issues.append(f"{label}: {field_name} row {row_index} must be numeric")
+        return
+    _validate_optional_float(value, label, row_index, field_name, issues)
+
+
+def _validate_optional_float(
+    value: Any,
+    label: str,
+    row_index: int,
+    field_name: str,
+    issues: list[str],
+) -> None:
+    if _is_blank(value):
+        return
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        issues.append(f"{label}: {field_name} row {row_index} must be numeric")
 
 
 def _validate_process_sample_ids(
@@ -381,6 +509,8 @@ def _is_blank(value: Any) -> bool:
         return True
     if isinstance(value, str):
         return value.strip() == ""
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
     return False
 
 
