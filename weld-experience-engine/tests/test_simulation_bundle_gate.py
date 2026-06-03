@@ -235,7 +235,7 @@ def test_unknown_input_id_fails(tmp_path: Path) -> None:
         manifest_overrides={
             "input_id": "missing-input",
             "sample_count": 2,
-            "taxonomy_ref": DEFAULT_TAXONOMY_REF,
+            "taxonomy_ref": "missing-taxonomy",
         },
     )
 
@@ -244,6 +244,7 @@ def test_unknown_input_id_fails(tmp_path: Path) -> None:
     assert not result.passed
     assert any("input_id" in issue and "unknown" in issue for issue in result.issues)
     assert any("sample_count" in issue for issue in result.issues)
+    assert any("taxonomy_ref" in issue and "not found" in issue for issue in result.issues)
 
 
 def test_taxonomy_mismatch_fails(tmp_path: Path) -> None:
@@ -289,6 +290,48 @@ def test_non_ready_taxonomy_fails(tmp_path: Path) -> None:
 
     assert not result.passed
     assert any("ready_for_synthetic_v2_plan" in issue for issue in result.issues)
+
+
+def test_input_taxonomy_non_ready_fails_even_when_manifest_points_to_ready_taxonomy(
+    tmp_path: Path,
+) -> None:
+    foundation = load_synthetic_input_foundation()
+    base_input = next(
+        item for item in foundation.simulation_inputs if item.input_id == DEFAULT_INPUT_ID
+    )
+    non_ready_entry = next(
+        entry for entry in foundation.task_taxonomy if entry.family_id == NON_READY_TAXONOMY_REF
+    )
+    ready_entry = next(
+        entry for entry in foundation.task_taxonomy if entry.family_id == DEFAULT_TAXONOMY_REF
+    )
+    custom_input = SimulationInputSpec(
+        input_id=base_input.input_id,
+        taxonomy_ref=non_ready_entry.family_id,
+        procedure_fields=dict(base_input.procedure_fields),
+        geometry_spec=dict(base_input.geometry_spec),
+        motion_spec=dict(base_input.motion_spec),
+        process_spec=dict(base_input.process_spec),
+        quality_spec=dict(base_input.quality_spec),
+        variant_policy=dict(base_input.variant_policy),
+        evidence_bindings=list(base_input.evidence_bindings),
+        generation_boundary=list(base_input.generation_boundary),
+    )
+    custom_foundation = load_synthetic_input_foundation()
+    custom_foundation.task_taxonomy = list(foundation.task_taxonomy)
+    custom_foundation.simulation_inputs = [custom_input]
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={
+            "taxonomy_ref": ready_entry.family_id,
+        },
+    )
+
+    result = validate_simulation_bundle(tmp_path, foundation=custom_foundation)
+
+    assert not result.passed
+    assert any("ready_for_synthetic_v2_plan" in issue for issue in result.issues)
+    assert any("taxonomy_ref mismatch" in issue for issue in result.issues)
 
 
 def test_missing_manifest_taxonomy_fails(tmp_path: Path) -> None:

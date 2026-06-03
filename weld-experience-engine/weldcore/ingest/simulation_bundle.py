@@ -153,19 +153,30 @@ def _validate_manifest(
     simulation_input = simulation_inputs_by_id.get(input_id)
     if simulation_input is None:
         issues.append(f"manifest.json: unknown input_id {input_id}")
+        _validate_taxonomy_ref(
+            issues,
+            taxonomy_by_ref,
+            taxonomy_ref,
+            "manifest.json",
+        )
     else:
         if taxonomy_ref != simulation_input.taxonomy_ref:
             issues.append(
                 f"manifest.json: taxonomy_ref mismatch for input_id {input_id}"
             )
-
-    taxonomy_entry = taxonomy_by_ref.get(taxonomy_ref)
-    if taxonomy_entry is None:
-        issues.append(f"manifest.json: taxonomy_ref {taxonomy_ref} not found")
-    elif not taxonomy_entry.ready_for_plan():
-        issues.append(
-            f"manifest.json: taxonomy_ref {taxonomy_ref} is not ready_for_synthetic_v2_plan"
+        _validate_taxonomy_ref(
+            issues,
+            taxonomy_by_ref,
+            simulation_input.taxonomy_ref,
+            f"input_id {input_id}",
         )
+        if taxonomy_ref != simulation_input.taxonomy_ref:
+            _validate_taxonomy_ref(
+                issues,
+                taxonomy_by_ref,
+                taxonomy_ref,
+                "manifest.json",
+            )
 
     if trajectory_rows is not None:
         sample_ids: set[str] = set()
@@ -178,6 +189,21 @@ def _validate_manifest(
         sample_count = manifest.get("sample_count")
         if sample_count != len(sample_ids):
             issues.append("manifest.json: sample_count mismatch with trajectory.csv")
+
+
+def _validate_taxonomy_ref(
+    issues: list[str],
+    taxonomy_by_ref: dict[str, Any],
+    taxonomy_ref: Any,
+    scope: str,
+) -> None:
+    taxonomy_entry = taxonomy_by_ref.get(taxonomy_ref)
+    if taxonomy_entry is None:
+        issues.append(f"{scope}: taxonomy_ref {taxonomy_ref} not found")
+    elif not taxonomy_entry.ready_for_plan():
+        issues.append(
+            f"{scope}: taxonomy_ref {taxonomy_ref} is not ready_for_synthetic_v2_plan"
+        )
 
 
 def _validate_process_signal_notes(
