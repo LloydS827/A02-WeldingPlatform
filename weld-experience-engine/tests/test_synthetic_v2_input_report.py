@@ -1,4 +1,5 @@
 import csv
+import inspect
 import json
 from pathlib import Path
 
@@ -74,9 +75,11 @@ def test_synthetic_v2_input_report_markdown_states_boundaries(tmp_path):
     assert "不是 WPS/PQR" in markdown
     assert "不证明真实焊接质量" in markdown
     assert "SyntheticSkillDataset v2" in markdown
+    assert "python -m weldcore.report.synthetic_v2_input_report" in markdown
+    assert "首批仿真输入：3" in markdown
 
 
-def test_synthetic_v2_input_report_json_outputs_do_not_contain_forbidden_pool_terms(
+def test_synthetic_v2_input_report_json_and_csv_outputs_do_not_contain_forbidden_pool_terms(
     tmp_path,
 ):
     run_synthetic_v2_input_report(outdir=tmp_path, docs_report_dir=None)
@@ -85,6 +88,7 @@ def test_synthetic_v2_input_report_json_outputs_do_not_contain_forbidden_pool_te
         "task_taxonomy.json",
         "procedure_fields.json",
         "simulation_inputs.json",
+        "evidence_bindings.csv",
     ]:
         text = (tmp_path / filename).read_text(encoding="utf-8").lower()
         assert not any(term in text for term in FORBIDDEN_POOL_TERMS)
@@ -122,3 +126,9 @@ def test_synthetic_v2_input_report_default_docs_dir_points_to_repo_docs():
     assert DEFAULT_DOCS_REPORT_DIR.name == "reports"
     assert DEFAULT_DOCS_REPORT_DIR.parent.name == "data-foundation"
     assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "docs"
+
+
+def test_synthetic_v2_input_report_programmatic_default_skips_docs_copy():
+    signature = inspect.signature(run_synthetic_v2_input_report)
+
+    assert signature.parameters["docs_report_dir"].default is None

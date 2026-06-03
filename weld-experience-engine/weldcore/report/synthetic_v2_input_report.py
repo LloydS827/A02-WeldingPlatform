@@ -41,7 +41,7 @@ def _summary(foundation: SyntheticInputFoundation) -> dict[str, int]:
 def run_synthetic_v2_input_report(
     outdir: str | Path = "synthetic_v2_input_report_out",
     foundation: SyntheticInputFoundation | None = None,
-    docs_report_dir: str | Path | None = DEFAULT_DOCS_REPORT_DIR,
+    docs_report_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     outpath = Path(outdir)
     outpath.mkdir(parents=True, exist_ok=True)
@@ -178,6 +178,12 @@ def _write_evidence_markdown(
         f"- 必填工艺字段：{summary['required_procedure_field_count']}",
         f"- 首批仿真输入：{summary['simulation_input_count']}",
         f"- 证据绑定总数：{summary['evidence_binding_count']}",
+        "",
+        "## 复现命令",
+        "",
+        "```bash",
+        "python -m weldcore.report.synthetic_v2_input_report",
+        "```",
         "",
         "## Task Taxonomy",
         "",

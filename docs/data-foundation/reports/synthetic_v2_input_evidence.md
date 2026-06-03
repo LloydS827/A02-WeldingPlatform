@@ -13,6 +13,12 @@
 - 首批仿真输入：3
 - 证据绑定总数：81
 
+## 复现命令
+
+```bash
+python -m weldcore.report.synthetic_v2_input_report
+```
+
 ## Task Taxonomy
 
 | family_id | readiness | joint_type | weld_position | motion_structure | notes |
