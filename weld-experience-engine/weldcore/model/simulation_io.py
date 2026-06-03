@@ -41,17 +41,14 @@ class SimulationBundleManifest:
     bundle_id: str
     simulation_run_id: str
     input_id: str
-    taxonomy_ref: str
     simulator: SimulatorName
     simulator_version: str
-    adapter_version: str
-    seed: int
+    created_at: str
     sample_count: int
-    generated_at: str
+    taxonomy_ref: str
+    artifact_refs: dict[str, Any]
     assumption_summary: list[str]
-    requires_real_validation_later: bool
-    missing_signal_notes: list[str]
-    generation_boundary: list[str]
+    validation_status: str
     source_type: str = "simulation"
     schema_version: str = SIMULATION_BUNDLE_SCHEMA_VERSION
 
@@ -62,17 +59,12 @@ class SimulationBundleManifest:
 @dataclass(frozen=True)
 class SimulationRunRecord:
     simulation_run_id: str
-    input_ids: list[str]
+    input_id: str
     simulator: SimulatorName
-    simulator_version: str
-    adapter_name: str
-    adapter_version: str
-    seed: int
-    started_at: str
-    finished_at: str
     status: SimulationRunStatus
+    created_at: str
+    completed_at: str
     output_bundle_uris: list[str]
-    sample_count: int
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     boundary_notes: list[str] = field(default_factory=list)
