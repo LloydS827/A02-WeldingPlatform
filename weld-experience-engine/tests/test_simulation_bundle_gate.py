@@ -130,6 +130,64 @@ def test_valid_single_input_bundle_passes(tmp_path: Path) -> None:
     assert result.issues == []
 
 
+def test_valid_single_input_multi_sample_bundle_passes(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"sample_count": 2},
+        trajectory_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "x": 1.0,
+                "y": 2.0,
+                "z": 3.0,
+                "rx": 0.1,
+                "ry": 0.2,
+                "rz": 0.3,
+                "current": 120.0,
+                "voltage": 24.0,
+                "force": 55.0,
+            },
+            {
+                "sample_id": "sample-002",
+                "t": 0.2,
+                "x": 1.2,
+                "y": 2.2,
+                "z": 3.2,
+                "rx": 0.12,
+                "ry": 0.22,
+                "rz": 0.32,
+                "current": 121.0,
+                "voltage": 24.2,
+                "force": 56.0,
+            },
+        ],
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "current": 120.0,
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            },
+            {
+                "sample_id": "sample-002",
+                "t": 0.2,
+                "current": 121.0,
+                "voltage": 24.2,
+                "wire_feed": 9.6,
+                "travel_speed": 3.2,
+            },
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert result.passed
+    assert result.issues == []
+
+
 def test_missing_manifest_json_fails(tmp_path: Path) -> None:
     _write_valid_bundle(tmp_path)
     (tmp_path / "manifest.json").unlink()
@@ -199,7 +257,7 @@ def test_non_ready_taxonomy_fails(tmp_path: Path) -> None:
     result = validate_simulation_bundle(tmp_path, foundation=custom_foundation)
 
     assert not result.passed
-    assert any("ready_for_plan" in issue for issue in result.issues)
+    assert any("ready_for_synthetic_v2_plan" in issue for issue in result.issues)
 
 
 def test_missing_trajectory_csv_fails(tmp_path: Path) -> None:
@@ -324,7 +382,20 @@ def test_quality_placeholder_label_is_accepted_even_when_later_validation_is_fal
     assert result.issues == []
 
 
-def test_forbidden_terms_in_manifest_or_quality_payload_fail(tmp_path: Path) -> None:
+def test_forbidden_terms_in_manifest_payload_fail(tmp_path: Path) -> None:
+    forbidden_term = FORBIDDEN_POOL_TERMS[0]
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"generation_boundary": [f"contains {forbidden_term}"]},
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("forbidden" in issue for issue in result.issues)
+
+
+def test_forbidden_terms_in_quality_payload_fail(tmp_path: Path) -> None:
     forbidden_term = FORBIDDEN_POOL_TERMS[0]
     _write_valid_bundle(
         tmp_path,

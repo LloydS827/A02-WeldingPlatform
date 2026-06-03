@@ -167,7 +167,7 @@ def _validate_manifest(
         )
     elif not taxonomy_entry.ready_for_plan():
         issues.append(
-            f"manifest.json: taxonomy_ref {simulation_input.taxonomy_ref} is not ready_for_plan"
+            f"manifest.json: taxonomy_ref {simulation_input.taxonomy_ref} is not ready_for_synthetic_v2_plan"
         )
 
     if trajectory_rows is not None:
