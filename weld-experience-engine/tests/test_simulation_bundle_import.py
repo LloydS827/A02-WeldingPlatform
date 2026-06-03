@@ -162,8 +162,10 @@ def test_valid_bundle_imports_to_skill_dataset(tmp_path: Path) -> None:
     assert data["samples"][0]["metadata"]["bundle_id"] == "bundle-panel-butt-001"
     assert data["samples"][0]["metadata"]["artifact_refs"]["trajectory"] == "trajectory.csv"
     assert data["samples"][0]["metadata"]["evidence_bindings"]["taxonomy_ref"] == "panel-butt"
-    assert data["samples"][0]["metadata"]["requires_real_validation_later"] is False
+    assert data["samples"][0]["metadata"]["requires_real_validation_later"] is True
     assert data["samples"][0]["metadata"]["validation_status"] == "requires_real_validation_later"
+    assert data["samples"][0]["metadata"]["quality_placeholders"]["quality_label"] == "simulation_score_placeholder"
+    assert data["samples"][0]["metadata"]["quality_placeholders"]["requires_real_validation_later"] is False
     assert "not WPS/PQR" in json.dumps(data, ensure_ascii=False)
 
 
@@ -181,6 +183,78 @@ def test_invalid_bundle_raises_value_error(tmp_path: Path) -> None:
 
     message = str(exc_info.value)
     assert "unknown input_id" in message
+
+
+def test_process_only_sample_id_is_rejected(tmp_path: Path) -> None:
+    _write_bundle(
+        tmp_path,
+        manifest_overrides={"sample_count": 1},
+        process_rows=[
+            {
+                "sample_id": "sample-999",
+                "t": 0.0,
+                "current": 120.0,
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        import_simulation_bundle(tmp_path)
+
+    message = str(exc_info.value)
+    assert "sample_id" in message
+    assert "process_signals.csv" in message
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_key", "bad_value"),
+    [
+        ("trajectory.csv: t", "t", "bad"),
+        ("trajectory.csv: x", "x", "bad"),
+    ],
+)
+def test_invalid_required_trajectory_float_raises(
+    tmp_path: Path,
+    field_name: str,
+    field_key: str,
+    bad_value: str,
+) -> None:
+    trajectory_row = {
+        "sample_id": "sample-001",
+        "t": 0.0,
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0,
+        "rx": 0.1,
+        "ry": 0.2,
+        "rz": 0.3,
+        "current": 120.0,
+        "voltage": 24.0,
+        "force": 55.0,
+    }
+    trajectory_row[field_key] = bad_value
+    _write_bundle(
+        tmp_path,
+        trajectory_rows=[trajectory_row],
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "current": 120.0,
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        import_simulation_bundle(tmp_path)
+
+    assert field_name in str(exc_info.value)
 
 
 def test_multi_sample_bundle_imports_one_sample_per_distinct_sample_id(

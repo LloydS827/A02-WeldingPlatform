@@ -103,6 +103,8 @@ def validate_simulation_bundle(
             taxonomy_by_ref,
         )
         _validate_process_signal_notes(manifest, process_rows, issues)
+        if trajectory_rows is not None and process_rows is not None:
+            _validate_process_sample_ids(process_rows, trajectory_rows, issues)
 
     if quality_placeholders is not None:
         _validate_quality_placeholders(quality_placeholders, issues)
@@ -314,6 +316,27 @@ def _validate_process_signal_notes(
         )
 
 
+def _validate_process_sample_ids(
+    process_rows: list[dict[str, str]],
+    trajectory_rows: list[dict[str, str]],
+    issues: list[str],
+) -> None:
+    trajectory_sample_ids = {
+        str(row.get("sample_id", "")).strip()
+        for row in trajectory_rows
+        if not _is_blank(row.get("sample_id", ""))
+    }
+    for row in process_rows:
+        sample_id = str(row.get("sample_id", "")).strip()
+        if _is_blank(sample_id):
+            issues.append("process_signals.csv: blank sample_id")
+            continue
+        if sample_id not in trajectory_sample_ids:
+            issues.append(
+                f"process_signals.csv: sample_id {sample_id} not present in trajectory.csv"
+            )
+
+
 def _validate_quality_placeholders(
     quality_placeholders: Any,
     issues: list[str],
@@ -423,21 +446,32 @@ def _coerce_optional_float(value: Any) -> float | None:
         return None
 
 
+def _parse_required_float(value: Any, field_name: str) -> float:
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        raise ValueError(f"{field_name}: required float is missing")
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name}: invalid float value {value!r}") from exc
+
+
 def _trajectory_from_rows(rows: list[dict[str, str]]) -> Trajectory:
     samples = [
         TrajectorySample(
-            t=_coerce_float(row.get("t")),
-            x=_coerce_float(row.get("x")),
-            y=_coerce_float(row.get("y")),
-            z=_coerce_float(row.get("z")),
-            rx=_coerce_float(row.get("rx")),
-            ry=_coerce_float(row.get("ry")),
-            rz=_coerce_float(row.get("rz")),
+            t=_parse_required_float(row.get("t"), "trajectory.csv: t"),
+            x=_parse_required_float(row.get("x"), "trajectory.csv: x"),
+            y=_parse_required_float(row.get("y"), "trajectory.csv: y"),
+            z=_parse_required_float(row.get("z"), "trajectory.csv: z"),
+            rx=_parse_required_float(row.get("rx"), "trajectory.csv: rx"),
+            ry=_parse_required_float(row.get("ry"), "trajectory.csv: ry"),
+            rz=_parse_required_float(row.get("rz"), "trajectory.csv: rz"),
             current=_coerce_optional_float(row.get("current")),
             voltage=_coerce_optional_float(row.get("voltage")),
             force=_coerce_optional_float(row.get("force")),
         )
-        for row in sorted(rows, key=lambda item: _coerce_float(item.get("t")))
+        for row in sorted(
+            rows, key=lambda item: _parse_required_float(item.get("t"), "trajectory.csv: t")
+        )
     ]
     return Trajectory(samples=samples)
 
@@ -445,13 +479,18 @@ def _trajectory_from_rows(rows: list[dict[str, str]]) -> Trajectory:
 def _process_signals_from_rows(rows: list[dict[str, str]]) -> list[ProcessSignal]:
     return [
         ProcessSignal(
-            t=_coerce_float(row.get("t")),
+            t=_parse_required_float(row.get("t"), "process_signals.csv: t"),
             current=_coerce_optional_float(row.get("current")),
             voltage=_coerce_optional_float(row.get("voltage")),
             wire_feed=_coerce_optional_float(row.get("wire_feed")),
             travel_speed=_coerce_optional_float(row.get("travel_speed")),
         )
-        for row in sorted(rows, key=lambda item: _coerce_float(item.get("t")))
+        for row in sorted(
+            rows,
+            key=lambda item: _parse_required_float(
+                item.get("t"), "process_signals.csv: t"
+            ),
+        )
     ]
 
 
@@ -479,8 +518,6 @@ def _build_skill_dataset(
     for row in process_rows:
         sample_id = str(row.get("sample_id", "")).strip()
         process_rows_by_sample_id[sample_id].append(row)
-        if sample_id not in trajectory_rows_by_sample_id and sample_id not in sample_id_order:
-            sample_id_order.append(sample_id)
 
     samples = [
         _build_skill_sample(
@@ -570,6 +607,7 @@ def _build_skill_sample(
             else {},
             "evidence_bindings": evidence_bindings,
             "requires_real_validation_later": requires_real_validation_later,
+            "quality_placeholders": quality_placeholders,
             "generation_boundary": _normalize_string_list(
                 manifest.get("generation_boundary")
                 or manifest.get("boundary_notes")
@@ -596,6 +634,11 @@ def _requires_real_validation_later(
     manifest: dict[str, Any],
     quality_placeholders: Any,
 ) -> bool:
+    if (
+        isinstance(quality_placeholders, dict)
+        and quality_placeholders.get("quality_label") == "simulation_score_placeholder"
+    ):
+        return True
     if (
         isinstance(quality_placeholders, dict)
         and "requires_real_validation_later" in quality_placeholders
