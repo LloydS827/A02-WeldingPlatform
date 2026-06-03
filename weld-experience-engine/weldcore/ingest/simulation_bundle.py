@@ -149,32 +149,32 @@ def _validate_manifest(
         issues.append("manifest.json: source_type must be simulation")
 
     input_id = manifest.get("input_id")
-    if input_id not in simulation_inputs_by_id:
-        issues.append(f"manifest.json: unknown input_id {input_id}")
-        return
-
-    simulation_input = simulation_inputs_by_id[input_id]
     taxonomy_ref = manifest.get("taxonomy_ref")
-    if taxonomy_ref != simulation_input.taxonomy_ref:
-        issues.append(
-            f"manifest.json: taxonomy_ref mismatch for input_id {input_id}"
-        )
+    simulation_input = simulation_inputs_by_id.get(input_id)
+    if simulation_input is None:
+        issues.append(f"manifest.json: unknown input_id {input_id}")
+    else:
+        if taxonomy_ref != simulation_input.taxonomy_ref:
+            issues.append(
+                f"manifest.json: taxonomy_ref mismatch for input_id {input_id}"
+            )
 
-    taxonomy_entry = taxonomy_by_ref.get(simulation_input.taxonomy_ref)
+    taxonomy_entry = taxonomy_by_ref.get(taxonomy_ref)
     if taxonomy_entry is None:
-        issues.append(
-            f"manifest.json: taxonomy_ref {simulation_input.taxonomy_ref} not found"
-        )
+        issues.append(f"manifest.json: taxonomy_ref {taxonomy_ref} not found")
     elif not taxonomy_entry.ready_for_plan():
         issues.append(
-            f"manifest.json: taxonomy_ref {simulation_input.taxonomy_ref} is not ready_for_synthetic_v2_plan"
+            f"manifest.json: taxonomy_ref {taxonomy_ref} is not ready_for_synthetic_v2_plan"
         )
 
     if trajectory_rows is not None:
-        sample_ids = {
-            row.get("sample_id", "")
-            for row in trajectory_rows
-        }
+        sample_ids: set[str] = set()
+        for row in trajectory_rows:
+            sample_id = row.get("sample_id", "")
+            if _is_blank(sample_id):
+                issues.append("trajectory.csv: blank sample_id")
+                continue
+            sample_ids.add(str(sample_id).strip())
         sample_count = manifest.get("sample_count")
         if sample_count != len(sample_ids):
             issues.append("manifest.json: sample_count mismatch with trajectory.csv")

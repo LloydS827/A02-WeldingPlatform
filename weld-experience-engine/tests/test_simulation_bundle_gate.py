@@ -9,10 +9,23 @@ from weldcore.knowledge.synthetic_input import FORBIDDEN_POOL_TERMS, SimulationI
 from weldcore.knowledge.synthetic_manifest import load_synthetic_input_foundation
 from weldcore.model import SIMULATION_BUNDLE_SCHEMA_VERSION
 
+DEFAULT_INPUT_ID = "input-panel-butt-001"
+DEFAULT_TAXONOMY_REF = "panel-butt"
+NON_READY_TAXONOMY_REF = "double-bottom-inner-fillet"
 
-def _load_input_spec():
+
+def _load_input_spec(
+    input_id: str = DEFAULT_INPUT_ID,
+    taxonomy_ref: str = DEFAULT_TAXONOMY_REF,
+):
     foundation = load_synthetic_input_foundation()
-    return foundation, foundation.simulation_inputs[0], foundation.task_taxonomy[0]
+    simulation_input = next(
+        item for item in foundation.simulation_inputs if item.input_id == input_id
+    )
+    taxonomy_entry = next(
+        item for item in foundation.task_taxonomy if item.family_id == taxonomy_ref
+    )
+    return foundation, simulation_input, taxonomy_entry
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -217,12 +230,20 @@ def test_non_simulation_source_type_fails(tmp_path: Path) -> None:
 
 
 def test_unknown_input_id_fails(tmp_path: Path) -> None:
-    _write_valid_bundle(tmp_path, manifest_overrides={"input_id": "missing-input"})
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={
+            "input_id": "missing-input",
+            "sample_count": 2,
+            "taxonomy_ref": DEFAULT_TAXONOMY_REF,
+        },
+    )
 
     result = validate_simulation_bundle(tmp_path)
 
     assert not result.passed
     assert any("input_id" in issue and "unknown" in issue for issue in result.issues)
+    assert any("sample_count" in issue for issue in result.issues)
 
 
 def test_taxonomy_mismatch_fails(tmp_path: Path) -> None:
@@ -236,28 +257,50 @@ def test_taxonomy_mismatch_fails(tmp_path: Path) -> None:
 
 def test_non_ready_taxonomy_fails(tmp_path: Path) -> None:
     foundation = load_synthetic_input_foundation()
-    non_ready_entry = next(entry for entry in foundation.task_taxonomy if not entry.ready_for_plan())
+    base_input = next(
+        item for item in foundation.simulation_inputs if item.input_id == DEFAULT_INPUT_ID
+    )
+    non_ready_entry = next(
+        entry for entry in foundation.task_taxonomy if entry.family_id == NON_READY_TAXONOMY_REF
+    )
     custom_input = SimulationInputSpec(
-        input_id=foundation.simulation_inputs[0].input_id,
+        input_id=base_input.input_id,
         taxonomy_ref=non_ready_entry.family_id,
-        procedure_fields=dict(foundation.simulation_inputs[0].procedure_fields),
-        geometry_spec=dict(foundation.simulation_inputs[0].geometry_spec),
-        motion_spec=dict(foundation.simulation_inputs[0].motion_spec),
-        process_spec=dict(foundation.simulation_inputs[0].process_spec),
-        quality_spec=dict(foundation.simulation_inputs[0].quality_spec),
-        variant_policy=dict(foundation.simulation_inputs[0].variant_policy),
-        evidence_bindings=list(foundation.simulation_inputs[0].evidence_bindings),
-        generation_boundary=list(foundation.simulation_inputs[0].generation_boundary),
+        procedure_fields=dict(base_input.procedure_fields),
+        geometry_spec=dict(base_input.geometry_spec),
+        motion_spec=dict(base_input.motion_spec),
+        process_spec=dict(base_input.process_spec),
+        quality_spec=dict(base_input.quality_spec),
+        variant_policy=dict(base_input.variant_policy),
+        evidence_bindings=list(base_input.evidence_bindings),
+        generation_boundary=list(base_input.generation_boundary),
     )
     custom_foundation = load_synthetic_input_foundation()
     custom_foundation.task_taxonomy = list(foundation.task_taxonomy)
     custom_foundation.simulation_inputs = [custom_input]
-    _write_valid_bundle(tmp_path, manifest_overrides={"taxonomy_ref": non_ready_entry.family_id})
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={
+            "taxonomy_ref": non_ready_entry.family_id,
+        },
+    )
 
     result = validate_simulation_bundle(tmp_path, foundation=custom_foundation)
 
     assert not result.passed
     assert any("ready_for_synthetic_v2_plan" in issue for issue in result.issues)
+
+
+def test_missing_manifest_taxonomy_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"taxonomy_ref": "missing-taxonomy"},
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("taxonomy_ref" in issue and "not found" in issue for issue in result.issues)
 
 
 def test_missing_trajectory_csv_fails(tmp_path: Path) -> None:
@@ -306,6 +349,56 @@ def test_missing_required_canonical_columns_fail(tmp_path: Path) -> None:
 
     assert not other_result.passed
     assert any("process_signals.csv" in issue and "wire_feed" in issue for issue in other_result.issues)
+
+
+def test_blank_trajectory_sample_id_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"sample_count": 1},
+        trajectory_rows=[
+            {
+                "sample_id": "",
+                "t": 0.0,
+                "x": 1.0,
+                "y": 2.0,
+                "z": 3.0,
+                "rx": 0.1,
+                "ry": 0.2,
+                "rz": 0.3,
+                "current": 120.0,
+                "voltage": 24.0,
+                "force": 55.0,
+            },
+            {
+                "sample_id": "sample-002",
+                "t": 0.2,
+                "x": 1.2,
+                "y": 2.2,
+                "z": 3.2,
+                "rx": 0.12,
+                "ry": 0.22,
+                "rz": 0.32,
+                "current": 121.0,
+                "voltage": 24.2,
+                "force": 56.0,
+            },
+        ],
+        process_rows=[
+            {
+                "sample_id": "sample-002",
+                "t": 0.2,
+                "current": 121.0,
+                "voltage": 24.2,
+                "wire_feed": 9.6,
+                "travel_speed": 3.2,
+            }
+        ],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("sample_id" in issue for issue in result.issues)
 
 
 def test_blank_process_signal_without_missing_signal_notes_fails(tmp_path: Path) -> None:
