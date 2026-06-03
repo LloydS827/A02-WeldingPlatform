@@ -12,6 +12,7 @@
     uv run python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
     uv run python -m weldcore.report.scenario_report # 船舶场景资料底座与候选任务证据
     uv run python -m weldcore.report.data_foundation_report # 数据集与资料底座证据
+    uv run python -m weldcore.report.synthetic_v2_input_report # SyntheticSkillDataset v2 输入规范 gate 证据
 
 如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
@@ -38,6 +39,8 @@ MVP 阶段的边界是：先验证结构化技能迁移机制，不把结果夸�
 默认输出目录为 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。
 
 `data_foundation_report` 用于生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录为 `data_foundation_report_out/`，并刷新根目录 `docs/data-foundation/reports/` 下的中文报告；它完成的是资料底座 gate，不下载大文件，不生成批量仿真数据，不代表真实焊接质量验证，也不包含熔池路线。
+
+`synthetic_v2_input_report` 用于生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录为 `synthetic_v2_input_report_out/`，并刷新根目录 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`；它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不代表真实焊接质量验证，也不是 WPS/PQR。
 
 ## 评测结论
 

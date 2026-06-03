@@ -1,6 +1,6 @@
 # 焊接技能大师平台项目进展说明
 
-更新时间：2026-06-01
+更新时间：2026-06-03
 
 这份文件用于跟踪 A02「焊接技能大师平台」的实际进展、已有能力、待补能力和下一步计划。它面向项目负责人、业务人员、工艺人员和非技术读者，尽量用直白语言说明项目现在到底走到哪一步。
 
@@ -23,11 +23,11 @@
 
 ## 当前阶段判断
 
-项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate 的第一轮落地。
+项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate 和 `SyntheticSkillDataset v2` 输入规范 gate 的第一轮落地。
 
-现在可以说已经完成的是：软件和数据结构层面的最小闭环已经跑通。也就是说，我们已经能用一个简化的焊接任务证明“轨迹可以结构化”“技能可以形成包”“技能包可以迁移到相近条件并被评测”。在场景闸门之后，项目又新增了可执行的资料底座 gate：用 manifest 和报告检查资料来源、公开数据集、字段覆盖、任务证据映射是否足够支撑下一步 `SyntheticSkillDataset v2` 计划输入。
+现在可以说已经完成的是：软件和数据结构层面的最小闭环已经跑通。也就是说，我们已经能用一个简化的焊接任务证明“轨迹可以结构化”“技能可以形成包”“技能包可以迁移到相近条件并被评测”。在场景闸门之后，项目又新增了可执行的资料底座 gate：用 manifest 和报告检查资料来源、公开数据集、字段覆盖、任务证据映射是否足够支撑下一步 `SyntheticSkillDataset v2` 计划输入。最新完成的是 `SyntheticSkillDataset v2` 输入规范 gate：把这些计划输入进一步整理成船舶焊接任务分类、行业标准字段、字段来源和仿真假设边界，并形成证据报告。
 
-根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。目前已经完成公开资料来源、船舶焊接任务族和候选仿真场景的第一道可执行证据闸门，也已经完成资料底座 gate 的 manifest、校验逻辑和中文报告；它还不是 `SyntheticSkillDataset v2` 的批量生成完成结论，也不是真实焊接质量验证。
+根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。目前已经完成公开资料来源、船舶焊接任务族和候选仿真场景的第一道可执行证据闸门，也已经完成资料底座 gate 的 manifest、校验逻辑、中文报告和 `SyntheticSkillDataset v2` 输入规范 gate；它还不是 bulk synthetic sample generation，也不是 `SyntheticSkillDataset v2` 的批量样本生成完成结论，不是真实焊接质量验证，也不是 WPS/PQR。
 
 现在还不能说已经完成的是：真实焊接质量验证。因为目前主要依赖轻量仿真和合成数据，还没有把真机焊接、焊材、工艺评定、焊后检测结果接入完整闭环。
 
@@ -97,6 +97,7 @@ uv run python -m weldcore.report.generate
 uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 uv run python -m weldcore.report.data_foundation_report
+uv run python -m weldcore.report.synthetic_v2_input_report
 ```
 
 第一条命令生成经验结构化 POC 证据。
@@ -111,6 +112,8 @@ uv run python -m weldcore.report.data_foundation_report
 第三条命令生成仿真优先船舶焊接场景证据，包括公开资料来源、船舶焊接任务族、候选 `SimulationScenarioSpec` 和字段覆盖说明。默认输出目录是 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。它是 `SyntheticSkillDataset v2` 之前的场景知识闸门，不生成真机结论，也不纳入熔池路线。
 
 第四条命令生成数据集与资料底座证据，包括资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/data-foundation/reports/` 下的中文证据报告和 `synthetic_skilldataset_v2_plan_input.md`。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。
+
+第五条命令生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是输入规范 gate，不是 bulk synthetic sample generation，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
 ### 5. 可选可视化和生态边界
 
@@ -187,9 +190,9 @@ uv run python -m weldcore.report.data_foundation_report
 
 ## 下一步计划
 
-### 第一优先级：基于资料底座的 `SyntheticSkillDataset v2` 小批量设计
+### 第一优先级：基于已完成输入规范 gate 的小批量设计
 
-先使用已经通过资料底座 gate 的来源、公开数据集、字段覆盖矩阵和任务证据映射，选择少量 ready 任务进入 `SyntheticSkillDataset v2` 的样本设计。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
+现在已经完成面向 `SyntheticSkillDataset v2` 的输入规范 gate。下一步是在这个 gate 的基础上，选择少量 ready 任务进入样本设计和小批量生成方案。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
 
 ### 第二优先级：继续收敛船舶焊接任务族
 
@@ -207,8 +210,10 @@ uv run python -m weldcore.report.data_foundation_report
 
 - 不要把仿真结果直接说成真实焊接质量已经验证。
 - 不要把公开资料约束、仿真样本或候选场景写成真实焊接质量已经验证。
-- 不要把资料底座 gate 写成 `SyntheticSkillDataset v2` 已经批量生成。
+- 不要把资料底座 gate 或 `SyntheticSkillDataset v2` 输入规范 gate 写成 `SyntheticSkillDataset v2` 已经批量生成。
+- 不要把输入规范 gate 写成 bulk synthetic sample generation。
 - 不要把资料底座、公开数据集或场景报告写成真实焊接质量验证。
+- 不要把输入规范、资料底座或仿真计划写成 WPS/PQR。
 - 当前阶段不包含熔池图像、熔池控制或焊中闭环路线。
 - 不要为了等真机条件完全成熟而停止软件和数据结构建设。
 - 不要让 Rerun、ManiSkill 或某个仿真平台替代自有核心模型。
@@ -223,9 +228,12 @@ uv run python -m weldcore.report.data_foundation_report
 - `docs/plans/2026-05-31-焊接技能迁移MVP实施计划.md`：技能迁移 MVP 实施计划。
 - `docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.md`：仿真优先路线设计。
 - `docs/superpowers/plans/2026-06-01-仿真优先船舶焊接数据底座实施计划.md`：仿真优先知识闸门实施计划。
+- `docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md`：`SyntheticSkillDataset v2` 输入规范与船舶焊接任务分类框架设计。
 - `docs/data-foundation/`：资料底座中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
 - `weld-experience-engine/data_foundation_report_out/`：资料底座报告命令生成的运行时输出目录。
 - `docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。
+- `weld-experience-engine/synthetic_v2_input_report_out/`：`SyntheticSkillDataset v2` 输入规范 gate 的运行时输出目录。
+- `docs/data-foundation/reports/synthetic_v2_input_evidence.md`：`SyntheticSkillDataset v2` 输入规范 gate 证据报告。
 - `report/船舶焊接工艺大脑平台_风险驱动论证白皮书.md`：风险驱动白皮书。
 - `weld-experience-engine/`：可运行 POC、MVP、仿真优先知识闸门与资料底座 gate 代码。
 
@@ -240,6 +248,7 @@ uv run python -m weldcore.report.generate
 uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 uv run python -m weldcore.report.data_foundation_report
+uv run python -m weldcore.report.synthetic_v2_input_report
 ```
 
 如果上述命令都通过，说明当前软件原型的基础验证仍然有效。若本机尚未安装 `uv`，可以先安装 `uv`；临时备用方式是使用当前 Python 环境直接运行 `pytest` 和 `python -m ...`。

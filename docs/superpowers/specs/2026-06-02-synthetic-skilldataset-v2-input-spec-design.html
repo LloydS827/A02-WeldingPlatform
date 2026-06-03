@@ -1,0 +1,296 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SyntheticSkillDataset v2 输入规范与船舶焊接任务分类框架</title><style>:root{--bg:#f7f8fb;--paper:#fff;--ink:#172033;--muted:#5f6b7a;--line:#d9dee8;--accent:#1769aa;--soft:#eef5fb;}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;max-width:1380px;margin:0 auto;padding:28px}nav{position:sticky;top:24px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:18px;max-height:calc(100vh - 48px);overflow:auto}nav h2{font-size:15px;margin:0 0 10px;color:var(--muted)}nav a{display:block;color:var(--accent);text-decoration:none;font-size:14px;margin:7px 0}main{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:42px 54px;box-shadow:0 8px 24px rgba(20,32,48,.06)}h1{font-size:34px;line-height:1.18;margin:0 0 18px}h2{font-size:24px;border-top:1px solid var(--line);padding-top:28px;margin-top:34px}h3{font-size:19px;margin-top:26px}code{background:var(--soft);padding:.12em .35em;border-radius:4px}pre{background:#101827;color:#e6edf7;padding:18px;border-radius:8px;overflow:auto;line-height:1.55}pre code{background:transparent;padding:0}table{width:100%;border-collapse:collapse;margin:18px 0;display:block;overflow:auto}th,td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}th{background:#f0f4f9;text-align:left}hr{border:0;border-top:1px solid var(--line);margin:28px 0}a{color:var(--accent)}@media(max-width:900px){.layout{display:block;padding:14px}nav{position:relative;top:0;margin-bottom:14px}main{padding:28px 20px}h1{font-size:28px}}</style></head><body><div class="layout"><nav><h2>目录</h2><a href="#0.-结论先行">0. 结论先行</a>
+<a href="#1.-已确认关键决策">1. 已确认关键决策</a>
+<a href="#2.-背景与当前缺口">2. 背景与当前缺口</a>
+<a href="#3.-范围边界">3. 范围边界</a>
+<a href="#3.1-本阶段做什么">3.1 本阶段做什么</a>
+<a href="#3.2-本阶段不做什么">3.2 本阶段不做什么</a>
+<a href="#4.-方案取舍">4. 方案取舍</a>
+<a href="#4.1-方案-a：轻量任务字段表">4.1 方案 A：轻量任务字段表</a>
+<a href="#4.2-方案-b：任务分类框架-+-字段来源映射">4.2 方案 B：任务分类框架 + 字段来源映射</a>
+<a href="#4.3-方案-c：准-wps/pqr-输入模板">4.3 方案 C：准 WPS/PQR 输入模板</a>
+<a href="#5.-船舶焊接任务分类框架">5. 船舶焊接任务分类框架</a>
+<a href="#5.1-第一版任务族">5.1 第一版任务族</a>
+<a href="#6.-行业标准关键字段集">6. 行业标准关键字段集</a>
+<a href="#6.1-任务与接头字段">6.1 任务与接头字段</a>
+<a href="#6.2-几何与材料字段">6.2 几何与材料字段</a>
+<a href="#6.3-工艺参数字段">6.3 工艺参数字段</a>
+<a href="#6.4-运动与姿态字段">6.4 运动与姿态字段</a>
+<a href="#6.5-质量与检查字段">6.5 质量与检查字段</a>
+<a href="#7.-字段来源与证据角色">7. 字段来源与证据角色</a>
+<a href="#7.1-证据角色">7.1 证据角色</a>
+<a href="#7.2-绑定规则">7.2 绑定规则</a>
+<a href="#7.3-最小结构">7.3 最小结构</a>
+<a href="#8.-仿真生成输入规范">8. 仿真生成输入规范</a>
+<a href="#8.1-顶层字段">8.1 顶层字段</a>
+<a href="#8.2-变体规则">8.2 变体规则</a>
+<a href="#9.-第一批-synthetic-v2-任务选择">9. 第一批 synthetic v2 任务选择</a>
+<a href="#9.1-选择规则">9.1 选择规则</a>
+<a href="#9.2-第一批建议">9.2 第一批建议</a>
+<a href="#9.3-暂缓任务">9.3 暂缓任务</a>
+<a href="#10.-与现有代码和资料的关系">10. 与现有代码和资料的关系</a>
+<a href="#11.-gate-设计">11. Gate 设计</a>
+<a href="#11.1-分类-gate">11.1 分类 gate</a>
+<a href="#11.2-标准字段-gate">11.2 标准字段 gate</a>
+<a href="#11.3-来源绑定-gate">11.3 来源绑定 gate</a>
+<a href="#11.4-禁止字段-gate">11.4 禁止字段 gate</a>
+<a href="#12.-报告设计">12. 报告设计</a>
+<a href="#13.-成功标准">13. 成功标准</a>
+<a href="#14.-后续实施计划入口">14. 后续实施计划入口</a></nav><main><h1 id="syntheticskilldataset-v2-输入规范与船舶焊接任务分类框架-—-设计-spec">SyntheticSkillDataset v2 输入规范与船舶焊接任务分类框架 — 设计 Spec</h1>
+<p>日期：2026-06-02 版本：v0.1 适用项目：A02 焊接技能大师平台 阶段：资料底座 gate 通过后，进入 <code>SyntheticSkillDataset v2</code> 小批量生成前</p>
+<hr>
+<h2 id="0.-结论先行">0. 结论先行</h2>
+<p>下一阶段不应直接生成 <code>SyntheticSkillDataset v2</code> 样本。应先建立一个面向生成的输入规范：</p>
+<pre><code>
+船舶焊接任务分类框架
+-&gt; 行业标准关键字段覆盖
+-&gt; 字段来源/假设/验证状态映射
+-&gt; 仿真生成输入
+-&gt; SyntheticSkillDataset v2 小批量样本
+</code></pre>
+<p>本 spec 推荐采用 <strong>任务分类框架 + 字段来源映射</strong> 的方案。它比单纯列 3 个 ready 任务族更稳，也比直接做 WPS/PQR 模板更符合当前阶段边界。</p>
+<p>第一版要解决的问题不是“完整综述焊接行业知识”，而是回答：</p>
+<ol><li>船舶焊接任务如何分类，哪些任务可进入仿真生成，哪些暂缓。</li><li>行业标准和工艺文件中哪些关键字段必须被数据结构覆盖。</li><li>每个字段来自公开资料、公开数据集、项目内部资料、仿真假设，还是必须后续真机/工艺评定验证。</li><li>如何把这些字段转成 <code>SyntheticSkillDataset v2</code> 的生成输入，而不把仿真数据说成真实质量验证。</li></ol>
+<hr>
+<h2 id="1.-已确认关键决策">1. 已确认关键决策</h2>
+<ol><li>本阶段直接服务 <code>SyntheticSkillDataset v2</code> 输入规范，不做百科式行业综述。</li><li>先建立更宽的船舶焊接任务分类框架，再从框架中选择第一批生成任务。</li><li>第一批生成仍优先落在资料底座已标记 ready 的 3 个任务族：</li></ol>
+<p>- <code>stiffened-panel-fillet</code> - <code>panel-butt</code> - <code>micro-panel-web-bulkhead</code></p>
+<ol><li><code>double-bottom-inner-fillet</code> 和更复杂任务保留在分类框架中，但不进入第一批生成。</li><li>标准对齐采用混合口径：</li></ol>
+<p>- schema 命名尽量使用国际通用表达，便于论文、专利、开放数据和仿真系统复用。 - 中文解释和任务语境贴近国内船舶制造、船级社审查和工艺文件习惯。</p>
+<ol><li>标准对齐做到字段 + 来源映射级，不直接做准 WPS/PQR 模板。</li><li>本阶段仍然不纳入熔池图像、熔池控制或焊中闭环路线。</li></ol>
+<hr>
+<h2 id="2.-背景与当前缺口">2. 背景与当前缺口</h2>
+<p>当前项目已经完成：</p>
+<ul><li>经验结构化 POC。</li><li>技能迁移 MVP。</li><li>仿真优先知识闸门。</li><li>Manifest-first 资料底座 gate。</li></ul>
+<p>资料底座已经沉淀：</p>
+<ul><li>20 条资料来源。</li><li>6 个公开数据集。</li><li>字段覆盖矩阵。</li><li>4 个任务证据条目，其中 3 个 ready。</li><li><code>docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md</code> 作为下一步规划输入。</li></ul>
+<p>但这些产物仍然偏资料 gate 和证据报告，还没有形成正式的 synthetic 样本生成输入规范。尤其缺少：</p>
+<ul><li>宽任务分类框架与第一批生成任务之间的关系。</li><li>行业标准关键字段和现有 <code>WeldCondition</code> / <code>SkillSample</code> / <code>SimulationScenarioSpec</code> 的对应关系。</li><li>参数字段、质量字段、假设字段和后续真实验证字段的统一证据角色。</li><li>面向仿真生成的输入结构、变体规则和 gate。</li></ul>
+<hr>
+<h2 id="3.-范围边界">3. 范围边界</h2>
+<h3 id="3.1-本阶段做什么">3.1 本阶段做什么</h3>
+<ul><li>定义船舶焊接任务分类框架。</li><li>定义标准关键字段集 <code>WeldProcedureFieldSet</code>。</li><li>定义字段来源与证据角色 <code>EvidenceBinding</code>。</li><li>定义仿真生成输入 <code>SimulationInputSpec</code>。</li><li>定义 <code>SyntheticSkillDatasetV2PlanInput</code>。</li><li>规定第一批生成任务的选择规则和暂缓规则。</li><li>规定 gate，防止把公开资料、仿真假设或 synthetic 标签写成真实质量结论。</li></ul>
+<h3 id="3.2-本阶段不做什么">3.2 本阶段不做什么</h3>
+<ul><li>不生成批量 <code>SyntheticSkillDataset v2</code> 样本。</li><li>不下载公开大数据集。</li><li>不做生产级数据库或平台界面。</li><li>不实现真实机器人控制、焊机控制或现场采集接口。</li><li>不把输入规范写成真实 WPS/PQR。</li><li>不声称任何 synthetic 样本通过真实焊接质量验证。</li><li>不纳入熔池图像、熔池形态识别、熔池控制或焊中闭环自适应。</li></ul>
+<hr>
+<h2 id="4.-方案取舍">4. 方案取舍</h2>
+<h3 id="4.1-方案-a：轻量任务字段表">4.1 方案 A：轻量任务字段表</h3>
+<p>做法：只列任务族、接头、位置、坡口、电参、质量标签等字段。</p>
+<p>优点：</p>
+<ul><li>快速。</li><li>容易进入实现。</li></ul>
+<p>问题：</p>
+<ul><li>字段来源不清楚。</li><li>标准对齐弱。</li><li>后续 synthetic 样本容易变成“看似合理但证据不清”的数据。</li></ul>
+<h3 id="4.2-方案-b：任务分类框架-+-字段来源映射">4.2 方案 B：任务分类框架 + 字段来源映射</h3>
+<p>做法：先定义船舶焊接任务分类，再为关键字段绑定来源、证据角色、假设和后续验证状态。</p>
+<p>优点：</p>
+<ul><li>能服务仿真生成。</li><li>能覆盖行业标准关键字段。</li><li>能保留来源追溯和边界。</li><li>能解释为什么第一批选 3 个 ready 任务，而不是只做几个孤立场景。</li></ul>
+<p>问题：</p>
+<ul><li>schema 比轻量字段表更严格。</li></ul>
+<p>结论：<strong>推荐采用。</strong></p>
+<h3 id="4.3-方案-c：准-wps/pqr-输入模板">4.3 方案 C：准 WPS/PQR 输入模板</h3>
+<p>做法：把输入规范设计成接近真实工艺规程和工艺评定记录。</p>
+<p>优点：</p>
+<ul><li>长期产品化价值高。</li></ul>
+<p>问题：</p>
+<ul><li>当前没有真实焊材、工艺评定、焊后检测和船级审查证据。</li><li>容易让人误解为 synthetic 样本已经具备真实工艺合格意义。</li><li>会把当前阶段过早推向合规和验收模板。</li></ul>
+<p>结论：暂不采用，但预留字段扩展。</p>
+<hr>
+<h2 id="5.-船舶焊接任务分类框架">5. 船舶焊接任务分类框架</h2>
+<p>第一版 <code>TaskTaxonomy</code> 不只覆盖 ready 任务，还要覆盖路线图任务。任务分类至少包含以下维度：</p>
+<table>
+<tr><th>维度</th><th>字段建议</th><th>说明</th></tr>
+<tr><td>船舶制造阶段</td><td><code>manufacturing_stage</code></td><td>panel line / subassembly / block assembly / erection 等</td></tr>
+<tr><td>焊接对象</td><td><code>weld_object</code></td><td>stiffener-to-panel、panel butt、bulkhead web、double bottom inner fillet 等</td></tr>
+<tr><td>接头形式</td><td><code>joint_type</code></td><td>butt / fillet / tee / lap / groove / complex</td></tr>
+<tr><td>焊接位置</td><td><code>weld_position</code></td><td>flat / horizontal / vertical-up / overhead / multi-position</td></tr>
+<tr><td>坡口和边界</td><td><code>groove_geometry</code></td><td>V/X/K/none、root gap、bevel angle、land 等</td></tr>
+<tr><td>层道结构</td><td><code>layer_pass</code></td><td>single pass / multi-pass / multi-layer，占位到足够承接后续工艺</td></tr>
+<tr><td>空间可达性</td><td><code>access_context</code></td><td>open panel / confined compartment / internal cell / curved surface</td></tr>
+<tr><td>运动结构</td><td><code>motion_structure</code></td><td>single seam / seam list / multi-short-seam / curved seam</td></tr>
+<tr><td>当前处置</td><td><code>readiness</code></td><td>ready_for_synthetic_v2_plan / needs_more_sources / defer</td></tr>
+<tr><td>复杂度</td><td><code>modeling_difficulty</code></td><td>easy / medium / hard</td></tr>
+</table>
+<h3 id="5.1-第一版任务族">5.1 第一版任务族</h3>
+<table>
+<tr><th>family_id</th><th>分类定位</th><th>当前处置</th><th>说明</th></tr>
+<tr><td><code>stiffened-panel-fillet</code></td><td>面板线/小组立，加筋板或纵骨角焊</td><td><code>ready_for_synthetic_v2_plan</code></td><td>第一批生成任务，几何和运动较可控</td></tr>
+<tr><td><code>panel-butt</code></td><td>平面板拼接/简化对接焊</td><td><code>ready_for_synthetic_v2_plan</code></td><td>第一批生成任务，可承接现有 straight-flat 能力，但需区分船舶板拼</td></tr>
+<tr><td><code>micro-panel-web-bulkhead</code></td><td>微型面板、腹板、隔板多短焊缝</td><td><code>ready_for_synthetic_v2_plan</code></td><td>第一批生成任务，用于验证多焊缝序列 schema</td></tr>
+<tr><td><code>double-bottom-inner-fillet</code></td><td>双层底/双壳内部角焊</td><td>needs_more_sources</td><td>保留任务框架，暂不生成样本</td></tr>
+<tr><td><code>vertical-overhead-hull-weld</code></td><td>立向/仰位船体焊缝</td><td>defer</td><td>作为位置复杂度路线图</td></tr>
+<tr><td><code>thick-plate-groove-multipass</code></td><td>厚板坡口多层多道</td><td>defer</td><td>保留 WPS/PQR 扩展位，第一批只做字段占位</td></tr>
+<tr><td><code>curved-spatial-complex-weld</code></td><td>曲面与空间复杂焊缝</td><td>defer</td><td>暂不进入 synthetic v2 第一批</td></tr>
+</table>
+<hr>
+<h2 id="6.-行业标准关键字段集">6. 行业标准关键字段集</h2>
+<p>第一版定义 <code>WeldProcedureFieldSet</code>，用于覆盖行业标准和工艺文件中常见的关键信息。它不是 WPS/PQR，但要能承接 WPS/PQR 的主要字段。</p>
+<h3 id="6.1-任务与接头字段">6.1 任务与接头字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th><th>第一版用途</th></tr>
+<tr><td><code>welding_process</code></td><td>GMAW / FCAW / SAW / manual / hybrid 等</td><td>synthetic v2 必填或显式 unknown</td></tr>
+<tr><td><code>joint_type</code></td><td>对接、角接、T 型、搭接、坡口等</td><td>任务分类和仿真几何</td></tr>
+<tr><td><code>weld_position</code></td><td>平焊、横焊、立焊、仰焊等</td><td>任务筛选和姿态约束</td></tr>
+<tr><td><code>weld_object</code></td><td>船舶构件和焊缝对象</td><td>船舶语境约束</td></tr>
+<tr><td><code>manufacturing_stage</code></td><td>制造阶段</td><td>防止脱离船舶制造任务</td></tr>
+</table>
+<h3 id="6.2-几何与材料字段">6.2 几何与材料字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th><th>第一版用途</th></tr>
+<tr><td><code>base_material</code></td><td>母材类别或占位</td><td>第一版可 unknown，但需保留</td></tr>
+<tr><td><code>plate_thickness_mm</code></td><td>板厚</td><td>允许假设，但必须标注</td></tr>
+<tr><td><code>groove_geometry</code></td><td>坡口类型、角度、间隙、钝边等</td><td>panel-butt 必须覆盖</td></tr>
+<tr><td><code>leg_size_mm</code></td><td>角焊缝焊脚尺寸</td><td>stiffened-panel-fillet 假设字段</td></tr>
+<tr><td><code>root_gap_mm</code></td><td>根部间隙</td><td>panel-butt 假设字段</td></tr>
+<tr><td><code>seam_length_mm</code></td><td>焊缝长度</td><td>仿真轨迹生成</td></tr>
+<tr><td><code>weld_seam_list</code></td><td>多短焊缝列表</td><td>micro-panel-web-bulkhead 假设字段</td></tr>
+</table>
+<h3 id="6.3-工艺参数字段">6.3 工艺参数字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th><th>第一版用途</th></tr>
+<tr><td><code>current</code></td><td>电流</td><td>参数曲线或范围，占位需标注来源</td></tr>
+<tr><td><code>voltage</code></td><td>电压</td><td>参数曲线或范围，占位需标注来源</td></tr>
+<tr><td><code>wire_feed</code></td><td>送丝速度</td><td>可选参数曲线</td></tr>
+<tr><td><code>travel_speed</code></td><td>行走速度</td><td>运动和热输入占位的核心字段</td></tr>
+<tr><td><code>heat_input_placeholder</code></td><td>热输入占位</td><td>第一版只做可计算占位，不做真实合规判断</td></tr>
+<tr><td><code>shielding_gas</code></td><td>保护气体</td><td>第一版可 unknown，预留 WPS 扩展</td></tr>
+<tr><td><code>filler_material</code></td><td>焊材</td><td>第一版可 unknown，预留 WPS 扩展</td></tr>
+</table>
+<h3 id="6.4-运动与姿态字段">6.4 运动与姿态字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th><th>第一版用途</th></tr>
+<tr><td><code>trajectory</code></td><td>TCP 轨迹</td><td>synthetic 样本核心字段</td></tr>
+<tr><td><code>robot_pose</code></td><td>姿态或机器人位姿</td><td>姿态约束和可达性占位</td></tr>
+<tr><td><code>torch_angle</code></td><td>工作角/行进角等</td><td>角焊、面板线任务核心字段</td></tr>
+<tr><td><code>motion_template</code></td><td>直线、摆动、多短焊缝序列等</td><td>技能包提取和迁移</td></tr>
+<tr><td><code>sequence_order</code></td><td>多焊缝顺序</td><td>micro-panel-web-bulkhead 假设字段</td></tr>
+<tr><td><code>node_transition</code></td><td>节点过渡</td><td>多短焊缝任务占位</td></tr>
+</table>
+<h3 id="6.5-质量与检查字段">6.5 质量与检查字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th><th>第一版用途</th></tr>
+<tr><td><code>quality_label</code></td><td>质量标签或占位</td><td>只能作为仿真评分、公开标签词汇或待验证占位</td></tr>
+<tr><td><code>defect_label</code></td><td>缺陷词汇</td><td>来自公开数据集和缺陷资料</td></tr>
+<tr><td><code>inspection_reference</code></td><td>检查参考</td><td>标准/资料入口，不替代验收</td></tr>
+<tr><td><code>requires_real_validation_later</code></td><td>后续真实验证标记</td><td>所有涉及真实质量的字段必须可标注</td></tr>
+</table>
+<hr>
+<h2 id="7.-字段来源与证据角色">7. 字段来源与证据角色</h2>
+<p>定义 <code>EvidenceBinding</code>，绑定字段、来源和证据角色。</p>
+<h3 id="7.1-证据角色">7.1 证据角色</h3>
+<table>
+<tr><th>角色</th><th>说明</th></tr>
+<tr><td><code>shipbuilding_case</code></td><td>船舶自动化或船厂公开案例，用于任务存在性和场景边界</td></tr>
+<tr><td><code>public_process_reference</code></td><td>公开工艺资料或标准入口，用于字段和参数约束</td></tr>
+<tr><td><code>public_dataset_schema</code></td><td>公开数据集，用于 schema、模态和标签词汇参考</td></tr>
+<tr><td><code>project_internal</code></td><td>项目内部规划，用于项目字段和需求边界</td></tr>
+<tr><td><code>simulation_assumption</code></td><td>当前仿真生成需要的假设字段</td></tr>
+<tr><td><code>simulation_output</code></td><td>由仿真生成的轨迹、参数曲线或标签</td></tr>
+<tr><td><code>requires_real_validation_later</code></td><td>后续需要真机、WPS、PQR、检测或人工审查验证</td></tr>
+</table>
+<h3 id="7.2-绑定规则">7.2 绑定规则</h3>
+<ul><li>每个 synthetic v2 关键字段必须至少有一个 <code>EvidenceBinding</code>。关键字段指 <code>WeldProcedureFieldSet</code> 中的字段、<code>SimulationInputSpec</code> 顶层业务字段，以及 gate 明确要求的字段；<code>input_id</code>、<code>taxonomy_ref</code>、<code>evidence_bindings</code> 这类索引/元数据字段不需要自绑定，普通说明字段和纯报告文本也不需要逐项绑定。</li><li>所有参数值必须区分来源：</li></ul>
+<p>- 公开资料约束。 - 公开数据集 schema 线索。 - 项目内部定义。 - 仿真假设。 - 仿真输出。</p>
+<ul><li>任何质量相关字段默认必须包含 <code>requires_real_validation_later</code>，除非它只是纯粹的标签词汇。</li><li>公开数据集可以提供 schema、模态、标签词汇和 benchmark 参考，不直接证明船舶焊接质量。</li><li>标准入口可以提供字段覆盖和后续合规验证方向，不替代标准正文、客户 WPS 或船级审查。</li></ul>
+<h3 id="7.3-最小结构">7.3 最小结构</h3>
+<p>第一版 <code>EvidenceBinding</code> 至少包含：</p>
+<table>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>field_path</code></td><td>被绑定的字段路径，例如 <code>procedure_fields.joint_type</code></td></tr>
+<tr><td><code>source_id</code></td><td>来源编号，对应资料底座 manifest；仿真输出可使用内部生成来源编号</td></tr>
+<tr><td><code>evidence_role</code></td><td>证据角色，取自 7.1</td></tr>
+<tr><td><code>value_status</code></td><td>值状态：<code>constrained</code> / <code>assumed</code> / <code>generated</code> / <code>unknown</code> / <code>requires_real_validation_later</code></td></tr>
+<tr><td><code>notes</code></td><td>使用边界或假设说明</td></tr>
+</table>
+<p>同一字段允许多个绑定。例如 <code>current</code> 可以同时绑定公开工艺资料、公开数据集 schema 和 <code>requires_real_validation_later</code>。</p>
+<hr>
+<h2 id="8.-仿真生成输入规范">8. 仿真生成输入规范</h2>
+<p>定义 <code>SimulationInputSpec</code>，作为 <code>SyntheticSkillDataset v2</code> 生成器的输入。</p>
+<h3 id="8.1-顶层字段">8.1 顶层字段</h3>
+<table>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>input_id</code></td><td>输入编号</td></tr>
+<tr><td><code>taxonomy_ref</code></td><td>对应 <code>TaskTaxonomy</code> 的 <code>family_id</code></td></tr>
+<tr><td><code>procedure_fields</code></td><td>标准关键字段集</td></tr>
+<tr><td><code>geometry_spec</code></td><td>焊缝、坡口、板厚、焊脚、焊缝列表等</td></tr>
+<tr><td><code>motion_spec</code></td><td>轨迹、姿态、运动模板、多焊缝顺序等</td></tr>
+<tr><td><code>process_spec</code></td><td>电流、电压、送丝、行走速度等</td></tr>
+<tr><td><code>quality_spec</code></td><td>仿真评分、标签占位、缺陷词汇、后续验证标记</td></tr>
+<tr><td><code>variant_policy</code></td><td>样本变体规则</td></tr>
+<tr><td><code>evidence_bindings</code></td><td>字段来源与证据角色</td></tr>
+<tr><td><code>generation_boundary</code></td><td>不可声称事项和后续验证要求</td></tr>
+</table>
+<h3 id="8.2-变体规则">8.2 变体规则</h3>
+<p>第一版只允许小批量、可解释的变体：</p>
+<ul><li><code>length_variation</code>：焊缝长度变化。</li><li><code>width_or_gap_variation</code>：坡口宽度、根部间隙或焊脚假设变化。</li><li><code>speed_variation</code>：行走速度变化。</li><li><code>torch_angle_variation</code>：焊枪角度小范围变化。</li><li><code>sequence_variation</code>：多短焊缝顺序和节点过渡变化。</li></ul>
+<p>暂不允许：</p>
+<ul><li>任意曲面焊缝自动生成。</li><li>高复杂多层多道完整填充规划。</li><li>真实质量合格/不合格判定。</li><li>熔池图像、熔池控制或焊中闭环标签。</li></ul>
+<hr>
+<h2 id="9.-第一批-synthetic-v2-任务选择">9. 第一批 synthetic v2 任务选择</h2>
+<h3 id="9.1-选择规则">9.1 选择规则</h3>
+<p>第一批任务必须满足：</p>
+<ol><li>位于船舶制造任务分类框架中。</li><li><code>readiness = ready_for_synthetic_v2_plan</code>。</li><li>关键字段在 <code>WeldProcedureFieldSet</code> 中有定义。</li><li>每个关键字段有 <code>EvidenceBinding</code>。</li><li>假设字段显式标注为 <code>simulation_assumption</code>。</li><li>质量相关字段显式标注 <code>requires_real_validation_later</code>。</li><li>不依赖真实 WPS/PQR、真机采集或熔池路线。</li></ol>
+<h3 id="9.2-第一批建议">9.2 第一批建议</h3>
+<table>
+<tr><th>family_id</th><th>首批定位</th><th>生成重点</th></tr>
+<tr><td><code>stiffened-panel-fillet</code></td><td>P1</td><td>面板线角焊、焊枪角度、行走速度、焊脚假设</td></tr>
+<tr><td><code>panel-butt</code></td><td>P1</td><td>板拼对接、坡口/间隙、直线轨迹、电参占位</td></tr>
+<tr><td><code>micro-panel-web-bulkhead</code></td><td>P2</td><td>多短焊缝列表、顺序、节点过渡、姿态占位</td></tr>
+</table>
+<h3 id="9.3-暂缓任务">9.3 暂缓任务</h3>
+<table>
+<tr><th>family_id</th><th>暂缓原因</th></tr>
+<tr><td><code>double-bottom-inner-fillet</code></td><td>狭小空间、可达性和姿态切换证据不足</td></tr>
+<tr><td><code>vertical-overhead-hull-weld</code></td><td>位置复杂度高，需要更强工艺和姿态约束</td></tr>
+<tr><td><code>thick-plate-groove-multipass</code></td><td>接近 WPS/PQR 和多层多道规划，当前不宜直接生成</td></tr>
+<tr><td><code>curved-spatial-complex-weld</code></td><td>曲面拓扑和空间复杂度超出第一版</td></tr>
+</table>
+<hr>
+<h2 id="10.-与现有代码和资料的关系">10. 与现有代码和资料的关系</h2>
+<p>本 spec 不替换现有资料底座，而是在其上新增一层生成输入规范。</p>
+<p>现有对象关系：</p>
+<pre><code>
+docs/data-foundation/manifests/*
+-&gt; DataFoundation
+-&gt; TaskEvidenceEntry
+-&gt; SyntheticSkillDataset v2 plan input
+</code></pre>
+<p>后续新增对象关系：</p>
+<pre><code>
+TaskTaxonomy
+WeldProcedureFieldSet
+EvidenceBinding
+SimulationInputSpec
+SyntheticSkillDatasetV2PlanInput
+-&gt; SkillDataset
+-&gt; WeldSkillPackage
+-&gt; TransferExperiment
+</code></pre>
+<p>建议保持：</p>
+<ul><li><code>docs/data-foundation/</code> 继续作为资料底座。</li><li><code>weldcore.knowledge</code> 继续负责资料、任务和证据 gate。</li><li><code>weldcore.sim</code> 负责仿真生成。</li><li><code>weldcore.model.skill</code> 继续承接 <code>SkillDataset</code> 和 <code>SkillSample</code>。</li><li><code>weldcore.transfer</code> 继续承接技能包提取和迁移评测。</li></ul>
+<hr>
+<h2 id="11.-gate-设计">11. Gate 设计</h2>
+<h3 id="11.1-分类-gate">11.1 分类 gate</h3>
+<ul><li>每个 synthetic v2 输入必须引用一个存在的 <code>TaskTaxonomy.family_id</code>。</li><li><code>family_id</code> 必须有 <code>readiness</code>。</li><li>第一批生成只允许 <code>ready_for_synthetic_v2_plan</code>。</li><li><code>defer</code> 和 <code>needs_more_sources</code> 只能进入报告和路线图，不进入样本生成。</li></ul>
+<h3 id="11.2-标准字段-gate">11.2 标准字段 gate</h3>
+<ul><li>每个任务输入必须覆盖：</li></ul>
+<p>- <code>joint_type</code> - <code>weld_position</code> - <code>weld_object</code> - <code>welding_process</code> - <code>geometry_spec</code> - <code>motion_spec</code> - <code>process_spec</code> - <code>quality_spec</code></p>
+<ul><li>如果字段未知，必须显式写 <code>unknown</code> 或 <code>requires_real_validation_later</code>，不能静默缺失。</li></ul>
+<h3 id="11.3-来源绑定-gate">11.3 来源绑定 gate</h3>
+<ul><li>每个关键字段必须有来源绑定。</li><li>每个 <code>simulation_assumption</code> 必须出现在输出报告中。</li><li>所有质量字段必须说明：</li></ul>
+<p>- 公开标签词汇。 - 仿真评分。 - 或后续真实验证占位。</p>
+<ul><li>禁止把公开数据集标签写成本项目真实质量结果。</li></ul>
+<h3 id="11.4-禁止字段-gate">11.4 禁止字段 gate</h3>
+<p>当前 JSON/CSV 生成输入不得包含熔池图像、熔池形态、熔池控制或焊中闭环字段。相关内容如被提及，只能出现在 Markdown 边界说明中，表达为“本阶段不纳入”。</p>
+<hr>
+<h2 id="12.-报告设计">12. 报告设计</h2>
+<p>后续 <code>synthetic_v2_input_report</code> 应输出：</p>
+<ul><li>任务分类表。</li><li>标准关键字段覆盖表。</li><li>字段来源绑定表。</li><li>第一批 synthetic v2 输入清单。</li><li>暂缓任务和暂缓原因。</li><li>假设字段清单。</li><li>后续真实验证字段清单。</li></ul>
+<p>报告结论必须包含：</p>
+<ul><li>本报告是 synthetic 数据生成输入规范。</li><li>本报告不是 WPS/PQR。</li><li>本报告不证明真实焊接质量。</li><li>第一批 synthetic 样本只能用于结构化、迁移和评测机制验证。</li></ul>
+<hr>
+<h2 id="13.-成功标准">13. 成功标准</h2>
+<p>设计进入实施计划前，必须满足：</p>
+<ul><li>任务分类框架覆盖 <code>ready_for_synthetic_v2_plan</code>、<code>needs_more_sources</code>、<code>defer</code> 三类任务。</li><li>字段集覆盖行业标准和工艺文件中的关键字段。</li><li>第一批任务能从宽分类框架中被解释性选出。</li><li>所有关键字段都有来源/假设/验证状态。</li><li>质量相关字段不会被误写成真实质量结论。</li><li><code>SimulationInputSpec</code> 能直接指导后续生成器实现。</li><li>现有 <code>SkillDataset</code>、<code>WeldSkillPackage</code>、<code>TransferExperiment</code> 链路不被替换。</li><li>本阶段仍排除熔池路线。</li></ul>
+<hr>
+<h2 id="14.-后续实施计划入口">14. 后续实施计划入口</h2>
+<p>用户审核本 spec 后，下一步应进入 implementation plan。计划建议拆成 6 个任务：</p>
+<ol><li>先完成 <code>SyntheticSkillDataset v2</code> 输入规范前置调研，汇总船舶焊接任务分类、焊缝/接头/位置/坡口/层道、工艺参数、质量缺陷词汇、公开数据集 schema 和仿真路线约束，并形成字段差距矩阵。</li><li>新增 <code>TaskTaxonomy</code>、<code>WeldProcedureFieldSet</code>、<code>EvidenceBinding</code> 数据模型。</li><li>从现有资料底座 manifest 和前置调研产物派生第一版输入规范 manifest。</li><li>新增 <code>SimulationInputSpec</code> loader 和 gate。</li><li>新增 synthetic v2 输入报告。</li><li>更新 <code>details.md</code> 和 README，说明当前完成的是输入规范，不是 synthetic v2 批量生成。</li></ol></main></div></body></html>

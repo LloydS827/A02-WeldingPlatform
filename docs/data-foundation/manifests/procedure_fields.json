@@ -1,0 +1,92 @@
+[
+  {
+    "field_name": "welding_process",
+    "field_group": "task_joint",
+    "required": true,
+    "description": "Publicly bounded welding process family used for the synthetic input specification."
+  },
+  {
+    "field_name": "joint_type",
+    "field_group": "task_joint",
+    "required": true,
+    "description": "Joint type aligned with the task taxonomy entry."
+  },
+  {
+    "field_name": "weld_position",
+    "field_group": "task_joint",
+    "required": true,
+    "description": "Nominal welding position category for first-batch planning."
+  },
+  {
+    "field_name": "weld_object",
+    "field_group": "task_joint",
+    "required": true,
+    "description": "Shipbuilding object or member pair being welded."
+  },
+  {
+    "field_name": "manufacturing_stage",
+    "field_group": "task_joint",
+    "required": true,
+    "description": "Manufacturing stage where the task family is expected to occur."
+  },
+  {
+    "field_name": "plate_thickness_mm",
+    "field_group": "geometry_material",
+    "required": true,
+    "description": "Synthetic planning thickness placeholder in millimeters, not a production WPS value."
+  },
+  {
+    "field_name": "groove_geometry",
+    "field_group": "geometry_material",
+    "required": true,
+    "description": "Groove or fillet geometry descriptor aligned with the task taxonomy."
+  },
+  {
+    "field_name": "current",
+    "field_group": "process",
+    "required": true,
+    "description": "Public-reference process current placeholder requiring later project validation."
+  },
+  {
+    "field_name": "voltage",
+    "field_group": "process",
+    "required": true,
+    "description": "Public-reference process voltage placeholder requiring later project validation."
+  },
+  {
+    "field_name": "travel_speed",
+    "field_group": "process",
+    "required": true,
+    "description": "Public-reference travel speed placeholder or bounded range."
+  },
+  {
+    "field_name": "trajectory",
+    "field_group": "motion_posture",
+    "required": true,
+    "description": "Top-level motion trajectory descriptor for synthetic planning."
+  },
+  {
+    "field_name": "torch_angle",
+    "field_group": "motion_posture",
+    "required": true,
+    "description": "Torch angle placeholder or posture descriptor from public automation references."
+  },
+  {
+    "field_name": "quality_label",
+    "field_group": "quality_inspection",
+    "required": true,
+    "description": "Quality label vocabulary placeholder; never a real weld quality conclusion."
+  },
+  {
+    "field_name": "inspection_reference",
+    "field_group": "quality_inspection",
+    "required": true,
+    "description": "Inspection vocabulary or reference placeholder requiring later real validation."
+  },
+  {
+    "field_name": "defect_label",
+    "field_group": "quality_inspection",
+    "required": false,
+    "description": "Optional public defect vocabulary placeholder for label-schema alignment."
+  }
+]
