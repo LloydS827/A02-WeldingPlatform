@@ -1,4 +1,12 @@
 from .experiment import TransferDecision, TransferExperiment, TransferMetrics
+from .simulation_io import (
+    SIMULATION_BUNDLE_SCHEMA_VERSION,
+    SYNTHETIC_DATASET_SCHEMA_VERSION,
+    SimulationBundleManifest,
+    SimulationRunRecord,
+    SimulationRunStatus,
+    SimulatorName,
+)
 from .skill import (
     HumanReview,
     MotionSkill,
@@ -23,9 +31,15 @@ __all__ = [
     "ProcessSignal",
     "ProcessSkill",
     "QualityObservation",
+    "SIMULATION_BUNDLE_SCHEMA_VERSION",
     "SkillDataset",
     "SkillEvaluation",
     "SkillSample",
+    "SYNTHETIC_DATASET_SCHEMA_VERSION",
+    "SimulationBundleManifest",
+    "SimulationRunRecord",
+    "SimulationRunStatus",
+    "SimulatorName",
     "SourceType",
     "TransferDecision",
     "TransferExperiment",
