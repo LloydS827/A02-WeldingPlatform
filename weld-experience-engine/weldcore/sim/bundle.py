@@ -21,15 +21,18 @@ def write_simlite_bundle(
     seed: int = 7,
     foundation: SyntheticInputFoundation | None = None,
 ) -> Path:
-    bundle_dir = Path(outdir)
-    bundle_dir.mkdir(parents=True, exist_ok=True)
+    if sample_count < 1:
+        raise ValueError(f"sample_count must be at least 1, got {sample_count}")
 
     synthetic_foundation = foundation or load_synthetic_input_foundation()
     simulation_input = _simulation_input_by_id(synthetic_foundation, input_id)
     taxonomy_ref = simulation_input.taxonomy_ref
+    bundle_id = f"simlite-{input_id}-{seed}-{sample_count}"
+    bundle_dir = Path(outdir) / bundle_id
+    bundle_dir.mkdir(parents=True, exist_ok=True)
 
     manifest = {
-        "bundle_id": f"simlite-{input_id}-{seed}-{sample_count}",
+        "bundle_id": bundle_id,
         "simulation_run_id": f"run-{input_id}-{seed}-{sample_count}",
         "input_id": simulation_input.input_id,
         "taxonomy_ref": taxonomy_ref,
