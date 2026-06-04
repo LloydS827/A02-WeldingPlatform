@@ -1,6 +1,6 @@
 # 焊接技能大师平台项目进展说明
 
-更新时间：2026-06-03
+更新时间：2026-06-04
 
 这份文件用于跟踪 A02「焊接技能大师平台」的实际进展、已有能力、待补能力和下一步计划。它面向项目负责人、业务人员、工艺人员和非技术读者，尽量用直白语言说明项目现在到底走到哪一步。
 
@@ -23,11 +23,13 @@
 
 ## 当前阶段判断
 
-项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate 和 `SyntheticSkillDataset v2` 输入规范 gate 的第一轮落地。
+项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate 的第一轮落地。
 
-现在可以说已经完成的是：软件和数据结构层面的最小闭环已经跑通。也就是说，我们已经能用一个简化的焊接任务证明“轨迹可以结构化”“技能可以形成包”“技能包可以迁移到相近条件并被评测”。在场景闸门之后，项目又新增了可执行的资料底座 gate：用 manifest 和报告检查资料来源、公开数据集、字段覆盖、任务证据映射是否足够支撑下一步 `SyntheticSkillDataset v2` 计划输入。最新完成的是 `SyntheticSkillDataset v2` 输入规范 gate：把这些计划输入进一步整理成船舶焊接任务分类、行业标准字段、字段来源和仿真假设边界，并形成证据报告。
+现在可以说已经完成的是：软件和数据结构层面的最小闭环已经跑通。也就是说，我们已经能用一个简化的焊接任务证明“轨迹可以结构化”“技能可以形成包”“技能包可以迁移到相近条件并被评测”。在场景闸门之后，项目又新增了可执行的资料底座 gate：用 manifest 和报告检查资料来源、公开数据集、字段覆盖、任务证据映射是否足够支撑下一步 `SyntheticSkillDataset v2` 计划输入。随后完成的是 `SyntheticSkillDataset v2` 输入规范 gate：把这些计划输入进一步整理成船舶焊接任务分类、行业标准字段、字段来源和仿真假设边界，并形成证据报告。最新完成的是仿真输出接入 gate：平台现在可以接收 simulation output bundles，把它们导入为 `SyntheticSkillDataset v2`，再输出证据报告。
 
-根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。目前已经完成公开资料来源、船舶焊接任务族和候选仿真场景的第一道可执行证据闸门，也已经完成资料底座 gate 的 manifest、校验逻辑、中文报告和 `SyntheticSkillDataset v2` 输入规范 gate；它还不是 bulk synthetic sample generation，也不是 `SyntheticSkillDataset v2` 的批量样本生成完成结论，不是真实焊接质量验证，也不是 WPS/PQR。
+根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。目前已经完成公开资料来源、船舶焊接任务族和候选仿真场景的第一道可执行证据闸门，也已经完成资料底座 gate 的 manifest、校验逻辑、中文报告、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate。这个仿真输出接入 gate 是第一个真正的平台侧仿真数据积累能力：外部或轻量仿真器产出的结果，可以先按统一格式进入平台，再沉淀为后续可追踪的数据资产。但它还不是 bulk synthetic sample generation，也不是 `SyntheticSkillDataset v2` 的批量样本生成完成结论，不是真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
+
+前期调研资料没有被删除或废弃。它们仍然作为未来焊接知识嵌入的底座，用来约束任务、字段、参数来源和术语边界。ManiSkill 和 Isaac 仍然是可选的外部执行工具，可以用于后续机器人任务或仿真执行评估，但不是平台核心；平台核心仍然是自有 schema、gate、导入、证据报告和经验沉淀能力。
 
 现在还不能说已经完成的是：真实焊接质量验证。因为目前主要依赖轻量仿真和合成数据，还没有把真机焊接、焊材、工艺评定、焊后检测结果接入完整闭环。
 
@@ -88,7 +90,7 @@
 
 ### 4. 报告生成能力
 
-现在有四类报告命令：
+现在有六类报告命令：
 
 ```bash
 cd weld-experience-engine
@@ -98,6 +100,7 @@ uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
+uv run python -m weldcore.report.simulation_ingest_report
 ```
 
 第一条命令生成经验结构化 POC 证据。
@@ -115,14 +118,17 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 
 第五条命令生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是输入规范 gate，不是 bulk synthetic sample generation，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
+第六条命令生成仿真输出接入 gate 证据。默认运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。它说明平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告。当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac。
+
 ### 5. 可选可视化和生态边界
 
-项目已经明确 Rerun 和 ManiSkill 的定位：
+项目已经明确 Rerun、ManiSkill 和 Isaac 的定位：
 
 - Rerun 用作多源数据记录、回放、标注和调试工具。
 - ManiSkill 用作机器人任务、示教数据和评测基准的参考范式。
+- Isaac 用作后续可能评估的外部仿真执行选项。
 
-重要的是：这两个工具目前都不是项目运行的强制依赖。没有安装它们，基础测试和报告生成仍然可以运行。
+重要的是：这些工具目前都不是项目运行的强制依赖。没有安装它们，基础测试和报告生成仍然可以运行。
 
 ## 尚未完成的能力
 
@@ -190,9 +196,9 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 
 ## 下一步计划
 
-### 第一优先级：基于已完成输入规范 gate 的小批量设计
+### 第一优先级：基于已完成仿真输出接入 gate 的小批量设计
 
-现在已经完成面向 `SyntheticSkillDataset v2` 的输入规范 gate。下一步是在这个 gate 的基础上，选择少量 ready 任务进入样本设计和小批量生成方案。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
+现在已经完成面向 `SyntheticSkillDataset v2` 的输入规范 gate，也完成了平台侧仿真输出接入 gate。下一步是在这两个 gate 的基础上，选择少量 ready 任务进入样本设计和小批量生成方案。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
 
 ### 第二优先级：继续收敛船舶焊接任务族
 
@@ -204,19 +210,20 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 
 ### 第四优先级：后续仿真数据生成计划
 
-在资料底座 gate 通过后，再进入 `SyntheticSkillDataset v2` 的生成计划和小批量样本验证。真机采集和专家访谈作为后续校准、验证和审查，不作为当前主路径。
+在资料底座 gate、输入规范 gate 和仿真输出接入 gate 通过后，再进入 `SyntheticSkillDataset v2` 的生成计划和小批量样本验证。真机采集和专家访谈作为后续校准、验证和审查，不作为当前主路径。ManiSkill/Isaac 可以作为外部执行选项评估，但不能替代平台自己的数据导入和证据闭环。
 
 ## 风险提醒
 
 - 不要把仿真结果直接说成真实焊接质量已经验证。
 - 不要把公开资料约束、仿真样本或候选场景写成真实焊接质量已经验证。
 - 不要把资料底座 gate 或 `SyntheticSkillDataset v2` 输入规范 gate 写成 `SyntheticSkillDataset v2` 已经批量生成。
+- 不要把仿真输出接入 gate 写成完整 ManiSkill/Isaac 集成或真实质量验证。
 - 不要把输入规范 gate 写成 bulk synthetic sample generation。
 - 不要把资料底座、公开数据集或场景报告写成真实焊接质量验证。
 - 不要把输入规范、资料底座或仿真计划写成 WPS/PQR。
 - 当前阶段不包含熔池图像、熔池控制或焊中闭环路线。
 - 不要为了等真机条件完全成熟而停止软件和数据结构建设。
-- 不要让 Rerun、ManiSkill 或某个仿真平台替代自有核心模型。
+- 不要让 Rerun、ManiSkill、Isaac 或某个仿真平台替代自有核心模型。
 - 不要一开始就做完整平台页面，当前更重要的是数据闭环和证据闭环。
 - 不要只整理专家文字经验，必须尽量转成字段、规则和可评测数据。
 
@@ -234,6 +241,8 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 - `docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。
 - `weld-experience-engine/synthetic_v2_input_report_out/`：`SyntheticSkillDataset v2` 输入规范 gate 的运行时输出目录。
 - `docs/data-foundation/reports/synthetic_v2_input_evidence.md`：`SyntheticSkillDataset v2` 输入规范 gate 证据报告。
+- `weld-experience-engine/simulation_ingest_report_out/`：仿真输出接入 gate 的运行时输出目录。
+- `docs/data-foundation/reports/simulation_ingest_evidence.md`：仿真输出接入 gate 证据报告。
 - `report/船舶焊接工艺大脑平台_风险驱动论证白皮书.md`：风险驱动白皮书。
 - `weld-experience-engine/`：可运行 POC、MVP、仿真优先知识闸门与资料底座 gate 代码。
 
@@ -249,6 +258,7 @@ uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
+uv run python -m weldcore.report.simulation_ingest_report
 ```
 
 如果上述命令都通过，说明当前软件原型的基础验证仍然有效。若本机尚未安装 `uv`，可以先安装 `uv`；临时备用方式是使用当前 Python 环境直接运行 `pytest` 和 `python -m ...`。

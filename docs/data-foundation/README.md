@@ -11,4 +11,6 @@
 
 本目录不是焊接质量真实验证报告，也不声称任何公开数据集已经验证了本项目的真实焊接质量。当前输出只用于资料追踪、字段约束、任务筛选和后续 `SyntheticSkillDataset v2` 规划输入。真实工艺验证、客户 WPS、现场检测和设备采集数据必须在后续阶段单独建立证据链。
 
+仿真输出接入之后，本目录下的 manifests 仍然被 simulation ingest gate 使用，用来约束 `SimulationOutputBundle` 进入 `SyntheticSkillDataset v2` 时的任务、字段和来源边界。前期 research docs 也仍然保留，作为未来焊接知识嵌入的底座，而不是被改写成真实质量验证、WPS/PQR 或熔池路线。
+
 当前路线不依赖焊中视觉控制或生产闭环控制字段；如未来需要纳入这类路线，必须新建独立设计、manifest 和 gate。
