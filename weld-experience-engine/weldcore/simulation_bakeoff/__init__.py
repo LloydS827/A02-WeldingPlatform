@@ -1,4 +1,5 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
+from .bakeoff import MinimalBakeoffResult, run_minimal_simulation_bakeoff
 from .evidence import build_simulation_evidence_bundle
 from .model import (
     BakeoffScorecard,
@@ -12,6 +13,7 @@ from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_s
 __all__ = [
     "DEFAULT_SIMULATION_TASK_SPECS",
     "BakeoffScorecard",
+    "MinimalBakeoffResult",
     "SimulationEvidenceBundle",
     "SimulationPathPoint",
     "SimulationTaskSpec",
@@ -21,4 +23,5 @@ __all__ = [
     "build_simulation_evidence_bundle",
     "default_simulation_task_specs",
     "run_simlite_reference",
+    "run_minimal_simulation_bakeoff",
 ]
