@@ -4,19 +4,21 @@
 
 ## POC / MVP
 
-保留前期概念验证和技能迁移 MVP 的设计、计划、实现证据和复盘材料。
+- `poc-mvp/specs/`
+- `poc-mvp/plans/`
 
 ## Gate 设计与实施计划
 
-保留资料底座、输入规范和仿真输出接入等阶段 gate 的设计与实施计划。
+- `gates/superpowers/specs/`
+- `gates/superpowers/plans/`
 
 ## 白皮书
 
-保留焊接经验结构化论证白皮书及相关报告材料。
+- `whitepaper/report/`
 
 ## 旧计划
 
-保留已被当前技能资产主线替代或降级的历史计划。
+- `old-plans/2026-06-04-下一阶段场景仿真与接入计划.md`：已被 Physical AI 焊接技能资产项目级重构路线取代。
 
 ## 仍可运行的历史命令
 
