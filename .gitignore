@@ -12,3 +12,7 @@ scenario_report_out/
 weld-experience-engine/scenario_report_out/
 data_foundation_report_out/
 weld-experience-engine/data_foundation_report_out/
+synthetic_v2_input_report_out/
+weld-experience-engine/synthetic_v2_input_report_out/
+simulation_ingest_report_out/
+weld-experience-engine/simulation_ingest_report_out/

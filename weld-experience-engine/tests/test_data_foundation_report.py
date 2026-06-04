@@ -108,7 +108,8 @@ def test_data_foundation_report_json_and_csv_outputs_do_not_contain_forbidden_te
 def test_data_foundation_report_default_docs_dir_points_to_repo_docs():
     assert DEFAULT_DOCS_REPORT_DIR.name == "reports"
     assert DEFAULT_DOCS_REPORT_DIR.parent.name == "data-foundation"
-    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "docs"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "evidence"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.parent.name == "docs"
 
 
 def test_data_foundation_report_module_entrypoint_refreshes_temp_docs(tmp_path):

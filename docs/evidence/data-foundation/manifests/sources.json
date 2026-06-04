@@ -11,7 +11,7 @@
     "covered_fields": ["shipbuilding_context", "manufacturing_stage", "weld_object", "robot_pose"],
     "missing_fields": ["current", "voltage", "quality_label", "requires_real_validation_later"],
     "usable_for": ["scenario_selection", "field_coverage"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
     "assumptions": ["仅把公开宣传资料用作场景约束和字段线索。"],
     "use_boundary": "可用于任务选择和字段覆盖；不可用于真实焊接质量验证或设备控制参数确认。",
     "notes": "不导入控制器数据或生产数据。"
@@ -28,7 +28,7 @@
     "covered_fields": ["shipbuilding_context", "manufacturing_stage", "weld_object", "weld_position", "joint_type"],
     "missing_fields": ["trajectory", "robot_pose", "quality_label"],
     "usable_for": ["scenario_selection", "parameter_range"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
     "assumptions": ["把行业页中的阶段和对象术语作为公开约束。"],
     "use_boundary": "可用于船舶语境和任务字段；不可替代船厂 WPS 或真实检测数据。",
     "notes": "与内部项目规划联合使用时需要标注假设字段。"
@@ -45,7 +45,7 @@
     "covered_fields": ["shipbuilding_context", "manufacturing_stage", "weld_object", "trajectory", "robot_pose", "motion_template"],
     "missing_fields": ["current", "voltage", "quality_label"],
     "usable_for": ["scenario_selection", "motion_template"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
     "assumptions": ["仅使用公开案例描述的任务结构，不导入客户程序或产线数据。"],
     "use_boundary": "可用于任务拆解和仿真边界；不可声称真实产线质量验证。",
     "notes": "适合支持微型面板、腹板、隔板多短焊缝任务规划。"
@@ -62,7 +62,7 @@
     "covered_fields": ["shipbuilding_context", "manufacturing_stage", "weld_object", "joint_type", "travel_speed", "trajectory", "torch_angle", "motion_template"],
     "missing_fields": ["current", "voltage", "quality_label", "requires_real_validation_later"],
     "usable_for": ["scenario_selection", "parameter_range", "motion_template"],
-    "source_refs": ["docs/superpowers/plans/2026-06-01-数据集与资料底座实施计划.md#task-2"],
+    "source_refs": ["docs/archive/gates/superpowers/plans/2026-06-01-数据集与资料底座实施计划.md#task-2"],
     "assumptions": ["把公开页面中的面板线能力作为任务字段证据。"],
     "use_boundary": "可用于任务和字段约束；不可用于过程质量验证或控制器数据复原。",
     "notes": "首批加筋板角焊任务的强相关来源。"
@@ -79,7 +79,7 @@
     "covered_fields": ["shipbuilding_context", "manufacturing_stage", "weld_object"],
     "missing_fields": ["weld_position", "robot_pose", "motion_template", "current", "voltage", "quality_label"],
     "usable_for": ["scenario_selection", "literature_screening"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
     "assumptions": ["保留原计划 source_id，但只把有效公开页作为船舶应用筛选入口。"],
     "use_boundary": "可用于复杂船体构件资料筛选；不可声称已取得具体块体焊接产线证据或质量验证。",
     "notes": "双层底/双壳内部角焊仍为待补证任务。"
@@ -113,7 +113,7 @@
     "covered_fields": ["defect_label", "quality_label", "inspection_reference"],
     "missing_fields": ["shipbuilding_context", "trajectory", "robot_pose"],
     "usable_for": ["quality_label", "benchmark", "schema_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["只用于缺陷词汇和 benchmark 方向，不迁移为船舶质量结论。"],
     "use_boundary": "可用于标签词汇；不可用于船舶焊接质量真实验证。",
     "notes": "不在 git 中镜像完整数据。"
@@ -130,7 +130,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "quality_label", "assumption_field"],
     "missing_fields": ["shipbuilding_context", "robot_pose", "trajectory"],
     "usable_for": ["parameter_range", "benchmark", "schema_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["使用任何字段前需要先筛选文件、许可和标签定义。"],
     "use_boundary": "可用于 schema 和参数字段参考；不可用于船舶任务质量验证。",
     "notes": "外部缓存优先，不下载大文件进 git。"
@@ -147,7 +147,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "travel_speed", "trajectory", "robot_pose", "quality_label"],
     "missing_fields": ["shipbuilding_context", "manufacturing_stage"],
     "usable_for": ["schema_reference", "parameter_range", "benchmark"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["仅把多模态字段结构作为后续 synthetic v2 规划参考。"],
     "use_boundary": "可用于 schema 参考；不可直接映射为船舶现场质量证据。",
     "notes": "完整数据保持外部缓存策略。"
@@ -164,7 +164,7 @@
     "covered_fields": ["defect_label", "quality_label", "inspection_reference"],
     "missing_fields": ["shipbuilding_context", "trajectory", "robot_pose"],
     "usable_for": ["quality_label", "benchmark", "schema_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["只作为图像标签来源候选，需后续核对许可和类别定义。"],
     "use_boundary": "可用于标签词汇和 benchmark；不可证明船舶焊缝质量。",
     "notes": "不下载完整图像集进 git。"
@@ -181,7 +181,7 @@
     "covered_fields": ["defect_label", "quality_label", "inspection_reference"],
     "missing_fields": ["shipbuilding_context", "trajectory", "robot_pose"],
     "usable_for": ["quality_label", "benchmark", "schema_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["只登记为公开数据集线索，后续使用前核对标签语义。"],
     "use_boundary": "可用于视觉标签参考；不可作为船舶质量验证结果。",
     "notes": "下载策略由 dataset manifest 控制。"
@@ -198,7 +198,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "quality_label", "assumption_field"],
     "missing_fields": ["shipbuilding_context", "robot_pose", "trajectory"],
     "usable_for": ["schema_reference", "parameter_range"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.2"],
     "assumptions": ["进入任务规划前必须人工筛选字段、许可、样本含义和质量标签。"],
     "use_boundary": "可作为候选数据来源；不可自动进入训练或质量验证。",
     "notes": "作为第六个公开数据集卡的筛选入口。"
@@ -215,7 +215,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "travel_speed", "inspection_reference", "requires_real_validation_later"],
     "missing_fields": ["shipbuilding_context", "trajectory", "robot_pose"],
     "usable_for": ["parameter_range", "procedure_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["只使用公开页面解释，不复制或替代标准正文。"],
     "use_boundary": "可用于 WPS 概念；不可替代客户 WPS、船级社规则或标准正文。",
     "notes": "标准正文和适用性需后续合规确认。"
@@ -232,7 +232,7 @@
     "covered_fields": ["inspection_reference", "requires_real_validation_later", "assumption_field"],
     "missing_fields": ["shipbuilding_context", "trajectory", "quality_label"],
     "usable_for": ["procedure_reference", "field_coverage"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["索引只作为标准入口，不代表具体标准内容已经纳入。"],
     "use_boundary": "可用于标注后续合规验证需求；不可替代标准采购和项目审查。",
     "notes": "支持 requires_real_validation_later 字段。"
@@ -249,7 +249,7 @@
     "covered_fields": ["defect_label", "quality_label", "inspection_reference"],
     "missing_fields": ["shipbuilding_context", "trajectory", "robot_pose"],
     "usable_for": ["quality_label", "inspection_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["只提取术语边界，不把公开解释转化为项目判定规则。"],
     "use_boundary": "可用于缺陷词汇；不可用于真实质量判定或验收。",
     "notes": "与数据集标签需要后续映射。"
@@ -266,7 +266,7 @@
     "covered_fields": ["shipbuilding_context", "defect_label", "quality_label", "inspection_reference"],
     "missing_fields": ["trajectory", "robot_pose", "current"],
     "usable_for": ["quality_label", "inspection_reference"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["作为词汇和检查语境来源，不视为项目实测证据。"],
     "use_boundary": "可用于船舶语境的缺陷词汇；不可替代项目验收标准。",
     "notes": "与 GDXray/RIAWELC/LoHi 标签做后续映射。"
@@ -283,7 +283,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "travel_speed", "joint_type"],
     "missing_fields": ["shipbuilding_context", "robot_pose", "quality_label"],
     "usable_for": ["parameter_range", "field_coverage"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["只作为通用工艺字段参考，船舶适用性需另行验证。"],
     "use_boundary": "可用于通用参数字段；不可直接作为船舶 WPS。",
     "notes": "用于补齐工艺字段覆盖。"
@@ -300,7 +300,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "travel_speed", "joint_type", "weld_position"],
     "missing_fields": ["shipbuilding_context", "trajectory", "quality_label"],
     "usable_for": ["parameter_range", "field_coverage"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["只登记公开资料入口，具体参数需后续人工筛选。"],
     "use_boundary": "可用于通用工艺字段参考；不可替代项目 WPS 或质量验证。",
     "notes": "后续可细化到具体 ESAB 指南页面。"
@@ -317,7 +317,7 @@
     "covered_fields": ["current", "voltage", "wire_feed", "travel_speed", "joint_type", "weld_position"],
     "missing_fields": ["shipbuilding_context", "robot_pose", "quality_label"],
     "usable_for": ["parameter_range", "field_coverage"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.3"],
     "assumptions": ["只用于通用字段和术语，不把参数直接用于船舶任务。"],
     "use_boundary": "可用于参数字段参考；不可替代船舶工艺规程。",
     "notes": "与 Lincoln/ESAB 共同提供保守字段覆盖。"
@@ -334,7 +334,7 @@
     "covered_fields": ["shipbuilding_context", "robot_pose", "trajectory", "motion_template", "requires_real_validation_later"],
     "missing_fields": ["current", "voltage", "quality_label"],
     "usable_for": ["literature_screening", "scenario_selection"],
-    "source_refs": ["docs/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
+    "source_refs": ["docs/archive/gates/superpowers/specs/2026-06-01-数据集与资料底座-design.md#6.1"],
     "assumptions": ["只作为公开文献筛选入口，不把二级页面摘要作为实验证据。"],
     "use_boundary": "可用于规划后续文献筛选；不可用于实测结果或质量验证。",
     "notes": "后续需要替换或补充为具体论文条目。"
