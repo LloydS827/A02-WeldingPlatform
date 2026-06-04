@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>焊接技能大师平台项目进展说明</title>
+  <style>:root {
+  color-scheme: light;
+  --bg: #f7f8fa;
+  --paper: #ffffff;
+  --ink: #1f2933;
+  --muted: #5b6472;
+  --line: #d8dde6;
+  --accent: #1f6feb;
+  --code-bg: #f3f5f7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.72;
+}
+main {
+  width: min(960px, calc(100% - 40px));
+  margin: 32px auto 56px;
+  padding: 42px 48px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+h1, h2, h3 {
+  line-height: 1.28;
+  margin: 1.3em 0 0.55em;
+}
+h1 { margin-top: 0; font-size: 2rem; }
+h2 { padding-top: 0.5em; border-top: 1px solid var(--line); font-size: 1.35rem; }
+h3 { font-size: 1.1rem; }
+p, ul, ol, pre, table { margin: 0.75em 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  background: var(--code-bg);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow-x: auto;
+  padding: 14px 16px;
+  border-radius: 6px;
+  background: #111827;
+  color: #f9fafb;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+li { margin: 0.35em 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }
+th { background: #f3f5f7; }
+.meta {
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+}
+@media (max-width: 720px) {
+  main { width: 100%; margin: 0; padding: 24px 18px 40px; border: 0; border-radius: 0; }
+  h1 { font-size: 1.65rem; }
+}</style>
+</head>
+<body>
+  <main>
+    <div class="meta">HTML 阅读版；维护源：<a href="details.md">details.md</a></div>
+<h1>焊接技能大师平台项目进展说明</h1>
+<p>更新时间：2026-06-04</p>
+<p>这份文件用于跟踪 A02「焊接技能大师平台」的实际进展、已有能力、待补能力和下一步计划。它面向项目负责人、业务人员、工艺人员和非技术读者，尽量用直白语言说明项目现在到底走到哪一步。</p>
+<h2>维护方式</h2>
+<p>这份文件需要随着项目推进及时更新。凡是项目阶段、已有能力、待补能力、下一步计划、风险判断或关键交付物发生变化，都应该同步修改本文件。</p>
+<p>未来 Agent 在阶段或范围变化时必须检查本文件。更新时请保持面向非技术读者的表达方式，明确区分“已经完成”“正在验证”“后续需要补充”，不要把仿真或软件原型结果夸大为真实焊接质量结论。</p>
+<p>本文件应同步维护 <a href="details.html">HTML 阅读版</a>。后续如果更新根目录 <code>README.md</code>、本文件或类似面向读者的阶段/路线说明，也要同步创建或刷新对应的 <code>.html</code> 阅读副本，方便项目负责人、业务人员和工艺人员直接阅读。</p>
+<h2>一句话说明</h2>
+<p>本项目要把焊接技能大师的经验，从口头描述、纸面工艺卡或单次报告，逐步整理成机器可以记录、分析、复用、迁移和审计的焊接技能资产。</p>
+<p>当前最重要的对象叫 <code>WeldSkillPackage</code>。可以把它理解为一个“焊接技能包”：里面记录这个技能来自哪里、适用于什么焊接任务、轨迹和姿态怎么表达、工艺参数是什么、哪些条件下可以迁移、哪里容易失败、机器人执行时需要哪些建议，以及证据状态是否可靠。</p>
+<h2>当前阶段</h2>
+<p>当前阶段是围绕 <code>WeldSkillPackage</code> 的第一阶段项目级重构。</p>
+<p>过去一段时间里，项目陆续完成了 POC、MVP、资料 gate、输入规范 gate、仿真输出接入 gate 和报告机制。它们证明基础代码、数据结构和证据生成机制已经跑通。现在的工作不是否定这些成果，而是把项目从“报告和验证任务堆在一起”的状态，整理成“Physical AI 焊接技能资产底座”的状态。</p>
+<p>这次重构要解决的主要问题是项目变得臃肿：入口文档里同时出现 POC、MVP、gate、场景计划、白皮书和报告命令，容易让读者误以为这些历史阶段就是当前研发主线。新的默认主线应当更清楚：本仓库服务 A02 焊接技能大师平台在 Physical AI 方向下的研发，核心资产对象是 <code>WeldSkillPackage</code>。</p>
+<h2>已完成</h2>
+<p>已经完成的基础能力包括：</p>
+<ul>
+<li>有可运行的 <code>weldcore</code> 代码引擎。</li>
+<li>有基础数据结构，可以表达 <code>SkillDataset</code>、焊接样本、<code>WeldSkillPackage</code>、迁移实验和评测证据。</li>
+<li>已跑通经验结构化 POC，证明焊接轨迹可以被拆解和重组。</li>
+<li>已跑通技能迁移 MVP，证明技能包可以在简化条件下迁移并被评测。</li>
+<li>已跑通资料底座、输入规范和仿真输出接入等 gate，证明资料、字段、仿真假设和导入证据可以被组织起来。</li>
+<li>已保留报告命令，用于生成当前证据或历史支撑材料。</li>
+<li>POC、MVP、gate、白皮书和旧计划已经归档为历史证据和支撑机制，而不是继续占据默认项目入口。</li>
+</ul>
+<p>这些成果说明软件和数据结构层面的最小闭环已经存在，但不能说明真实焊接质量已经验证。</p>
+<h2>当前工作</h2>
+<p>当前工作是减轻项目臃肿，把仓库结构和战略方向对齐。</p>
+<p>具体来说：</p>
+<ul>
+<li>根目录入口改为 Physical AI 焊接技能资产底座。</li>
+<li>默认主线改为围绕 <code>WeldSkillPackage</code> 建立技能资产。</li>
+<li>POC、MVP、gate 和报告命令保留，但放回“证据”和“历史支撑”的位置。</li>
+<li><code>stiffened-panel-fillet</code> 保留为历史资料 gate 和行业实例，不再作为默认项目主线。</li>
+<li>simlite 保留为 L0 稳定仿真和测试工具，不被写成最终类机器人仿真方案。</li>
+<li>ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部生态保留为 adapter 候选，不作为当前基础依赖。</li>
+</ul>
+<h2>下一步</h2>
+<p>下一步进入 <code>WeldSkillUnit</code> 驱动的类机器人仿真路线准备。</p>
+<p>这意味着项目会继续回答三个问题：</p>
+<ol>
+<li>一个 <code>WeldSkillPackage</code> 里面应该如何拆出更小、更可复用的 <code>WeldSkillUnit</code>。</li>
+<li>类机器人仿真应如何读取、生成或验证这些技能资产。</li>
+<li>Rerun 如何作为证据回放和时间轴检查工具接入，但不承担仿真器角色。</li>
+</ol>
+<p>下一步不是马上选择最终仿真器。最终仿真器需要在技能资产对象、adapter 边界、机器人约束和验证目标更清楚之后再评估。</p>
+<h2>尚未完成</h2>
+<p>当前仍未完成的能力包括：</p>
+<ul>
+<li>真实焊接质量验证：还没有把真实焊机、机器人、焊材、工艺参数、焊后检测和质量结果接成完整闭环。</li>
+<li>WPS/PQR：当前资料、输入规范和仿真假设不能替代正式焊接工艺规程或工艺评定。</li>
+<li>最终仿真器选择：ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等只能作为候选 adapter 或生态参考。</li>
+<li>完整业务平台：当前重点仍是技能资产、数据结构、证据边界和验证路径，不是完整业务系统页面。</li>
+<li>专家知识系统化录入：技能大师经验还需要后续形成稳定的采集、标注和审查格式。</li>
+</ul>
+<h2>当前可交付物清单</h2>
+<ul>
+<li><code>README.md</code>：项目默认入口，说明 Physical AI 焊接技能资产底座。</li>
+<li><code>details.md</code>：面向非技术读者的项目阶段说明和维护台账。</li>
+<li><code>docs/strategy/</code>：公司级 Physical AI 判断与当前项目承接关系。</li>
+<li><code>docs/architecture/</code>：五层架构、模块边界和 adapter 原则。</li>
+<li><code>docs/skill-assets/</code>：<code>WeldSkillPackage</code> 与焊缝技能单元路线。</li>
+<li><code>docs/simulation/</code>：类机器人仿真路线、simlite 边界和外部 adapter 候选。</li>
+<li><code>docs/evidence/</code>：资料来源、字段覆盖、证据报告和质量边界。</li>
+<li><code>docs/archive/</code>：POC、MVP、gate、白皮书和旧计划归档。</li>
+<li><code>weld-experience-engine/</code>：可运行的焊接技能资产引擎、测试和报告命令。</li>
+</ul>
+<h2>最近一次验证方式</h2>
+<p>进入 <code>weld-experience-engine</code> 后运行：</p>
+<pre><code>uv sync --extra dev --extra viz
+uv run pytest -q</code></pre>
+<p>报告命令仍可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。</p>
+<h2>风险提醒</h2>
+<ul>
+<li>不要把 <code>stiffened-panel-fillet</code> 写成当前默认项目主线。</li>
+<li>不要把 simlite 写成最终类机器人仿真路线。</li>
+<li>不要把 Rerun 写成仿真器、机器人控制总线或生产数据库。</li>
+<li>不要把外部仿真器或机器人生态写成项目核心对象；它们仍是候选或工业参考路线。</li>
+<li>不要把公开资料、合成数据、仿真输出或报告结论写成真实焊接质量验证。</li>
+<li>不要把资料证据、输入规范或仿真假设写成 WPS/PQR。</li>
+<li>不要删除历史成果；历史材料应继续保留在归档目录中。</li>
+</ul>
+  </main>
+</body>
+</html>
