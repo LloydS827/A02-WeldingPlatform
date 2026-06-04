@@ -43,11 +43,17 @@ class SimulationBundleManifest:
     input_id: str
     simulator: SimulatorName
     simulator_version: str
+    adapter_version: str
+    seed: int
     created_at: str
+    generated_at: str
     sample_count: int
     taxonomy_ref: str
     artifact_refs: dict[str, Any]
     assumption_summary: list[str]
+    requires_real_validation_later: bool
+    missing_signal_notes: list[str]
+    generation_boundary: list[str]
     validation_status: str
     source_type: str = "simulation"
     schema_version: str = SIMULATION_BUNDLE_SCHEMA_VERSION
@@ -61,6 +67,10 @@ class SimulationRunRecord:
     simulation_run_id: str
     input_id: str
     simulator: SimulatorName
+    simulator_version: str
+    adapter_version: str
+    seed: int | None
+    sample_count: int
     status: SimulationRunStatus
     created_at: str
     completed_at: str

@@ -62,6 +62,8 @@ def _write_valid_bundle(
         "taxonomy_ref": simulation_input.taxonomy_ref,
         "simulator": "simlite",
         "simulator_version": "0.1",
+        "adapter_version": "0.1",
+        "seed": 7,
         "created_at": "2026-06-03T00:00:00Z",
         "generated_at": "2026-06-03T00:00:00Z",
         "sample_count": 1,
@@ -72,7 +74,9 @@ def _write_valid_bundle(
             "quality_placeholders": "quality_placeholders.json",
         },
         "assumption_summary": ["synthetic-only bundle for gate tests"],
+        "requires_real_validation_later": True,
         "missing_signal_notes": "one wire-feed value is not available in the source output",
+        "generation_boundary": ["not WPS/PQR", "not real welding quality validation"],
     }
     if manifest_overrides:
         manifest.update(manifest_overrides)
@@ -120,7 +124,7 @@ def _write_valid_bundle(
         else {
             "input_id": simulation_input.input_id,
             "taxonomy_ref": taxonomy_entry.family_id,
-            "bindings": [],
+            "bindings": [{"field_path": "geometry_spec.plate_thickness_mm"}],
         },
     )
     _write_json(
@@ -242,6 +246,28 @@ def test_non_simulation_source_type_fails(tmp_path: Path) -> None:
     assert any("source_type" in issue for issue in result.issues)
 
 
+def test_non_object_manifest_returns_gate_failure_without_crashing(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        process_rows=[
+            {
+                "sample_id": "sample-001",
+                "t": 0.0,
+                "current": "",
+                "voltage": 24.0,
+                "wire_feed": 9.5,
+                "travel_speed": 3.1,
+            }
+        ],
+    )
+    _write_json(tmp_path / "manifest.json", ["not", "an", "object"])
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("expected json object" in issue for issue in result.issues)
+
+
 def test_missing_required_manifest_field_fails(tmp_path: Path) -> None:
     _write_valid_bundle(tmp_path)
     manifest_path = tmp_path / "manifest.json"
@@ -266,6 +292,20 @@ def test_missing_other_required_manifest_field_fails(tmp_path: Path) -> None:
 
     assert not result.passed
     assert any("simulator_version" in issue for issue in result.issues)
+
+
+def test_zero_sample_count_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={"sample_count": 0},
+        trajectory_rows=[],
+        process_rows=[],
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("sample_count" in issue and "at least 1" in issue for issue in result.issues)
 
 
 def test_unknown_input_id_fails(tmp_path: Path) -> None:
@@ -614,6 +654,49 @@ def test_artifact_refs_missing_target_file_fails(tmp_path: Path) -> None:
 
     assert not result.passed
     assert any("artifact_refs" in issue and "missing-evidence.json" in issue for issue in result.issues)
+
+
+def test_artifact_refs_missing_canonical_key_fails(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        manifest_overrides={
+            "artifact_refs": {
+                "trajectory": "trajectory.csv",
+                "process_signals": "process_signals.csv",
+                "evidence_bindings": "evidence_bindings.json",
+            }
+        },
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("quality_placeholders" in issue for issue in result.issues)
+
+
+def test_evidence_bindings_must_be_structured_json(tmp_path: Path) -> None:
+    _write_valid_bundle(tmp_path, evidence_bindings=["not", "bindings"])
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("evidence_bindings.json" in issue for issue in result.issues)
+
+
+def test_evidence_bindings_input_and_taxonomy_must_align(tmp_path: Path) -> None:
+    _write_valid_bundle(
+        tmp_path,
+        evidence_bindings={
+            "input_id": "other-input",
+            "taxonomy_ref": DEFAULT_TAXONOMY_REF,
+            "bindings": [{"field_path": "geometry_spec.plate_thickness_mm"}],
+        },
+    )
+
+    result = validate_simulation_bundle(tmp_path)
+
+    assert not result.passed
+    assert any("input_id" in issue for issue in result.issues)
 
 
 def test_missing_evidence_bindings_json_fails(tmp_path: Path) -> None:

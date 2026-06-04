@@ -53,9 +53,14 @@ MANIFEST_REQUIRED_FIELDS = (
     "taxonomy_ref",
     "simulator",
     "simulator_version",
+    "adapter_version",
+    "seed",
+    "generated_at",
     "sample_count",
     "artifact_refs",
     "assumption_summary",
+    "requires_real_validation_later",
+    "generation_boundary",
     "source_type",
     "schema_version",
 )
@@ -67,6 +72,18 @@ PROCESS_OPTIONAL_NUMERIC_FIELDS = (
     "voltage",
     "wire_feed",
     "travel_speed",
+)
+ARTIFACT_REF_REQUIRED_KEYS = (
+    "trajectory",
+    "process_signals",
+    "evidence_bindings",
+    "quality_placeholders",
+)
+EVIDENCE_BINDING_LIST_REQUIRED_FIELDS = (
+    "field_path",
+    "source_id",
+    "evidence_role",
+    "value_status",
 )
 @dataclass(frozen=True)
 class SimulationBundleGateResult:
@@ -109,7 +126,7 @@ def validate_simulation_bundle(
     process_rows = _load_csv_rows(
         process_path, issues, "process_signals.csv", PROCESS_REQUIRED_COLUMNS
     )
-    _load_json(evidence_path, issues, "evidence_bindings.json")
+    evidence_bindings = _load_json(evidence_path, issues, "evidence_bindings.json")
     quality_placeholders = _load_json(
         quality_path, issues, "quality_placeholders.json"
     )
@@ -125,7 +142,10 @@ def validate_simulation_bundle(
             simulation_inputs_by_id,
             taxonomy_by_ref,
         )
-        _validate_process_signal_notes(manifest, process_rows, issues)
+        if isinstance(manifest, dict):
+            _validate_process_signal_notes(manifest, process_rows, issues)
+            if evidence_bindings is not None:
+                _validate_evidence_bindings(evidence_bindings, manifest, issues)
         _validate_csv_numeric_values(
             trajectory_rows,
             "trajectory.csv",
@@ -201,6 +221,10 @@ def import_simulation_bundle(
         simulation_run_id=simulation_run_id,
         input_id=str(manifest.get("input_id", "")),
         simulator=simulator,
+        simulator_version=str(manifest.get("simulator_version", "")),
+        adapter_version=str(manifest.get("adapter_version", "")),
+        seed=_coerce_optional_int(manifest.get("seed")),
+        sample_count=int(manifest.get("sample_count", 0)),
         status=SimulationRunStatus.IMPORTED,
         created_at=created_at,
         completed_at=completed_at,
@@ -317,7 +341,13 @@ def _validate_manifest(
                 continue
             sample_ids.add(str(sample_id).strip())
         sample_count = manifest.get("sample_count")
-        if sample_count != len(sample_ids):
+        if (
+            not isinstance(sample_count, int)
+            or isinstance(sample_count, bool)
+            or sample_count < 1
+        ):
+            issues.append("manifest.json: sample_count must be at least 1")
+        elif sample_count != len(sample_ids):
             issues.append("manifest.json: sample_count mismatch with trajectory.csv")
 
 
@@ -329,6 +359,10 @@ def _validate_artifact_refs(
     if not isinstance(artifact_refs, dict):
         issues.append("manifest.json: artifact_refs must be object")
         return
+
+    for ref_name in ARTIFACT_REF_REQUIRED_KEYS:
+        if ref_name not in artifact_refs or _is_blank(artifact_refs.get(ref_name)):
+            issues.append(f"manifest.json: artifact_refs.{ref_name} is required")
 
     for ref_name, ref_path in artifact_refs.items():
         if _is_blank(ref_path):
@@ -346,6 +380,58 @@ def _validate_artifact_refs(
             issues.append(
                 f"manifest.json: artifact_refs.{ref_name} target not found: {ref_path}"
             )
+
+
+def _validate_evidence_bindings(
+    evidence_bindings: Any,
+    manifest: dict[str, Any],
+    issues: list[str],
+) -> None:
+    if isinstance(evidence_bindings, list):
+        _validate_evidence_binding_list(evidence_bindings, "evidence_bindings.json", issues)
+        return
+
+    if not isinstance(evidence_bindings, dict):
+        issues.append("evidence_bindings.json: expected object or list")
+        return
+
+    if evidence_bindings.get("input_id") != manifest.get("input_id"):
+        issues.append("evidence_bindings.json: input_id must match manifest.json")
+    if evidence_bindings.get("taxonomy_ref") != manifest.get("taxonomy_ref"):
+        issues.append("evidence_bindings.json: taxonomy_ref must match manifest.json")
+
+    bindings = evidence_bindings.get("bindings")
+    if not isinstance(bindings, list) or len(bindings) == 0:
+        issues.append("evidence_bindings.json: bindings must be a non-empty list")
+        return
+
+    for index, binding in enumerate(bindings):
+        if not isinstance(binding, dict):
+            issues.append(f"evidence_bindings.json: bindings[{index}] must be object")
+            continue
+        if _is_blank(binding.get("field_path")):
+            issues.append(
+                f"evidence_bindings.json: bindings[{index}].field_path is required"
+            )
+
+
+def _validate_evidence_binding_list(
+    bindings: list[Any],
+    scope: str,
+    issues: list[str],
+) -> None:
+    if len(bindings) == 0:
+        issues.append(f"{scope}: expected at least one binding")
+        return
+    for index, binding in enumerate(bindings):
+        if not isinstance(binding, dict):
+            issues.append(f"{scope}: bindings[{index}] must be object")
+            continue
+        for field_name in EVIDENCE_BINDING_LIST_REQUIRED_FIELDS:
+            if _is_blank(binding.get(field_name)):
+                issues.append(
+                    f"{scope}: bindings[{index}].{field_name} is required"
+                )
 
 
 def _validate_taxonomy_ref(
@@ -572,6 +658,17 @@ def _coerce_optional_float(value: Any) -> float | None:
         if value is None or value == "":
             return None
         return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coerce_optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    try:
+        return int(value)
     except (TypeError, ValueError):
         return None
 

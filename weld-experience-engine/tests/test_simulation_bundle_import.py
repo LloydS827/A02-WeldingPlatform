@@ -54,14 +54,20 @@ def _write_bundle(
         "taxonomy_ref": simulation_input.taxonomy_ref,
         "simulator": "simlite",
         "simulator_version": "0.1",
+        "adapter_version": "0.1",
+        "seed": 7,
         "created_at": "2026-06-03T00:00:00Z",
         "generated_at": "2026-06-03T00:00:00Z",
         "sample_count": 1,
         "artifact_refs": {
             "trajectory": "trajectory.csv",
             "process_signals": "process_signals.csv",
+            "evidence_bindings": "evidence_bindings.json",
+            "quality_placeholders": "quality_placeholders.json",
         },
         "assumption_summary": ["not WPS/PQR; synthetic-only"],
+        "requires_real_validation_later": True,
+        "missing_signal_notes": [],
         "generation_boundary": ["not WPS/PQR", "synthetic-only"],
     }
     if manifest_overrides:
@@ -136,6 +142,10 @@ def test_valid_bundle_imports_to_skill_dataset(tmp_path: Path) -> None:
     assert result.run_record.simulation_run_id == "run-panel-butt-001"
     assert result.run_record.input_id == "input-panel-butt-001"
     assert result.run_record.simulator == SimulatorName.SIMLITE
+    assert result.run_record.simulator_version == "0.1"
+    assert result.run_record.adapter_version == "0.1"
+    assert result.run_record.seed == 7
+    assert result.run_record.sample_count == 1
     assert result.run_record.status == SimulationRunStatus.IMPORTED
     assert result.run_record.created_at == "2026-06-03T00:00:00Z"
     assert result.run_record.completed_at == "2026-06-03T00:00:00Z"
