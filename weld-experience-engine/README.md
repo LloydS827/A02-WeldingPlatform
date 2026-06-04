@@ -1,55 +1,70 @@
-# weldcore — 焊接技能大师经验结构化引擎 (POC)
+# weldcore — 焊接技能资产引擎
 
-验证核心命门：大师焊接轨迹 → 结构化工艺参数(摆动模板/工作角/行进角/行进速度/层道) → 机器人可执行轨迹，且特征不丢。
+`weldcore` 是 A02「焊接技能大师平台」的可运行引擎，用于把焊接经验、仿真输出、工艺字段和证据边界组织成可验证的焊接技能资产。
 
-闭环自证：合成理想轨迹 → 注入真实扰动 → decompose → recompose → 与已知 ground truth 比对。
+当前核心模型是：
+
+```text
+SkillDataset -> WeldSkillPackage -> evaluation / evidence
+```
+
+其中 `WeldSkillPackage` 是核心资产对象；POC、MVP、report 命令、simlite 和外部 adapter 都围绕它提供输入、验证或证据。
 
 ## 运行
 
-    uv sync --extra dev --extra viz
-    uv run pytest -q
-    uv run python -m weldcore.report.generate   # 出图+数据表
-    uv run python -m weldcore.report.mvp_report # 技能迁移 MVP 证据包
-    uv run python -m weldcore.report.scenario_report # 船舶场景资料底座与候选任务证据
-    uv run python -m weldcore.report.data_foundation_report # 数据集与资料底座证据
-    uv run python -m weldcore.report.synthetic_v2_input_report # SyntheticSkillDataset v2 输入规范 gate 证据
-    uv run python -m weldcore.report.simulation_ingest_report # SimulationOutputBundle 导入 gate 证据
+```bash
+uv sync --extra dev --extra viz
+uv run pytest -q
+```
 
 如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
 
-## 当前 POC 能力
+## 证据与历史支撑命令
 
-- `model/`：Trajectory、WeaveTemplate、GrooveGeometry、LayerPass、WeldProcess 工艺数据结构。
+既有 POC / MVP / report 命令仍可用，但它们用于当前证据或历史支撑，不是默认研发主线本身。
+
+当前证据命令：
+
+```bash
+uv run python -m weldcore.report.data_foundation_report
+uv run python -m weldcore.report.synthetic_v2_input_report
+uv run python -m weldcore.report.simulation_ingest_report
+```
+
+历史支撑命令：
+
+```bash
+uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.mvp_report
+uv run python -m weldcore.report.scenario_report
+```
+
+这些命令用于复盘经验结构化 POC、技能迁移 MVP、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate。它们不能被写成真实焊接质量验证、完整外部仿真器集成或 WPS/PQR。
+
+## 当前能力
+
+- `model/`：Trajectory、WeaveTemplate、GrooveGeometry、LayerPass、WeldProcess 等工艺数据结构。
 - `datagen/`：理想大师轨迹合成，以及手抖、漂移、无效停顿扰动注入。
 - `decompose/`：中心线提取、摆幅/摆频检测、模板分类、姿态估计，输出结构化 WeldProcess。
 - `recompose/`：结构化工艺参数重组为连续轨迹；缺少 scipy 时回退到正向合成轨迹。
 - `metrics/`：往返 RMS、参数恢复误差、抗扰动失效边界。
-- `report/`：生成 `report_out/roundtrip.png`、`robustness.png`、`evidence.json`、`robustness.csv`。
-- `sim/` + `transfer/`：轻量仿真样本、WeldSkillPackage 生成、条件迁移、迁移评测。
-- `knowledge/`：公开资料来源、船舶焊接任务族、候选仿真场景和三层 gate。
+- `sim/`：simlite/mock bundle，作为 L0 稳定仿真和测试工具。
+- `transfer/`：`WeldSkillPackage` 生成、条件迁移和迁移评测。
+- `knowledge/`：公开资料来源、船舶焊接任务族、候选仿真场景和 gate 支撑材料。
+- `ingest/`：`SimulationOutputBundle` 导入边界，用于把仿真输出转为可审计数据。
+- `weldcore.report`：当前证据与历史支撑报告生成器。
 - `viz/rerun_bridge.py`：可选 Rerun 回放边界；未安装 `rerun-sdk` 时不会影响测试。
 
-## 技能迁移 MVP
+## 仿真与 adapter 边界
 
-`python -m weldcore.report.mvp_report` 会生成 `mvp_report_out/evidence.json`、`metrics.csv`、`transfer_summary.png`、`ip_notes.md`，用于证明从仿真样本到技能包、再到目标焊接条件迁移评测的最小闭环。
+simlite 是 L0 稳定仿真和测试工具，用于保持默认项目可验证。它不是最终类机器人路线，也不代表真实焊接过程或真实质量验证。
 
-MVP 阶段的边界是：先验证结构化技能迁移机制，不把结果夸大为真实焊接质量结论。ManiSkill 仅作为机器人任务与 demonstration 数据范式的可选 adapter 方向，真机数据后续通过同一套 `SkillDataset` 接入。
+ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部仿真器和机器人生态是 adapter 候选。它们可以在后续用于机器人任务、运动学、可达性、碰撞、示教数据或 benchmark 评估，但不能替代 `SkillDataset -> WeldSkillPackage -> evaluation/evidence` 这条核心模型。
 
-`scenario_report` 用于生成公开资料来源、船舶焊接任务族、候选仿真场景和字段覆盖证据；它是 `SyntheticSkillDataset v2` 之前的知识闸门，不生成真机结论，也不纳入熔池路线。
+## 当前边界
 
-默认输出目录为 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。
-
-`data_foundation_report` 用于生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录为 `data_foundation_report_out/`，并刷新根目录 `docs/evidence/data-foundation/reports/` 下的中文报告；它完成的是资料底座 gate，不下载大文件，不生成批量仿真数据，不代表真实焊接质量验证，也不包含熔池路线。
-
-`synthetic_v2_input_report` 用于生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录为 `synthetic_v2_input_report_out/`，并刷新根目录 `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`；它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不代表真实焊接质量验证，也不是 WPS/PQR。
-
-`simulation_ingest_report` 用于验证平台能接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告。当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac。
-
-## 评测结论
-
-最近一次 `python -m weldcore.report.generate` 的核心结果：
-
-- 理想轨迹往返 RMS：0.1643 mm。
-- 月牙、锯齿、梯形三类模板分类均正确。
-- 摆幅误差首次超过 0.5 mm 阈值的手抖级别：0.5 mm。
-- 摆频误差在当前扰动扫描范围内未越过 0.3 Hz 阈值。
+- 不把 POC / MVP 输出写成真实焊接质量结论。
+- 不把 `SyntheticSkillDataset v2` 输入规范 gate 写成批量样本已经生成。
+- 不把仿真输出接入 gate 写成完整 ManiSkill / Isaac / ROS 集成。
+- 不把公开资料、仿真假设或报告结论写成 WPS/PQR。
+- 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
