@@ -59,7 +59,8 @@ MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入
 ├── details.md       # 面向非技术读者的项目进展台账
 ├── AGENTS.md / CLAUDE.md
 ├── docs/
-│   ├── data-foundation/ # 资料底座资料卡、manifest 和报告
+│   ├── evidence/
+│   │   └── data-foundation/ # 资料底座资料卡、manifest 和报告
 │   ├── project/      # 课题定义、总体方案、规划说明
 │   ├── specs/        # 白皮书与技能迁移 MVP 设计 spec
 │   ├── plans/        # POC、白皮书与 MVP 实施计划

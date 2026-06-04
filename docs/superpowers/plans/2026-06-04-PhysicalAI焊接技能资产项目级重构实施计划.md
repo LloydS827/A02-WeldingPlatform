@@ -520,7 +520,7 @@ Expected:
 Run from repo root:
 
 ```bash
-rg -n "docs/data-foundation" docs/architecture docs/skill-assets docs/simulation docs/evidence weld-experience-engine/weldcore weld-experience-engine/tests || true
+rg -n "docs/data-foundation" README.md details.md weld-experience-engine/README.md project-sync-overview.html docs/architecture docs/skill-assets docs/simulation docs/evidence weld-experience-engine/weldcore weld-experience-engine/tests || true
 ```
 
 Expected: no matches in current-route files. Matches inside archive are acceptable after Task 3.
