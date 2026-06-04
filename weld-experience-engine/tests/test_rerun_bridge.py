@@ -1,9 +1,17 @@
+from pathlib import Path
+
+from weldcore.ingest import import_simulation_bundle
+from weldcore.knowledge.synthetic_manifest import load_synthetic_input_foundation
 from weldcore.sim.simlite import generate_straight_flat_dataset
+from weldcore.sim import write_simlite_bundle
 from weldcore.sim.task import straight_flat_task
 from weldcore.transfer.evaluate import evaluate_transfer
 from weldcore.transfer.package import package_from_sample
 from weldcore.transfer.rules import apply_transfer
-from weldcore.viz.rerun_bridge import log_skill_transfer
+from weldcore.viz.rerun_bridge import (
+    log_simulation_dataset_evidence,
+    log_skill_transfer,
+)
 
 
 def test_rerun_bridge_returns_bool_without_requiring_rerun():
@@ -22,3 +30,25 @@ def test_rerun_bridge_returns_bool_without_requiring_rerun():
     result = log_skill_transfer(sample, package, experiment, spawn=False)
 
     assert result in {True, False}
+
+
+def test_rerun_bridge_can_attempt_simulation_dataset_evidence_without_rerun(
+    tmp_path: Path,
+):
+    foundation = load_synthetic_input_foundation()
+    bundle = write_simlite_bundle(
+        tmp_path,
+        input_id="input-panel-butt-001",
+        sample_count=1,
+        seed=21,
+        foundation=foundation,
+    )
+    result = import_simulation_bundle(bundle, foundation=foundation)
+
+    logged = log_simulation_dataset_evidence(
+        result.dataset,
+        result.run_record,
+        spawn=False,
+    )
+
+    assert logged in {True, False}
