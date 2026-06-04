@@ -1,4 +1,5 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
+from .evidence import build_simulation_evidence_bundle
 from .model import (
     BakeoffScorecard,
     SimulationEvidenceBundle,
@@ -17,6 +18,7 @@ __all__ = [
     "SimulatorAdapterResult",
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
+    "build_simulation_evidence_bundle",
     "default_simulation_task_specs",
     "run_simlite_reference",
 ]
