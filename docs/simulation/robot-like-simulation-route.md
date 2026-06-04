@@ -48,6 +48,8 @@
 - R2：优先比较 ManiSkill/SAPIEN 方向和 Gazebo/MoveIt 方向。
 - R3：只调研 API、路径导入导出、机器人品牌和虚拟调试约束，不写入核心 schema。
 
+第一版实现应形成 `simulation_bakeoff_report`：同一组两个核心 `SimulationTaskSpec` 同时进入 R0/simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 尝试；外部路线不可用时记录统一 failure boundary，而不是阻断默认测试。
+
 ## Adapter 评估口径
 
 - adapter 是否能输出或转换为项目 canonical schema。

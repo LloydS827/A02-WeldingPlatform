@@ -98,7 +98,10 @@ uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
 uv run python -m weldcore.report.simulation_ingest_report
+uv run python -m weldcore.report.simulation_bakeoff_report
 ```
+
+`simulation_bakeoff_report` 用于生成第一轮 `WeldSkillUnit` 仿真最小验证证据；它记录 R0 baseline、ManiSkill/SAPIEN 与 Gazebo/MoveIt 的同任务尝试和失败边界，不表示最终仿真器已选择。
 
 历史支撑命令：
 
