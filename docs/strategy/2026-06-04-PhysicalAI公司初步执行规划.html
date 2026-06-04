@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physical AI 公司初步执行规划</title>
+<style>
+:root {
+  --ink: #172033;
+  --muted: #5d6678;
+  --line: #d8dee8;
+  --accent: #245f9d;
+  --accent-soft: #edf4fb;
+  --paper: #ffffff;
+  --bg: #f6f7f9;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.72;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 820px);
+  gap: 32px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 48px 28px 64px;
+}
+nav {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+nav .label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+nav a {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 5px 0;
+}
+nav a:hover { color: var(--accent); }
+main {
+  background: var(--paper);
+  padding: 54px 64px 64px;
+  border: 1px solid var(--line);
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+.meta {
+  color: var(--muted);
+  margin: 0 0 36px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+h2 {
+  margin: 34px 0 10px;
+  font-size: 21px;
+  line-height: 1.35;
+  color: var(--accent);
+  letter-spacing: 0;
+}
+p { margin: 0 0 14px; }
+blockquote {
+  margin: 18px 0 22px;
+  padding: 14px 18px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+ol, ul {
+  margin: 8px 0 18px 1.35em;
+  padding: 0;
+}
+li { margin: 6px 0; }
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+  background: #f0f2f5;
+  padding: 0.08em 0.3em;
+  border-radius: 4px;
+}
+@media (max-width: 860px) {
+  .layout { display: block; padding: 20px 16px 44px; }
+  nav { position: static; margin-bottom: 18px; }
+  main { padding: 32px 22px 40px; }
+  h1 { font-size: 28px; }
+}
+@media print {
+  body { background: #fff; }
+  .layout { display: block; max-width: none; padding: 0; }
+  nav { display: none; }
+  main { border: 0; padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="目录">
+  <div class="label">目录</div>
+  <a href="#文件定位">1. 文件定位</a>
+<a href="#阶段目标">2. 阶段目标</a>
+<a href="#大的推进节奏">3. 大的推进节奏</a>
+<a href="#启动策略">4. 启动策略</a>
+<a href="#当前项目的角色">5. 当前项目的角色</a>
+<a href="#关键问题">6. 关键问题</a>
+<a href="#暂不进入主线的事项">7. 暂不进入主线的事项</a>
+<a href="#阶段性判断">8. 阶段性判断</a>
+</nav>
+<main>
+<h1>Physical AI 公司初步执行规划</h1>
+<p class="meta">日期：2026-06-04</p>
+<h2 id="文件定位">1. 文件定位</h2>
+<p>这份文件不是当前项目的实施计划，而是以一家初创公司的视角，说明 Physical AI for Welding 这件事如何启动、如何验证、如何避免过早发散。</p>
+<p>当前「焊接技能大师平台」是重要的早期资产，但它不是公司的全部，也不应决定公司的叙事颗粒度。公司要验证的是一个更大的问题：能否把高技能工业作业从个人经验，变成可沉淀、可迁移、可执行、可审计的组织能力。</p>
+<h2 id="阶段目标">2. 阶段目标</h2>
+<p>早期阶段最重要的目标不是证明我们能做很多功能，而是证明这家公司有一个成立的能力闭环。</p>
+<p>这个闭环包括四件事：找到足够痛的工业场景，定义可复用的技能资产，建立进入机器人执行的路径，并用证据说明能力边界。</p>
+<p>如果这四件事能在焊接中成立，公司就不只是一个项目团队，而是在形成一类新的工业能力基础设施。</p>
+<h2 id="大的推进节奏">3. 大的推进节奏</h2>
+<p>推进节奏不宜先写成详细时间表，而应按创业验证的成熟度推进。</p>
+<p>第一阶段是方向收敛。核心任务是明确第一批客户是谁、他们最痛的高技能焊接问题是什么、哪些场景足够具体又足够有扩展价值。这个阶段要少做泛平台，多做问题选择。</p>
+<p>第二阶段是样板能力。围绕一个或两个代表性场景，形成能被内部反复讨论、能被外部客户理解的能力样板。样板不是 demo，而是要说明：经验如何进入数据，数据如何形成技能资产，技能资产如何连接机器人执行，证据如何说明可信边界。</p>
+<p>第三阶段是外部验证。用客户访谈、专家复核、有限数据合作或小范围现场资料，验证客户是否认同这个问题、是否愿意提供数据和工艺知识、是否认为技能资产有长期价值。</p>
+<p>第四阶段是产品化判断。只有当客户问题、技能资产形态、数据来源、执行路径和证据边界都逐步稳定，才进入更清晰的产品形态、商业模式和交付方式讨论。</p>
+<h2 id="启动策略">4. 启动策略</h2>
+<p>启动方式应保持窄、轻、真实。</p>
+<p>窄，是指先选择少数场景，不把公司一开始做成泛工业平台。焊接内部也要先选更适合沉淀技能资产的任务，而不是从最复杂、最依赖现场传感和闭环控制的任务开始。</p>
+<p>轻，是指不先重投入机器人本体、完整现场集成或高保真物理仿真。早期重点是把技能资产对象、数据结构、证据边界和执行接口建立起来。</p>
+<p>真实，是指所有样板能力都要能回到客户问题和工艺语境中讨论。不能只做技术演示，也不能把仿真、公开资料或软件原型包装成真实质量结论。</p>
+<h2 id="当前项目的角色">5. 当前项目的角色</h2>
+<p>当前项目的价值，是为公司提供了一个早期能力底座：它已经围绕经验结构化、技能包、数据接入、仿真样本、机器人执行基线和证据报告做出了一些可复用雏形。</p>
+<p>但从公司视角看，这些内容不应被理解为一组项目功能清单，而应被抽象为三类资产：</p>
+<ol>
+<li>技能资产对象：帮助公司定义什么是可复用的工业技能；</li>
+<li>数据与证据机制：帮助公司判断哪些数据可信、哪些仍是假设、哪些需要真实验证；</li>
+<li>执行接口雏形：帮助公司把技能资产逐步连接到机器人、焊机、仿真器和工作站。</li>
+</ol>
+<p>下一步不是简单继续堆功能，而是把这些雏形放进更大的创业验证中：客户是否认可，场景是否足够痛，数据是否能获得，技能是否能复用，机器人执行是否有清晰边界。</p>
+<h2 id="关键问题">6. 关键问题</h2>
+<p>当前最重要的问题不是“还要做哪些模块”，而是公司能否回答以下几个问题。</p>
+<p>第一，起始客户是谁。我们要找到真正受复杂焊接任务、老师傅依赖、机器人升级和工艺传承困扰的客户，而不是泛泛地服务所有制造企业。</p>
+<p>第二，起始场景是什么。场景必须足够具体，能让技能资产被定义和验证；同时又不能太窄，否则只能变成一次性项目经验。</p>
+<p>第三，技能资产的最小形态是什么。它既要小到能被早期团队持续生成，也要完整到能承载来源、适用范围、迁移规则、执行建议和证据状态。</p>
+<p>第四，数据如何获得和治理。公开资料、仿真样本、专家经验、真机数据和质检结果都可以进入体系，但它们的可信等级和用途必须分开。</p>
+<p>第五，机器人执行如何进入。公司不应一开始变成机器人本体厂或系统集成商，而应通过 adapter 和执行基线逐步连接物理世界。</p>
+<p>第六，商业入口是什么。早期可能从场景诊断、技能资产样板、数据层建设或机器人化改造评估切入，但最终必须回到长期技能资产，而不是停留在一次性咨询或一次性调试。</p>
+<h2 id="暂不进入主线的事项">7. 暂不进入主线的事项</h2>
+<p>为了保持创业初期的判断力，当前不把以下事项作为主线：</p>
+<ul>
+<li>不以机器人本体、焊机硬件或现场系统集成为公司核心；</li>
+<li>不以泛工业大模型或泛数据平台作为主要叙事；</li>
+<li>不以完整高保真仿真平台作为前提；</li>
+<li>不把公开资料、仿真结果或软件原型写成真实焊接质量结论；</li>
+<li>不生成或替代 WPS/PQR；</li>
+<li>不把熔池视觉闭环或焊中闭环控制作为启动点；</li>
+<li>不为了展示效果增加与技能资产沉淀无关的功能。</li>
+</ul>
+<p>这些方向并非没有价值，而是需要在公司主线成立之后再判断是否进入。</p>
+<h2 id="阶段性判断">8. 阶段性判断</h2>
+<p>这家公司早期要证明的，不是“我们有一个焊接项目”，而是“我们能围绕焊接建立一种新的工业技能资产化方法”。</p>
+<p>当前项目提供了起点，但创业推进必须从项目视角上升到公司视角：客户、场景、资产、数据、执行和证据都要一起成立。</p>
+<p>如果这一点成立，Physical AI for Welding 就不只是技术方向，而会成为一家公司的核心能力。后续研发、客户沟通和资源投入，都应服务于这个判断。</p>
+</main>
+</div>
+</body>
+</html>
