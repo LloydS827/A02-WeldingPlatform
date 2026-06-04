@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physical AI 公司顶层战略与方向</title>
+<style>
+:root {
+  --ink: #172033;
+  --muted: #5d6678;
+  --line: #d8dee8;
+  --accent: #245f9d;
+  --accent-soft: #edf4fb;
+  --paper: #ffffff;
+  --bg: #f6f7f9;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.72;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 820px);
+  gap: 32px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 48px 28px 64px;
+}
+nav {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+nav .label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+nav a {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 5px 0;
+}
+nav a:hover { color: var(--accent); }
+main {
+  background: var(--paper);
+  padding: 54px 64px 64px;
+  border: 1px solid var(--line);
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+.meta {
+  color: var(--muted);
+  margin: 0 0 36px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+h2 {
+  margin: 34px 0 10px;
+  font-size: 21px;
+  line-height: 1.35;
+  color: var(--accent);
+  letter-spacing: 0;
+}
+p { margin: 0 0 14px; }
+blockquote {
+  margin: 18px 0 22px;
+  padding: 14px 18px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+ol, ul {
+  margin: 8px 0 18px 1.35em;
+  padding: 0;
+}
+li { margin: 6px 0; }
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+  background: #f0f2f5;
+  padding: 0.08em 0.3em;
+  border-radius: 4px;
+}
+@media (max-width: 860px) {
+  .layout { display: block; padding: 20px 16px 44px; }
+  nav { position: static; margin-bottom: 18px; }
+  main { padding: 32px 22px 40px; }
+  h1 { font-size: 28px; }
+}
+@media print {
+  body { background: #fff; }
+  .layout { display: block; max-width: none; padding: 0; }
+  nav { display: none; }
+  main { border: 0; padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="目录">
+  <div class="label">目录</div>
+  <a href="#一句话定义">1. 一句话定义</a>
+<a href="#我们是谁">2. 我们是谁</a>
+<a href="#为什么是焊接">3. 为什么是焊接</a>
+<a href="#我们做什么">4. 我们做什么</a>
+<a href="#核心对象">5. 核心对象</a>
+<a href="#客户是谁">6. 客户是谁</a>
+<a href="#我们不做什么">7. 我们不做什么</a>
+<a href="#战略判断">8. 战略判断</a>
+</nav>
+<main>
+<h1>Physical AI 公司顶层战略与方向</h1>
+<p class="meta">日期：2026-06-04</p>
+<h2 id="一句话定义">1. 一句话定义</h2>
+<p>我们要做一家面向高技能工业作业的 Physical AI 公司，先从焊接切入，把专家经验、工艺知识、动作数据、机器人执行和质量证据沉淀为可学习、可迁移、可执行、可审计的工业技能资产。</p>
+<p>更短的内部口径是：</p>
+<blockquote>把老师傅的经验，变成机器人时代的工业技能资产。</blockquote>
+<h2 id="我们是谁">2. 我们是谁</h2>
+<p>我们不是单纯的焊接机器人公司，也不是普通工业数据平台公司。</p>
+<p>我们的定位是高技能工业作业的 Physical AI 技能系统。机器人是执行身体，数据和证据是记忆，技能资产是核心，大模型、仿真器和可视化工具都是能力组件。</p>
+<p>第一场景是焊接，长期母题是高技能工业作业。焊接不是一个孤立小应用，而是验证这类系统是否成立的第一座山。</p>
+<h2 id="为什么是焊接">3. 为什么是焊接</h2>
+<p>焊接同时具备五个特征：高度依赖经验，强物理动作约束，天然连接机器人，结果需要质量追溯，且在非标、大型、多变工件中仍然难以标准化。</p>
+<p>过去的自动化主要解决确定动作的重复执行。焊接、打磨、喷涂、装配、检测这类任务的难点更深：经验存在于人身上，动作发生在物理世界里，结果又必须能被验证和追责。Physical AI 的工业价值就在这里。</p>
+<p>如果我们能把焊接技能结构化、迁移、机器人化和审计化，就有机会把方法扩展到其他高技能工业作业。</p>
+<h2 id="我们做什么">4. 我们做什么</h2>
+<p>我们做的不是一个单点 AI 功能，而是一套从经验到技能资产、再到机器人执行的系统。</p>
+<p>核心工作可以收束为三件事：</p>
+<ol>
+<li>把工艺知识、动作过程、设备参数、专家判断和结果证据组织成统一的技能数据；</li>
+<li>把一次次作业过程沉淀为可复用、可迁移、可审计的工业技能资产；</li>
+<li>通过 adapter 把技能资产连接到机器人、焊机、仿真器和工作站，同时保留来源、假设、边界和验证状态。</li>
+</ol>
+<p>这套系统可以理解为五层：工艺知识层、技能数据层、技能资产层、机器人执行层、证据与边界层。五层不是组织架构，而是判断产品和研发是否跑偏的尺度。</p>
+<h2 id="核心对象">5. 核心对象</h2>
+<p>这家公司最重要的对象不是模型，也不是机器人程序，而是工业技能资产。</p>
+<p>在焊接场景中，它可以称为 <code>WeldSkillPackage</code>。它应至少包含任务、来源、轨迹、姿态、工艺参数、适用范围、迁移规则、失败边界、机器人执行建议和证据状态。</p>
+<p>每沉淀一个可靠技能包，公司就增加一个可复用的工业能力单元。长期看，这比完成一次现场调试或生成一段机器人程序更重要。</p>
+<h2 id="客户是谁">6. 客户是谁</h2>
+<p>第一批客户不是所有制造企业，而是拥有复杂焊接任务、老师傅依赖、机器人升级压力和工艺知识沉淀需求的工业企业。</p>
+<p>典型行业包括船舶制造、重型装备、钢结构、工程机械、压力容器，以及其他大型非标制造和维修场景。</p>
+<p>客户真正购买的不是“AI 功能”，而是把高技能作业能力从个人经验变成组织资产的能力：可积累、可复用、可迁移、可审计，并能逐步进入机器人执行。</p>
+<h2 id="我们不做什么">7. 我们不做什么</h2>
+<p>边界必须比口号更清楚。</p>
+<p>我们不做单纯机器人本体，不与本体厂在机械臂、控制柜或硬件渠道上正面竞争。</p>
+<p>我们不做普通系统集成商。项目交付可以是早期切入方式，但公司不能长期停留在一次性调试、一次性程序和一次性现场服务里。</p>
+<p>我们不做只存数据的数据平台。数据必须进入技能学习、迁移、执行和证据体系，否则只是记录，不是资产。</p>
+<p>我们不做泛泛工业大模型叙事。大模型可以是组件，但没有任务族、数据闭环、执行边界和质量证据，大模型叙事是空的。</p>
+<p>我们不承诺仿真结果等于真实焊接质量，不自动生成或替代 WPS/PQR，不把熔池视觉闭环或焊中闭环控制作为当前起点，也不把某一个仿真器、机器人品牌或可视化工具当成公司核心。</p>
+<h2 id="战略判断">8. 战略判断</h2>
+<p>这个方向值得推进，不是因为“焊接机器人”本身足够新，而是因为高技能工业作业正在出现新的组织方式。</p>
+<p>过去，技能主要在个人身上；机器人主要执行确定程序；数据主要用于事后记录。</p>
+<p>未来，技能会成为企业资产；机器人会成为技能执行端；数据和证据会成为 Physical AI 的学习与治理基础。</p>
+<p>我们判断方向是否正确，只看一件事：每一次产品、研发和客户动作，是否让高技能作业更接近成为可复用的工业技能资产。</p>
+<p>如果答案是肯定的，我们就在推进公司核心。如果答案是否定的，即使它看起来像一个功能、一个 demo 或一个项目机会，也不是当前战略优先级。</p>
+</main>
+</div>
+</body>
+</html>
