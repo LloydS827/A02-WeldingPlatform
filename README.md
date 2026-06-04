@@ -77,9 +77,17 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-报告命令仍然可用，但它们是当前证据或历史支撑，不是默认研发主线本身。
+报告命令仍然可用，但它们是技能资产证据、证据边界/仿真接入证据或历史支撑，不是默认研发主线本身。
 
-当前证据命令：
+技能资产证据命令：
+
+```bash
+uv run python -m weldcore.report.mvp_report
+```
+
+`mvp_report` 用于证明早期 `WeldSkillPackage` 闭环仍有效。
+
+证据边界/仿真接入证据命令：
 
 ```bash
 uv run python -m weldcore.report.data_foundation_report
@@ -91,7 +99,6 @@ uv run python -m weldcore.report.simulation_ingest_report
 
 ```bash
 uv run python -m weldcore.report.generate
-uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.scenario_report
 ```
 
