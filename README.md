@@ -39,16 +39,16 @@ MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入
   - 新增船舶焊接任务族支持闸门，先从船舶制造典型任务出发，而不是从通用直线焊或真机采集出发。
   - 新增 `SimulationScenarioSpec` 候选场景和 `scenario_report`，输出来源、任务族、字段覆盖和候选场景证据。
 - 完成资料底座 gate：
-  - 新增 `docs/data-foundation/`，沉淀中文资料卡、公开数据集说明、字段覆盖矩阵和任务证据映射。
+  - 新增 `docs/evidence/data-foundation/`，沉淀中文资料卡、公开数据集说明、字段覆盖矩阵和任务证据映射。
   - 新增 manifest-first 资料底座加载与校验，先通过清单证明资料、数据集、字段和任务证据足够支撑下一步计划。
   - 新增 `data_foundation_report`，生成中文证据报告和 `SyntheticSkillDataset v2` 计划输入。
 - 完成 `SyntheticSkillDataset v2` 输入规范 gate：
   - 新增 `synthetic_v2_input_report`，生成 input-spec gate 证据。
-  - 输出运行时证据目录 `synthetic_v2_input_report_out/`，并刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。
+  - 输出运行时证据目录 `synthetic_v2_input_report_out/`，并刷新 `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`。
   - 明确该 gate 只完成输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 - 完成仿真输出接入与经验沉淀平台设计/实现：
   - 新增 `simulation_ingest_report`，生成 `SimulationOutputBundle` 导入 gate 证据。
-  - 输出运行时证据目录 `simulation_ingest_report_out/`，并刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。
+  - 输出运行时证据目录 `simulation_ingest_report_out/`，并刷新 `docs/evidence/data-foundation/reports/simulation_ingest_evidence.md`。
   - 明确该 gate 完成的是平台侧仿真输出接入，当前使用 simlite/mock bundle，不要求完整 ManiSkill/Isaac 集成，不代表真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
 
 ## 目录结构
@@ -181,11 +181,11 @@ uv run python -m weldcore.report.simulation_ingest_report
 
 `data_foundation_report` 会生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。
 
-`data_foundation_report` 的运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/data-foundation/reports/` 下的中文证据报告和 `SyntheticSkillDataset v2` 计划输入。
+`data_foundation_report` 的运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/` 下的中文证据报告和 `SyntheticSkillDataset v2` 计划输入。
 
-`synthetic_v2_input_report` 会生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。它的运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+`synthetic_v2_input_report` 会生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。它的运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
-`simulation_ingest_report` 会生成仿真输出接入 gate 证据。它的运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。它验证平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告；当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac，不代表真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
+`simulation_ingest_report` 会生成仿真输出接入 gate 证据。它的运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/simulation_ingest_evidence.md`。它验证平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告；当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac，不代表真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
 
 ## 技术边界
 

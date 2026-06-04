@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from weldcore.report.simulation_ingest_report import main, run_simulation_ingest_report
+from weldcore.report.simulation_ingest_report import (
+    DEFAULT_DOCS_REPORT_DIR,
+    main,
+    run_simulation_ingest_report,
+)
 
 
 FORBIDDEN_POOL_TERMS = (
@@ -105,6 +109,13 @@ def test_simulation_ingest_report_cli_writes_docs_copy_by_default(tmp_path: Path
     assert (outdir / "dataset.json").exists()
     assert (outdir / "evidence.md").exists()
     assert (docs_report_dir / "simulation_ingest_evidence.md").exists()
+
+
+def test_simulation_ingest_report_default_docs_dir_points_to_repo_evidence_docs():
+    assert DEFAULT_DOCS_REPORT_DIR.name == "reports"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.name == "data-foundation"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "evidence"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.parent.name == "docs"
 
 
 def test_simulation_ingest_report_cli_no_docs_copy(tmp_path: Path) -> None:

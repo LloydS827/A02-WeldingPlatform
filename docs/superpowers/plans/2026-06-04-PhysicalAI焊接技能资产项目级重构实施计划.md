@@ -421,7 +421,8 @@ Expected: commit succeeds.
 - Modify: `weld-experience-engine/weldcore/knowledge/manifest.py`
 - Modify: `weld-experience-engine/tests/test_data_foundation_report.py`
 - Modify: `weld-experience-engine/tests/test_synthetic_v2_input_report.py`
-- Modify if needed: `README.md`, `details.md`, `weld-experience-engine/README.md` later in Task 4.
+- Modify: `README.md`, `details.md`, `weld-experience-engine/README.md` only for narrow `docs/data-foundation` -> `docs/evidence/data-foundation` path updates.
+- Keep Task 4 responsible for the full narrative rewrite of those files.
 
 - [ ] **Step 1: Move directory with git**
 
@@ -462,6 +463,8 @@ def test_data_foundation_report_default_docs_dir_points_to_repo_docs():
 ```
 
 In `weld-experience-engine/tests/test_synthetic_v2_input_report.py`, update `test_synthetic_v2_input_report_default_docs_dir_points_to_repo_docs` the same way.
+
+Also add the same default docs path regression coverage for `weld-experience-engine/tests/test_simulation_ingest_report.py`, because `simulation_ingest_report` derives its docs copy destination from the migrated foundation root.
 
 - [ ] **Step 4: Update moved evidence docs internal references**
 
@@ -522,7 +525,7 @@ rg -n "docs/data-foundation" docs/architecture docs/skill-assets docs/simulation
 
 Expected: no matches in current-route files. Matches inside archive are acceptable after Task 3.
 
-Do not include `README.md`, `details.md`, or `weld-experience-engine/README.md` in this audit yet; they are rewritten in Task 4.
+Include `README.md`, `details.md`, and `weld-experience-engine/README.md` in this audit only for stale `docs/data-foundation` path references. Task 4 still owns the full narrative rewrite.
 
 - [ ] **Step 8: Commit**
 

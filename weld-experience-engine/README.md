@@ -39,9 +39,9 @@ MVP 阶段的边界是：先验证结构化技能迁移机制，不把结果夸�
 
 默认输出目录为 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。
 
-`data_foundation_report` 用于生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录为 `data_foundation_report_out/`，并刷新根目录 `docs/data-foundation/reports/` 下的中文报告；它完成的是资料底座 gate，不下载大文件，不生成批量仿真数据，不代表真实焊接质量验证，也不包含熔池路线。
+`data_foundation_report` 用于生成资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录为 `data_foundation_report_out/`，并刷新根目录 `docs/evidence/data-foundation/reports/` 下的中文报告；它完成的是资料底座 gate，不下载大文件，不生成批量仿真数据，不代表真实焊接质量验证，也不包含熔池路线。
 
-`synthetic_v2_input_report` 用于生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录为 `synthetic_v2_input_report_out/`，并刷新根目录 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`；它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不代表真实焊接质量验证，也不是 WPS/PQR。
+`synthetic_v2_input_report` 用于生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录为 `synthetic_v2_input_report_out/`，并刷新根目录 `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`；它完成的是 input-spec gate，不生成批量 `SyntheticSkillDataset v2` 样本，不代表真实焊接质量验证，也不是 WPS/PQR。
 
 `simulation_ingest_report` 用于验证平台能接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告。当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac。
 

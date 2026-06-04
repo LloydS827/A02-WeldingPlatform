@@ -43,7 +43,7 @@
 - `docs/specs/`：关键设计说明，包括白皮书设计和技能迁移 MVP 设计。
 - `docs/plans/`：实施计划，包括 POC、白皮书和 MVP 计划。
 - `docs/reference/`：外部或前序技术方案参考。
-- `docs/data-foundation/`：资料底座的中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
+- `docs/evidence/data-foundation/`：资料底座的中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
 - `report/`：风险驱动论证白皮书、图表、数据和导出版本。
 
 这些材料已经能支撑项目复盘、阶段汇报和下一轮研发讨论。
@@ -114,11 +114,11 @@ uv run python -m weldcore.report.simulation_ingest_report
 
 第三条命令生成仿真优先船舶焊接场景证据，包括公开资料来源、船舶焊接任务族、候选 `SimulationScenarioSpec` 和字段覆盖说明。默认输出目录是 `scenario_report_out/`，包含 `sources.json`、`task_families.json`、`scenarios.json`、`field_coverage.csv` 和 `evidence.md`。它是 `SyntheticSkillDataset v2` 之前的场景知识闸门，不生成真机结论，也不纳入熔池路线。
 
-第四条命令生成数据集与资料底座证据，包括资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/data-foundation/reports/` 下的中文证据报告和 `synthetic_skilldataset_v2_plan_input.md`。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。
+第四条命令生成数据集与资料底座证据，包括资料来源、公开数据集、字段覆盖矩阵、任务证据映射和 `SyntheticSkillDataset v2` 计划输入。默认运行时输出目录是 `data_foundation_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/` 下的中文证据报告和 `synthetic_skilldataset_v2_plan_input.md`。它完成的是资料底座 gate，不下载大文件，也不生成批量仿真数据。
 
-第五条命令生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是输入规范 gate，不是 bulk synthetic sample generation，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+第五条命令生成 `SyntheticSkillDataset v2` 输入规范 gate 证据。默认运行时输出目录是 `synthetic_v2_input_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`。它完成的是输入规范 gate，不是 bulk synthetic sample generation，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
 
-第六条命令生成仿真输出接入 gate 证据。默认运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/data-foundation/reports/simulation_ingest_evidence.md`。它说明平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告。当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac。
+第六条命令生成仿真输出接入 gate 证据。默认运行时输出目录是 `simulation_ingest_report_out/`，同时会刷新 `docs/evidence/data-foundation/reports/simulation_ingest_evidence.md`。它说明平台可以接收 `SimulationOutputBundle`，导入为 `SyntheticSkillDataset v2`，并输出证据报告。当前使用 simlite/mock bundle，不要求安装 ManiSkill 或 Isaac。
 
 ### 5. 可选可视化和生态边界
 
@@ -241,13 +241,13 @@ uv run python -m weldcore.report.simulation_ingest_report
 - `docs/superpowers/plans/2026-06-01-仿真优先船舶焊接数据底座实施计划.md`：仿真优先知识闸门实施计划。
 - `docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md`：`SyntheticSkillDataset v2` 输入规范与船舶焊接任务分类框架设计。
 - `docs/plans/2026-06-04-下一阶段场景仿真与接入计划.md`：下一阶段从公司目标倒推的平台收束计划，明确优先场景、资料补强、仿真样板、技能资产样板和证据边界。
-- `docs/data-foundation/`：资料底座中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
+- `docs/evidence/data-foundation/`：资料底座中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
 - `weld-experience-engine/data_foundation_report_out/`：资料底座报告命令生成的运行时输出目录。
-- `docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。
+- `docs/evidence/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。
 - `weld-experience-engine/synthetic_v2_input_report_out/`：`SyntheticSkillDataset v2` 输入规范 gate 的运行时输出目录。
-- `docs/data-foundation/reports/synthetic_v2_input_evidence.md`：`SyntheticSkillDataset v2` 输入规范 gate 证据报告。
+- `docs/evidence/data-foundation/reports/synthetic_v2_input_evidence.md`：`SyntheticSkillDataset v2` 输入规范 gate 证据报告。
 - `weld-experience-engine/simulation_ingest_report_out/`：仿真输出接入 gate 的运行时输出目录。
-- `docs/data-foundation/reports/simulation_ingest_evidence.md`：仿真输出接入 gate 证据报告。
+- `docs/evidence/data-foundation/reports/simulation_ingest_evidence.md`：仿真输出接入 gate 证据报告。
 - `report/船舶焊接工艺大脑平台_风险驱动论证白皮书.md`：风险驱动白皮书。
 - `weld-experience-engine/`：可运行 POC、MVP、仿真优先知识闸门与资料底座 gate 代码。
 
