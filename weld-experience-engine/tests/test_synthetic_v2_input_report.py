@@ -125,7 +125,8 @@ def test_synthetic_v2_input_report_blocks_invalid_foundation(tmp_path):
 def test_synthetic_v2_input_report_default_docs_dir_points_to_repo_docs():
     assert DEFAULT_DOCS_REPORT_DIR.name == "reports"
     assert DEFAULT_DOCS_REPORT_DIR.parent.name == "data-foundation"
-    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "docs"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.name == "evidence"
+    assert DEFAULT_DOCS_REPORT_DIR.parent.parent.parent.name == "docs"
 
 
 def test_synthetic_v2_input_report_programmatic_default_skips_docs_copy():

@@ -3,7 +3,7 @@
 
 本阶段可以进入 SyntheticSkillDataset v2 输入结构设计，但边界必须明确：当前产物是 schema 和 vocabulary 的前置研究，不是 WPS/PQR，不证明真实焊接质量，也不替代船级、客户规范、项目 WPS/PQR 或现场试焊验证。
 
-依据清单核验：`docs/data-foundation/manifests/sources.json` 有 20 条来源，`docs/data-foundation/manifests/datasets.json` 有 6 个公开数据集，`docs/data-foundation/manifests/field_coverage.csv` 存在且覆盖 19 个字段；`docs/data-foundation/manifests/task_evidence_map.json` 中 `stiffened-panel-fillet`、`panel-butt`、`micro-panel-web-bulkhead` 三个任务族为 `ready_for_synthetic_v2_plan`。第一版输入规范应先承接任务分类、焊缝/接头/位置/坡口/层道、工艺字段、运动字段、质量标签和证据绑定，不纳入真实参数合格性判断。
+依据清单核验：`docs/evidence/data-foundation/manifests/sources.json` 有 20 条来源，`docs/evidence/data-foundation/manifests/datasets.json` 有 6 个公开数据集，`docs/evidence/data-foundation/manifests/field_coverage.csv` 存在且覆盖 19 个字段；`docs/evidence/data-foundation/manifests/task_evidence_map.json` 中 `stiffened-panel-fillet`、`panel-butt`、`micro-panel-web-bulkhead` 三个任务族为 `ready_for_synthetic_v2_plan`。第一版输入规范应先承接任务分类、焊缝/接头/位置/坡口/层道、工艺字段、运动字段、质量标签和证据绑定，不纳入真实参数合格性判断。
 
 - 进入第一层字段：`manufacturing_stage`、`weld_object`、`joint_type`、`weld_position`、`groove_geometry`、`layer_pass`、`welding_process`、`plate_thickness_mm`、`current`、`voltage`、`travel_speed`、`trajectory`、`torch_angle`、`motion_template`、`quality_label`、`defect_label`、`inspection_reference`、`requires_real_validation_later`。
 - 公开约束：船舶自动化案例和工艺指南可提供任务、对象、接头、位置和参数字段存在性；公开数据集只提供 schema、vocabulary 和 benchmark 参考。
@@ -85,7 +85,7 @@
 
 ## 7. 进入数据结构设计的字段原则
 
-来源：`docs/data-foundation/manifests/field_coverage.csv`、`docs/data-foundation/manifests/task_evidence_map.json`、`project-260522-shipbuilding-welding-brain-plan`、`standard-aws-swps-public-page`、`standard-aws-standards-index`。
+来源：`docs/evidence/data-foundation/manifests/field_coverage.csv`、`docs/evidence/data-foundation/manifests/task_evidence_map.json`、`project-260522-shipbuilding-welding-brain-plan`、`standard-aws-swps-public-page`、`standard-aws-standards-index`。
 
 下一步数据结构应以 EvidenceBinding 为核心，字段必须可追溯到来源、证据角色和值状态。第一版只做输入规范，不做生成器批量输出和质量合格声明。
 

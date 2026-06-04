@@ -19,7 +19,9 @@ from .foundation import (
 )
 
 
-DEFAULT_FOUNDATION_ROOT = Path(__file__).resolve().parents[3] / "docs" / "data-foundation"
+DEFAULT_FOUNDATION_ROOT = (
+    Path(__file__).resolve().parents[3] / "docs" / "evidence" / "data-foundation"
+)
 
 
 def _load_json(path: Path) -> Any:

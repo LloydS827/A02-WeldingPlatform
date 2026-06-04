@@ -6,4 +6,4 @@
 
 ## 当前目录
 
-- `data-foundation/`：资料来源、manifest、字段覆盖、任务证据和报告。
+- `data-foundation/`：资料来源、manifest、字段覆盖和报告的证据边界。

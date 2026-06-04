@@ -5,7 +5,7 @@
 - 职责：沉淀焊接术语、工艺约束、任务分类和资料来源。
 - 输入：标准、工艺手册、项目资料、现场经验和公开数据。
 - 输出：字段约束、任务证据、source cards 和知识边界说明。
-- 当前项目对应物：`weldcore.knowledge`、`docs/data-foundation/`、资料 manifest。
+- 当前项目对应物：`weldcore.knowledge`、`docs/evidence/data-foundation/`、资料 manifest。
 - 不做事项：不把资料整理等同于真实焊接质量验证，不替代 WPS/PQR。
 
 ## 2. 技能数据层
@@ -37,7 +37,7 @@
 - 职责：说明资料来源、字段覆盖、验证状态、质量边界和不可替代事项。
 - 输入：source cards、manifest、评测结果、报告命令输出和人工判断。
 - 输出：证据报告、边界说明、归档索引和当前路线判断。
-- 当前项目对应物：`weldcore.report`、`docs/data-foundation/reports/`、历史 POC/MVP/gate 材料。
+- 当前项目对应物：`weldcore.report`、`docs/evidence/data-foundation/reports/`、历史 POC/MVP/gate 材料。
 - 不做事项：不声称仿真或资料证据等于真实焊接质量验证，不替代 WPS/PQR。
 
 ## 不做事项
