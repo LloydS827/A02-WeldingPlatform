@@ -23,13 +23,13 @@
 
 ## 当前阶段判断
 
-项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate 的第一轮落地。
+项目已经完成了从概念论证到第一轮 MVP，并继续推进到资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate 的第一轮落地。根据公司层面的 Physical AI for Welding 方向，下一阶段需要从“多个能力点已经完成”收束到“围绕一个具体工业场景形成样板闭环”。
 
 现在可以说已经完成的是：软件和数据结构层面的最小闭环已经跑通。也就是说，我们已经能用一个简化的焊接任务证明“轨迹可以结构化”“技能可以形成包”“技能包可以迁移到相近条件并被评测”。在场景闸门之后，项目又新增了可执行的资料底座 gate：用 manifest 和报告检查资料来源、公开数据集、字段覆盖、任务证据映射是否足够支撑下一步 `SyntheticSkillDataset v2` 计划输入。随后完成的是 `SyntheticSkillDataset v2` 输入规范 gate：把这些计划输入进一步整理成船舶焊接任务分类、行业标准字段、字段来源和仿真假设边界，并形成证据报告。最新完成的是仿真输出接入 gate：平台现在可以接收 simulation output bundles，把它们导入为 `SyntheticSkillDataset v2`，再输出证据报告。
 
-根据最新路线调整，下一阶段不再把真机采集作为主路径，而是先建设“仿真优先的船舶焊接数据与工艺知识底座”。目前已经完成公开资料来源、船舶焊接任务族和候选仿真场景的第一道可执行证据闸门，也已经完成资料底座 gate 的 manifest、校验逻辑、中文报告、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate。这个仿真输出接入 gate 是第一个真正的平台侧仿真数据积累能力：外部或轻量仿真器产出的结果，可以先按统一格式进入平台，再沉淀为后续可追踪的数据资产。但它还不是 bulk synthetic sample generation，也不是 `SyntheticSkillDataset v2` 的批量样本生成完成结论，不是真实焊接质量验证，也不是 WPS/PQR 或熔池路线。
+根据最新路线调整，下一阶段不再把真机采集作为主路径，也不再同时铺开多个任务族，而是优先锁定船舶加筋板 / 纵骨角焊场景（内部标识 `stiffened-panel-fillet`）。项目要围绕这个场景补齐资料、定义仿真输入、生成可复现的 simlite 样板 bundle、接入仿真输出，并形成一个最小 `WeldSkillPackage` 和证据报告。这个阶段的目标是证明平台能围绕一个真实工业场景组织“资料 -> 仿真 -> 数据 -> 技能包 -> 执行基线 -> 证据”的链路，而不是证明真实焊接质量已经完成验证。
 
-前期调研资料没有被删除或废弃。它们仍然作为未来焊接知识嵌入的底座，用来约束任务、字段、参数来源和术语边界。ManiSkill 和 Isaac 仍然是可选的外部执行工具，可以用于后续机器人任务或仿真执行评估，但不是平台核心；平台核心仍然是自有 schema、gate、导入、证据报告和经验沉淀能力。
+前期调研资料没有被删除或废弃。它们仍然作为未来焊接知识嵌入的底座，用来约束任务、字段、参数来源和术语边界。下一阶段需要继续查询和整理的资料，也应围绕 `stiffened-panel-fillet` 收束，包括船舶面板线/加筋板/纵骨焊接资料、角焊缝工艺变量、机器人或龙门焊接设备案例、过程信号字段参考，以及 WPS/PQR 和质量验证边界资料。ManiSkill、Isaac 和 SAPIEN 仍然是可选的外部执行工具，可以用于后续机器人任务或仿真执行评估，但不是平台核心；平台核心仍然是自有 schema、gate、导入、证据报告和经验沉淀能力。
 
 现在还不能说已经完成的是：真实焊接质量验证。因为目前主要依赖轻量仿真和合成数据，还没有把真机焊接、焊材、工艺评定、焊后检测结果接入完整闭环。
 
@@ -196,21 +196,25 @@ uv run python -m weldcore.report.simulation_ingest_report
 
 ## 下一步计划
 
-### 第一优先级：基于已完成仿真输出接入 gate 的小批量设计
+### 第一优先级：锁定样板场景
 
-现在已经完成面向 `SyntheticSkillDataset v2` 的输入规范 gate，也完成了平台侧仿真输出接入 gate。下一步是在这两个 gate 的基础上，选择少量 ready 任务进入样本设计和小批量生成方案。这里仍然只是进入生成计划和小批量设计，不代表已经完成批量数据生产。
+优先锁定 `stiffened-panel-fillet`，也就是船舶加筋板 / 纵骨角焊场景。它和船舶制造语境匹配，机器人相关性强，轨迹边界相对清晰，适合作为第一条从资料到仿真、再到技能资产样板的主线。`panel-butt` 暂时作为第二候选，`micro-panel-web-bulkhead` 保留为复杂任务储备。
 
-### 第二优先级：继续收敛船舶焊接任务族
+### 第二优先级：围绕样板场景补齐资料
 
-继续围绕加筋板/纵骨角焊、平面板拼接、微型面板/腹板/隔板多短焊缝、双层底/双壳内部角焊等任务族收敛字段和假设。只有当任务族有船舶制造上下文、公开来源支撑和字段覆盖说明后，才进入候选仿真场景或 `SyntheticSkillDataset v2` 计划。
+围绕该场景继续整理船舶面板线、加筋板、纵骨角焊、机器人/龙门焊接设备、角焊缝工艺变量、过程信号字段和质量边界资料。新增资料必须先进入 source card、field coverage 或 task evidence，不能直接写成真实质量结论。
 
-### 第三优先级：候选仿真场景规格
+### 第三优先级：形成仿真样板并接入平台
 
-生成 2-3 个候选 `SimulationScenarioSpec`，明确哪些字段来自公开资料约束，哪些是仿真假设，哪些后续需要真机标定。本阶段不把这些候选场景说成真实焊接质量验证。
+基于已有 input-spec gate 和 simulation ingest gate，先用 simlite 生成一组可复现的 `SimulationOutputBundle`，再导入为 `SyntheticSkillDataset v2`。这一轮重点是验证样板场景的输入、输出、导入和证据链，不追求完整外部仿真器集成。
 
-### 第四优先级：后续仿真数据生成计划
+### 第四优先级：形成技能资产样板
 
-在资料底座 gate、输入规范 gate 和仿真输出接入 gate 通过后，再进入 `SyntheticSkillDataset v2` 的生成计划和小批量样本验证。真机采集和专家访谈作为后续校准、验证和审查，不作为当前主路径。ManiSkill/Isaac 可以作为外部执行选项评估，但不能替代平台自己的数据导入和证据闭环。
+把导入后的样本组织成围绕 `stiffened-panel-fillet` 的最小 `WeldSkillPackage`，说明来源、轨迹、姿态、参数、假设、适用边界、执行基线和证据状态。这个技能包仍是仿真和软件验证样板，不是真实生产工艺结论。
+
+### 第五优先级：更新证据报告
+
+下一阶段报告要回答：为什么选择这个场景，资料是否足以支撑当前仿真设计，仿真输出是否符合平台 schema，技能包是否保留来源和假设，以及还缺哪些真实验证。
 
 ## 风险提醒
 
@@ -236,6 +240,7 @@ uv run python -m weldcore.report.simulation_ingest_report
 - `docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.md`：仿真优先路线设计。
 - `docs/superpowers/plans/2026-06-01-仿真优先船舶焊接数据底座实施计划.md`：仿真优先知识闸门实施计划。
 - `docs/superpowers/specs/2026-06-02-synthetic-skilldataset-v2-input-spec-design.md`：`SyntheticSkillDataset v2` 输入规范与船舶焊接任务分类框架设计。
+- `docs/plans/2026-06-04-下一阶段场景仿真与接入计划.md`：下一阶段从公司目标倒推的平台收束计划，明确优先场景、资料补强、仿真样板、技能资产样板和证据边界。
 - `docs/data-foundation/`：资料底座中文资料卡、manifest、字段覆盖矩阵、任务证据映射和报告。
 - `weld-experience-engine/data_foundation_report_out/`：资料底座报告命令生成的运行时输出目录。
 - `docs/data-foundation/reports/synthetic_skilldataset_v2_plan_input.md`：面向 `SyntheticSkillDataset v2` 的计划输入文档。

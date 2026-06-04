@@ -2,7 +2,7 @@
 
 本仓库用于沉淀 A02「焊接技能大师平台」的方案文档、论证白皮书、关键预研 POC 与技能迁移 MVP。
 
-当前工作重点已经从 idea / POC 论证推进到 MVP 验证和仿真优先路线：先用轻量仿真和结构化数据模型证明“焊接技能能否被打包并迁移到相近焊缝条件”，再用公开资料和船舶制造任务族建立仿真前的知识闸门，后续再逐步接入真机标定和审查。
+当前工作重点已经从 idea / POC 论证、技能迁移 MVP、资料底座 gate 和仿真输出接入 gate，推进到“场景样板验证”阶段：从公司整体目标倒推，先锁定一个具体船舶焊接场景，围绕该场景补齐资料、设计仿真样板、接入仿真输出，并形成可复盘的 `WeldSkillPackage` 和证据报告。
 
 ## 当前结论
 
@@ -15,7 +15,9 @@
 5. **`SyntheticSkillDataset v2` 输入规范 gate**：验证“资料底座计划输入 -> 船舶焊接任务分类 -> 行业标准字段 -> 字段来源和仿真假设 -> input-spec 证据报告”的最小闭环。
 6. **仿真输出接入与经验沉淀平台设计/实现**：验证“SimulationInputSpec -> SimulationOutputBundle -> 导入 gate -> SyntheticSkillDataset v2 -> 证据报告”的最小闭环。
 
-MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 与仿真输出接入 gate 的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以作为下一阶段仿真数据生成、真机标定、专家知识整理、专利/论文材料沉淀的基础。当前新增完成的是平台侧仿真输出接入：平台能够接收 `SimulationOutputBundle`，通过导入 gate 进入 `SyntheticSkillDataset v2`，并生成证据报告。但它还不能被表述为完整 ManiSkill/Isaac 集成，也不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。输入规范 gate 完成的是 `SyntheticSkillDataset v2` 的输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 与仿真输出接入 gate 的阶段性判断是：软件与数据结构层面的核心机制已经跑通，可以支撑下一阶段围绕具体场景做仿真样板和技能资产样板。当前平台能够接收 `SimulationOutputBundle`，通过导入 gate 进入 `SyntheticSkillDataset v2`，并生成证据报告。但它还不能被表述为完整 ManiSkill/Isaac 集成，也不能被表述为真实焊接质量已经被验证；真实焊接质量仍需要真机、焊材、工艺评定和检测结果二次标定。输入规范 gate 完成的是 `SyntheticSkillDataset v2` 的输入规范审查，不生成批量 `SyntheticSkillDataset v2` 样本，不是真实焊接质量验证，也不是 WPS/PQR。
+
+下一阶段主线已经收束为：优先选择船舶加筋板 / 纵骨角焊场景（内部标识 `stiffened-panel-fillet`），围绕该场景完成资料补强、仿真输入定义、simlite 样板 bundle、仿真输出接入、`WeldSkillPackage` 样板和证据报告。`panel-butt` 作为第二候选，`micro-panel-web-bulkhead` 暂时保留为复杂任务储备。
 
 ## 已完成成果
 
@@ -87,6 +89,9 @@ MVP、场景知识闸门、资料底座 gate、`SyntheticSkillDataset v2` 输入
 - [焊接技能迁移 MVP 实施计划](docs/plans/2026-05-31-焊接技能迁移MVP实施计划.md)
 - [仿真优先船舶焊接数据底座设计 spec](docs/superpowers/specs/2026-06-01-仿真优先船舶焊接数据底座-design.md)
 - [仿真优先船舶焊接数据底座实施计划](docs/superpowers/plans/2026-06-01-仿真优先船舶焊接数据底座实施计划.md)
+- [下一阶段场景仿真与接入计划](docs/plans/2026-06-04-下一阶段场景仿真与接入计划.md)
+- [Physical AI 公司顶层战略与方向](docs/strategy/2026-06-04-PhysicalAI公司顶层战略与方向.md)
+- [Physical AI 公司初步执行规划](docs/strategy/2026-06-04-PhysicalAI公司初步执行规划.md)
 - [风险驱动论证白皮书](report/船舶焊接工艺大脑平台_风险驱动论证白皮书.md)
 - [项目进展说明与下一步计划](details.md)
 
@@ -201,10 +206,12 @@ uv run python -m weldcore.report.simulation_ingest_report
 - 已明确 Rerun、ManiSkill、Isaac、真机数据和专家知识的边界。
 - 已明确公开资料、资料底座、输入规范 gate 和仿真输出接入 gate 只能作为场景约束、参数参考、标签词汇来源、`SyntheticSkillDataset v2` 输入规范和平台侧数据沉淀能力，不能写成真实焊接质量验证、完整 ManiSkill/Isaac 集成、批量 synthetic samples 生成或 WPS/PQR。
 
-下一阶段建议进入“基于仿真输出接入 gate 的小批量样本设计和外部仿真执行对接评估”：
+下一阶段进入“场景锁定后的仿真样板与接入闭环”：
 
-1. 基于已通过 gate 的资料底座、输入规范和仿真输出接入能力，选择 2-3 个 ready 任务进入小批量 `SyntheticSkillDataset v2` 样本设计。
-2. 继续把公开资料用于约束仿真场景字段和参数范围；不能把公开资料或仿真结果写成真实焊接质量验证。
-3. ManiSkill/Isaac 可作为外部执行选项评估，但不替代平台核心 schema、gate、导入和证据报告能力。
-4. 本阶段不纳入熔池图像、熔池控制或焊中闭环。
-5. 真机采集和专家访谈保留为后续标定、验证和审查，不作为当前主路径。
+1. 优先锁定 `stiffened-panel-fillet`，把它作为第一条样板场景，而不是同时铺开多个任务族。
+2. 围绕该场景补齐公开资料、字段覆盖、任务证据和假设边界；资料只服务于场景定义和仿真样板，不做无边界调研。
+3. 基于已有 input-spec gate 和 simulation ingest gate，生成一组可复现的 simlite 样板 bundle，并导入为 `SyntheticSkillDataset v2`。
+4. 将导入结果组织成围绕该场景的 `WeldSkillPackage` 样板，输出机器人执行基线或调试输入。
+5. 生成证据报告，明确区分公开资料、仿真假设、软件验证、真实质量验证和 WPS/PQR 边界。
+6. ManiSkill/Isaac/SAPIEN 可作为后续 adapter 评估方向，但不替代平台核心 schema、gate、导入和证据报告能力。
+7. 本阶段不纳入熔池图像、熔池控制或焊中闭环；真机采集和专家访谈保留为后续标定、验证和审查。
