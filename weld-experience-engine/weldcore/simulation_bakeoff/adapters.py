@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 import importlib.util
+from pathlib import Path
+from typing import Any
 
-from weldcore.simulation_bakeoff.model import SimulationTaskSpec, SimulatorAdapterResult
+from weldcore.simulation_bakeoff.maniskill_adapter import adapt_maniskill_artifact
+from weldcore.simulation_bakeoff.maniskill_contract import RawManiSkillArtifact, read_json_artifact
+from weldcore.simulation_bakeoff.model import (
+    SimulationPathPoint,
+    SimulationTaskSpec,
+    SimulatorAdapterResult,
+)
 
 
 def run_simlite_reference(task_spec: SimulationTaskSpec) -> SimulatorAdapterResult:
@@ -28,7 +36,28 @@ def run_simlite_reference(task_spec: SimulationTaskSpec) -> SimulatorAdapterResu
     )
 
 
-def attempt_maniskill_sapien(task_spec: SimulationTaskSpec) -> SimulatorAdapterResult:
+def attempt_maniskill_sapien(
+    task_spec: SimulationTaskSpec,
+    raw_artifact_path: str | Path | None = None,
+) -> SimulatorAdapterResult:
+    if raw_artifact_path is not None:
+        artifact_path = Path(raw_artifact_path)
+        if not artifact_path.exists():
+            return _failed_external_attempt(
+                adapter_name="maniskill_sapien",
+                task_spec=task_spec,
+                failure_boundary=("artifact_missing",),
+            )
+        try:
+            artifact = _raw_maniskill_artifact_from_data(read_json_artifact(artifact_path))
+            return adapt_maniskill_artifact(task_spec, artifact)
+        except Exception:
+            return _failed_external_attempt(
+                adapter_name="maniskill_sapien",
+                task_spec=task_spec,
+                failure_boundary=("adapter_conversion_failed",),
+            )
+
     dependency_found = _any_dependency_found(("mani_skill", "sapien"))
     if not dependency_found:
         return _failed_external_attempt(
@@ -70,11 +99,30 @@ def _any_dependency_found(module_names: tuple[str, ...]) -> bool:
     return any(importlib.util.find_spec(module_name) is not None for module_name in module_names)
 
 
+def _raw_maniskill_artifact_from_data(data: dict[str, Any]) -> RawManiSkillArtifact:
+    return RawManiSkillArtifact(
+        run_id=data["run_id"],
+        task_id=data["task_id"],
+        status=data["status"],
+        tcp_trajectory=_path_points_from_data(data["tcp_trajectory"]),
+        tool_orientation=_path_points_from_data(data["tool_orientation"]),
+        task_state=dict(data["task_state"]),
+        metrics=dict(data["metrics"]),
+        failure_boundary=tuple(data["failure_boundary"]),
+        artifacts=dict(data["artifacts"]),
+        evidence_notes=tuple(data["evidence_notes"]),
+    )
+
+
+def _path_points_from_data(points: list[dict[str, Any]]) -> tuple[SimulationPathPoint, ...]:
+    return tuple(SimulationPathPoint(**point) for point in points)
+
+
 def _failed_external_attempt(
     *,
     adapter_name: str,
     task_spec: SimulationTaskSpec,
-    failure_boundary: tuple[str, str],
+    failure_boundary: tuple[str, ...],
 ) -> SimulatorAdapterResult:
     return SimulatorAdapterResult(
         adapter_name=adapter_name,
