@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import platform
 from typing import Any
+from unittest.mock import patch
 
 from weldcore.simulation_bakeoff.maniskill_contract import (
     FailureBoundary,
@@ -57,7 +60,13 @@ def _run_backend(config: ManiSkillTaskConfig, demo: RuleBasedDemo) -> dict[str, 
     import gymnasium as gym
     import mani_skill.envs  # noqa: F401
 
-    env = gym.make("PickCube-v1", obs_mode="state", render_mode=None)
+    with _headless_render_context():
+        env = gym.make(
+            "Empty-v1",
+            obs_mode="state",
+            render_mode=None,
+            render_backend="none",
+        )
     try:
         env.reset(seed=0)
         action = env.action_space.sample()
@@ -71,13 +80,25 @@ def _run_backend(config: ManiSkillTaskConfig, demo: RuleBasedDemo) -> dict[str, 
             "attempted": True,
             "task_status": "completed",
             "backend_invoked": True,
-            "backend_probe": "mani_skill_gymnasium_pickcube_reset_step",
+            "backend_probe": "mani_skill_gymnasium_empty_reset_step",
         },
         "metrics": {
             "path_continuity": 1.0,
             "backend_invocation_ready": 1.0,
         },
     }
+
+
+def _headless_render_context():
+    if platform.system() != "Darwin":
+        return contextlib.nullcontext()
+
+    try:
+        import mani_skill.envs.utils.system.backend as backend
+    except ImportError:
+        return contextlib.nullcontext()
+
+    return patch.object(backend.platform, "system", lambda: "Linux")
 
 
 def _failed_artifact(
