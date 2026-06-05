@@ -1,13 +1,13 @@
-# ManiSkill/SAPIEN Dev Environment
+# ManiSkill/SAPIEN 开发环境
 
-This page records the minimal local environment for the first real simulator loop.
-It is not a general ManiSkill tutorial and does not make ManiSkill/SAPIEN a core project dependency.
+本页记录第一条外部非 mock 仿真器最小闭环所需的本机轻量环境。
+它不是通用 ManiSkill 教程，也不把 ManiSkill/SAPIEN 变成项目核心依赖。
 
-## Why Conda
+## 为什么使用 Conda
 
-The default `uv` project environment stays light and testable. ManiSkill/SAPIEN runs in an independent conda environment so simulator dependencies do not break the default workflow.
+默认 `uv` 项目环境保持轻量、可测试。ManiSkill/SAPIEN 放在独立 conda 环境中运行，避免仿真器依赖破坏默认工作流。
 
-## Minimal Setup
+## 最小设置
 
 ```bash
 conda create -n weld-maniskill python=3.10 -y
@@ -16,21 +16,27 @@ pip install -e ./weld-experience-engine
 pip install mani-skill sapien
 ```
 
-If the package names or platform support change, follow the official ManiSkill/SAPIEN installation docs and keep this page short.
+如果包名或平台支持发生变化，以官方 ManiSkill/SAPIEN 安装文档为准，并保持本页简短。
 
-## Run
+## 运行
 
 ```bash
 ./scripts/run_maniskill_spike.sh
 ```
 
-Default output:
+默认输出目录：
 
 ```text
 artifacts/simulation/maniskill-sapien/
 ```
 
-## Expected Outputs
+## 预期输出
+
+根输出：
+
+- `run_summary.json`
+
+每个 task 子目录输出：
 
 - `task_config.json`
 - `demo.json`
@@ -38,9 +44,8 @@ artifacts/simulation/maniskill-sapien/
 - `adapter_result.json`
 - `experience_dataset.json`
 - `evidence_bundle.json`
-- `run_summary.json`
 
-## Failure Boundaries
+## 失败边界
 
 - `environment_missing`
 - `simulator_api_changed`
@@ -50,10 +55,10 @@ artifacts/simulation/maniskill-sapien/
 - `artifact_missing`
 - `adapter_conversion_failed`
 
-## Current Boundaries
+## 当前边界
 
-- Not final simulator selection.
-- Not robot executable process package.
-- Not real welding quality validation.
-- Not WPS/PQR.
-- Not GPU batch generation or RL training.
+- 不是最终仿真器选择。
+- 不是机器人可执行工艺包。
+- 不做真实焊接质量验证。
+- 不是 WPS/PQR。
+- 不是 GPU 批量生成或 RL 训练。
