@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 from typing import Any
 
@@ -50,13 +51,13 @@ def attempt_maniskill_sapien(
             )
         try:
             artifact = _raw_maniskill_artifact_from_data(read_json_artifact(artifact_path))
-            return adapt_maniskill_artifact(task_spec, artifact)
-        except Exception:
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return _failed_external_attempt(
                 adapter_name="maniskill_sapien",
                 task_spec=task_spec,
                 failure_boundary=("adapter_conversion_failed",),
             )
+        return adapt_maniskill_artifact(task_spec, artifact)
 
     dependency_found = _any_dependency_found(("mani_skill", "sapien"))
     if not dependency_found:

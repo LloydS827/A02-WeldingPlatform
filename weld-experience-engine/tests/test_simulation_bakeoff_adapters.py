@@ -1,3 +1,5 @@
+import pytest
+
 from weldcore.simulation_bakeoff import (
     attempt_gazebo_moveit,
     attempt_maniskill_sapien,
@@ -110,3 +112,24 @@ def test_maniskill_attempt_records_adapter_conversion_failure(tmp_path):
 
     assert result.status == "failed"
     assert "adapter_conversion_failed" in result.failure_boundary
+
+
+def test_maniskill_attempt_does_not_mask_adapter_runtime_errors(tmp_path, monkeypatch):
+    task_spec = default_simulation_task_specs()[0]
+    config = default_maniskill_task_configs()[0]
+    demo = generate_rule_based_demo(config)
+    _mock_completed_backend(monkeypatch)
+    artifact = run_maniskill_lightweight(config, demo)
+    artifact_path = tmp_path / "raw_artifact.json"
+    write_json_artifact(artifact_path, artifact.to_dict())
+
+    def raise_adapter_bug(task_spec, artifact):
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.adapters.adapt_maniskill_artifact",
+        raise_adapter_bug,
+    )
+
+    with pytest.raises(RuntimeError, match="bug"):
+        attempt_maniskill_sapien(task_spec, raw_artifact_path=artifact_path)
