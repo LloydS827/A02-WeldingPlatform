@@ -44,7 +44,7 @@ def run_maniskill_lightweight(
 def _maniskill_backend_available() -> bool:
     return (
         importlib.util.find_spec("mani_skill") is not None
-        or importlib.util.find_spec("sapien") is not None
+        and importlib.util.find_spec("gymnasium") is not None
     )
 
 

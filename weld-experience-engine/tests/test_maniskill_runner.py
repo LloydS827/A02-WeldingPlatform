@@ -22,6 +22,25 @@ def test_runner_returns_structured_failure_when_backend_missing(monkeypatch):
     assert artifact.task_state["attempted"] is True
 
 
+def test_runner_treats_sapien_without_maniskill_as_missing_backend(monkeypatch):
+    config = default_maniskill_task_configs()[0]
+    demo = generate_rule_based_demo(config)
+
+    def fake_find_spec(module_name):
+        if module_name in {"gymnasium", "sapien"}:
+            return object()
+        return None
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner.importlib.util.find_spec",
+        fake_find_spec,
+    )
+
+    artifact = run_maniskill_lightweight(config, demo)
+
+    assert artifact.failure_boundary == ("environment_missing",)
+
+
 def test_runner_uses_mocked_backend_for_contract_success(monkeypatch):
     config = default_maniskill_task_configs()[0]
     demo = generate_rule_based_demo(config)
