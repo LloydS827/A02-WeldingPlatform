@@ -44,6 +44,8 @@
 
 ## 第一轮最小验证建议
 
+第一条真实工具闭环优先采用 ManiSkill/SAPIEN 本机轻量 CPU/headless/state-based 路线；其输出仍必须通过 adapter 回到项目 canonical schema，不代表最终仿真器选择。
+
 - R1：用 Rerun 回放 simlite 或 `SimulationOutputBundle` 导入后的轨迹、姿态、任务状态和评测证据。
 - R2：优先比较 ManiSkill/SAPIEN 方向和 Gazebo/MoveIt 方向。
 - R3：只调研 API、路径导入导出、机器人品牌和虚拟调试约束，不写入核心 schema。
