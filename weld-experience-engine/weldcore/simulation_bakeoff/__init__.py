@@ -1,6 +1,7 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
 from .bakeoff import MinimalBakeoffResult, run_minimal_simulation_bakeoff
 from .evidence import build_simulation_evidence_bundle
+from .maniskill_adapter import adapt_maniskill_artifact, build_maniskill_experience_dataset
 from .maniskill_contract import (
     ExperienceDataset,
     FailureBoundary,
@@ -35,8 +36,10 @@ __all__ = [
     "SimulationPathPoint",
     "SimulationTaskSpec",
     "SimulatorAdapterResult",
+    "adapt_maniskill_artifact",
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
+    "build_maniskill_experience_dataset",
     "build_simulation_evidence_bundle",
     "default_maniskill_task_configs",
     "default_simulation_task_specs",
