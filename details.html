@@ -75,7 +75,7 @@ th { background: #f3f5f7; }
   <main>
     <div class="meta">HTML 阅读版；维护源：<a href="details.md">details.md</a></div>
 <h1>焊接技能大师平台项目进展说明</h1>
-<p>更新时间：2026-06-04</p>
+<p>更新时间：2026-06-05</p>
 <p>这份文件用于跟踪 A02「焊接技能大师平台」的实际进展、已有能力、待补能力和下一步计划。它面向项目负责人、业务人员、工艺人员和非技术读者，尽量用直白语言说明项目现在到底走到哪一步。</p>
 <h2>维护方式</h2>
 <p>这份文件需要随着项目推进及时更新。凡是项目阶段、已有能力、待补能力、下一步计划、风险判断或关键交付物发生变化，都应该同步修改本文件。</p>
@@ -109,10 +109,10 @@ th { background: #f3f5f7; }
 <li>POC、MVP、gate 和报告命令保留，但放回“证据”和“历史支撑”的位置。</li>
 <li><code>stiffened-panel-fillet</code> 保留为历史资料 gate 和行业实例，不再作为默认项目主线。</li>
 <li>simlite 保留为 L0 稳定仿真和测试工具，不被写成最终类机器人仿真方案。</li>
-<li>ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部生态保留为 adapter 候选，不作为当前基础依赖。</li>
+<li>ManiSkill/SAPIEN 开始以独立 conda 环境承担外部非 mock 仿真器最小闭环的本机轻量任务验证，但仍通过 adapter 保持边界，不作为当前基础依赖。</li>
 </ul>
 <h2>下一步</h2>
-<p>当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 <code>WeldSkillUnit</code> 做 R0 baseline 和 R2 候选路线 bake-off，把仿真尝试、失败边界、评分和 Rerun 回放沉淀为数字资产证据。</p>
+<p>当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 <code>WeldSkillUnit</code> 做 R0 baseline 和 R2 候选路线 bake-off，并优先在独立 conda 环境运行 ManiSkill/SAPIEN 本机轻量任务，把自动生成任务、demo、raw artifact、adapter 输出和经验级数据证据沉淀下来。</p>
 <p>这意味着项目会继续回答三个问题：</p>
 <ol>
 <li>一个 <code>WeldSkillPackage</code> 里面应该如何拆出更小、更可复用的 <code>WeldSkillUnit</code>。</li>
@@ -136,7 +136,8 @@ th { background: #f3f5f7; }
 <li><code>docs/strategy/</code>：公司级 Physical AI 判断与当前项目承接关系。</li>
 <li><code>docs/architecture/</code>：五层架构、模块边界和 adapter 原则。</li>
 <li><code>docs/skill-assets/</code>：<code>WeldSkillPackage</code> 与焊缝技能单元路线。</li>
-<li><code>docs/simulation/</code>：类机器人仿真路线、simlite 边界和外部 adapter 候选。</li>
+<li><code>docs/simulation/</code>：类机器人仿真路线、simlite 边界、外部 adapter 候选和 ManiSkill/SAPIEN 开发环境说明。</li>
+<li><code>scripts/run_maniskill_spike.sh</code>：ManiSkill/SAPIEN 本机轻量 spike 启动脚本。</li>
 <li><code>docs/evidence/</code>：资料来源、字段覆盖、证据报告和质量边界。</li>
 <li><code>docs/archive/</code>：POC、MVP、gate、白皮书和旧计划归档。</li>
 <li><code>weld-experience-engine/</code>：可运行的焊接技能资产引擎、测试和报告命令。</li>
@@ -151,7 +152,8 @@ uv run pytest -q</code></pre>
 <li>不要把 <code>stiffened-panel-fillet</code> 写成当前默认项目主线。</li>
 <li>不要把 simlite 写成最终类机器人仿真路线。</li>
 <li>不要把 Rerun 写成仿真器、机器人控制总线或生产数据库。</li>
-<li>不要把外部仿真器或机器人生态写成项目核心对象；它们仍是候选或工业参考路线。</li>
+<li>不要把外部仿真器或机器人生态写成项目核心对象；它们仍是候选或工业参考路线，不代表最终仿真器选择。</li>
+<li>不要把 ManiSkill/SAPIEN 最小闭环产物写成机器人可执行工艺包。</li>
 <li>不要把公开资料、合成数据、仿真输出或报告结论写成真实焊接质量验证。</li>
 <li>不要把资料证据、输入规范或仿真假设写成 WPS/PQR。</li>
 <li>不要删除历史成果；历史材料应继续保留在归档目录中。</li>
