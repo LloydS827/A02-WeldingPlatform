@@ -72,7 +72,7 @@ class RuleBasedDemo:
 class RawManiSkillArtifact:
     run_id: str
     task_id: str
-    status: str
+    status: Literal["completed", "failed"]
     tcp_trajectory: tuple[SimulationPathPoint, ...]
     tool_orientation: tuple[SimulationPathPoint, ...]
     task_state: dict[str, Any]
@@ -102,7 +102,9 @@ class ExperienceDataset:
 
 
 def write_json_artifact(path: str | Path, data: Any) -> None:
-    Path(path).write_text(
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
         json.dumps(_jsonable(data), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

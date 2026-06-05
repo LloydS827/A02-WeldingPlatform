@@ -1,4 +1,5 @@
 import json
+from typing import Literal, get_type_hints
 
 from weldcore.simulation_bakeoff import (
     ExperienceDataset,
@@ -59,6 +60,12 @@ def test_rule_based_demo_and_raw_artifact_preserve_failure_boundary():
     assert artifact.to_dict()["failure_boundary"] == ["environment_missing"]
 
 
+def test_raw_maniskill_artifact_status_contract_is_completed_or_failed():
+    hints = get_type_hints(RawManiSkillArtifact)
+
+    assert hints["status"] == Literal["completed", "failed"]
+
+
 def test_experience_dataset_declares_skilldataset_as_compatibility_export():
     dataset = ExperienceDataset(
         dataset_id="experience-maniskill-task-long-straight-horizontal-tracking",
@@ -83,6 +90,13 @@ def test_experience_dataset_declares_skilldataset_as_compatibility_export():
 
 def test_json_artifact_round_trips(tmp_path):
     path = tmp_path / "artifact.json"
+    write_json_artifact(path, {"task_id": "task-a"})
+
+    assert read_json_artifact(path)["task_id"] == "task-a"
+
+
+def test_write_json_artifact_creates_parent_directories(tmp_path):
+    path = tmp_path / "nested" / "artifact.json"
     write_json_artifact(path, {"task_id": "task-a"})
 
     assert read_json_artifact(path)["task_id"] == "task-a"
