@@ -41,6 +41,40 @@ def test_runner_treats_sapien_without_maniskill_as_missing_backend(monkeypatch):
     assert artifact.failure_boundary == ("environment_missing",)
 
 
+def test_runner_maps_backend_import_errors_to_environment_missing(monkeypatch):
+    config = default_maniskill_task_configs()[0]
+    demo = generate_rule_based_demo(config)
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner._maniskill_backend_available",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner._run_backend",
+        lambda config, demo: (_ for _ in ()).throw(ImportError("missing")),
+    )
+
+    artifact = run_maniskill_lightweight(config, demo)
+
+    assert artifact.failure_boundary == ("environment_missing",)
+
+
+def test_runner_treats_bad_backend_specs_as_environment_missing(monkeypatch):
+    config = default_maniskill_task_configs()[0]
+    demo = generate_rule_based_demo(config)
+
+    def bad_find_spec(module_name):
+        raise ValueError("bad spec")
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner.importlib.util.find_spec",
+        bad_find_spec,
+    )
+
+    artifact = run_maniskill_lightweight(config, demo)
+
+    assert artifact.failure_boundary == ("environment_missing",)
+
+
 def test_runner_uses_mocked_backend_for_contract_success(monkeypatch):
     config = default_maniskill_task_configs()[0]
     demo = generate_rule_based_demo(config)

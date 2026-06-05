@@ -20,7 +20,9 @@ def run_maniskill_lightweight(
 
     try:
         backend_result = _run_backend(config, demo)
-    except (ImportError, AttributeError, TypeError, ValueError):
+    except ImportError:
+        return _failed_artifact(config, ("environment_missing",))
+    except (AttributeError, TypeError, ValueError):
         return _failed_artifact(config, ("simulator_api_changed",))
     except Exception:
         return _failed_artifact(config, ("simulation_run_failed",))
@@ -42,10 +44,13 @@ def run_maniskill_lightweight(
 
 
 def _maniskill_backend_available() -> bool:
-    return (
-        importlib.util.find_spec("mani_skill") is not None
-        and importlib.util.find_spec("gymnasium") is not None
-    )
+    for module_name in ("mani_skill", "gymnasium"):
+        try:
+            if importlib.util.find_spec(module_name) is None:
+                return False
+        except (ImportError, ModuleNotFoundError, ValueError):
+            return False
+    return True
 
 
 def _run_backend(config: ManiSkillTaskConfig, demo: RuleBasedDemo) -> dict[str, Any]:
