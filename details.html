@@ -109,10 +109,10 @@ th { background: #f3f5f7; }
 <li>POC、MVP、gate 和报告命令保留，但放回“证据”和“历史支撑”的位置。</li>
 <li><code>stiffened-panel-fillet</code> 保留为历史资料 gate 和行业实例，不再作为默认项目主线。</li>
 <li>simlite 保留为 L0 稳定仿真和测试工具，不被写成最终类机器人仿真方案。</li>
-<li>ManiSkill/SAPIEN 开始以独立 conda 环境承担外部非 mock 仿真器最小闭环的本机轻量任务验证，但仍通过 adapter 保持边界，不作为当前基础依赖。</li>
+<li>ManiSkill/SAPIEN 只在独立 conda 环境里做本机小规模试跑，用来检查外部仿真任务能否接入项目数据结构，不作为当前基础依赖。</li>
 </ul>
 <h2>下一步</h2>
-<p>当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 <code>WeldSkillUnit</code> 做 R0 baseline 和 R2 候选路线 bake-off，并优先在独立 conda 环境运行 ManiSkill/SAPIEN 本机轻量任务，把自动生成任务、demo、raw artifact、adapter 输出和经验级数据证据沉淀下来。</p>
+<p>当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 <code>WeldSkillUnit</code> 做对照试跑，并优先在独立 conda 环境运行 ManiSkill/SAPIEN 本机轻量任务，检查任务生成、运行记录和结果转换是否能走通。更细的任务、demo、raw artifact、adapter 和经验级数据证据说明放在 <code>docs/simulation/</code> 中维护。</p>
 <p>这意味着项目会继续回答三个问题：</p>
 <ol>
 <li>一个 <code>WeldSkillPackage</code> 里面应该如何拆出更小、更可复用的 <code>WeldSkillUnit</code>。</li>
