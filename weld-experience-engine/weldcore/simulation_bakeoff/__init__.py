@@ -10,6 +10,7 @@ from .maniskill_contract import (
     read_json_artifact,
     write_json_artifact,
 )
+from .maniskill_demo import generate_rule_based_demo
 from .maniskill_tasks import default_maniskill_task_configs, maniskill_task_config_from_spec
 from .model import (
     BakeoffScorecard,
@@ -38,6 +39,7 @@ __all__ = [
     "build_simulation_evidence_bundle",
     "default_maniskill_task_configs",
     "default_simulation_task_specs",
+    "generate_rule_based_demo",
     "maniskill_task_config_from_spec",
     "read_json_artifact",
     "run_simlite_reference",
