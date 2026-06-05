@@ -1,5 +1,8 @@
 import json
 
+import pytest
+
+from weldcore.simulation_bakeoff import maniskill_pipeline
 from weldcore.simulation_bakeoff import run_maniskill_spike_pipeline
 
 
@@ -85,4 +88,29 @@ def test_pipeline_converts_adapter_errors_to_failure_artifact(tmp_path, monkeypa
     for task in summary["tasks"]:
         task_dir = tmp_path / task["task_id"]
         raw = json.loads((task_dir / "raw_artifact.json").read_text())
-        assert raw["failure_boundary"] == ["adapter_conversion_failed"]
+        adapter_failure = json.loads((task_dir / "adapter_failure.json").read_text())
+        assert raw["status"] == "completed"
+        assert raw["failure_boundary"] == []
+        assert adapter_failure["failure_boundary"] == ["adapter_conversion_failed"]
+
+
+def test_pipeline_does_not_summarize_task_config_write_errors_as_generation_failure(
+    tmp_path,
+    monkeypatch,
+):
+    original_write = maniskill_pipeline.write_json_artifact
+
+    def fail_task_config_write(path, data):
+        if path.name == "task_config.json":
+            raise RuntimeError("write failed")
+        original_write(path, data)
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_pipeline.write_json_artifact",
+        fail_task_config_write,
+    )
+
+    with pytest.raises(RuntimeError, match="write failed"):
+        run_maniskill_spike_pipeline(tmp_path)
+
+    assert not (tmp_path / "run_summary.json").exists()

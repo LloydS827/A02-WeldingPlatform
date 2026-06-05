@@ -34,21 +34,21 @@ def run_maniskill_spike_pipeline(
 
         try:
             config = maniskill_task_config_from_spec(task_spec)
-            write_json_artifact(task_dir / "task_config.json", config)
         except Exception:
             artifact = _stage_failure_artifact(task_spec.task_id, "task_generation_failed")
             write_json_artifact(task_dir / "raw_artifact.json", artifact)
             task_summaries.append(_task_summary(task_spec.task_id, artifact))
             continue
+        write_json_artifact(task_dir / "task_config.json", config)
 
         try:
             demo = generate_rule_based_demo(config)
-            write_json_artifact(task_dir / "demo.json", demo)
         except Exception:
             artifact = _stage_failure_artifact(task_spec.task_id, "demo_generation_failed")
             write_json_artifact(task_dir / "raw_artifact.json", artifact)
             task_summaries.append(_task_summary(task_spec.task_id, artifact))
             continue
+        write_json_artifact(task_dir / "demo.json", demo)
 
         artifact = run_maniskill_lightweight(config, demo)
         write_json_artifact(task_dir / "raw_artifact.json", artifact)
@@ -58,12 +58,12 @@ def run_maniskill_spike_pipeline(
             experience_dataset = build_maniskill_experience_dataset(task_spec, artifact)
             evidence_bundle = build_simulation_evidence_bundle(task_spec, adapter_result)
         except Exception:
-            artifact = _stage_failure_artifact(
+            adapter_failure = _stage_failure_artifact(
                 task_spec.task_id,
                 "adapter_conversion_failed",
             )
-            write_json_artifact(task_dir / "raw_artifact.json", artifact)
-            task_summaries.append(_task_summary(task_spec.task_id, artifact))
+            write_json_artifact(task_dir / "adapter_failure.json", adapter_failure)
+            task_summaries.append(_task_summary(task_spec.task_id, adapter_failure))
             continue
 
         write_json_artifact(task_dir / "adapter_result.json", adapter_result)
