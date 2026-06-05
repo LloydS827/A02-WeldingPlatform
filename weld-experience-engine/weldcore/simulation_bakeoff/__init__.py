@@ -10,6 +10,7 @@ from .maniskill_contract import (
     read_json_artifact,
     write_json_artifact,
 )
+from .maniskill_tasks import default_maniskill_task_configs, maniskill_task_config_from_spec
 from .model import (
     BakeoffScorecard,
     SimulationEvidenceBundle,
@@ -35,7 +36,9 @@ __all__ = [
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
     "build_simulation_evidence_bundle",
+    "default_maniskill_task_configs",
     "default_simulation_task_specs",
+    "maniskill_task_config_from_spec",
     "read_json_artifact",
     "run_simlite_reference",
     "run_minimal_simulation_bakeoff",
