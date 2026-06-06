@@ -1,5 +1,3 @@
-import json
-
 from weldcore.robot_process import (
     BASE_ROBOT_PROCESS_EVIDENCE_BOUNDARY,
     ProcessParameterStatus,
@@ -58,7 +56,9 @@ def test_robot_process_package_draft_serializes_minimal_contract():
         "requires_real_validation",
     ]
     assert "not_WPS_PQR" in data["evidence_boundary"]
-    assert "ready_for_robot_execution" not in json.dumps(data)
+    assert "not_ready_for_robot_execution" in data["evidence_boundary"]
+    assert data["readiness"] != "ready_for_robot_execution"
+    assert "ready_for_robot_execution" not in data["evidence_boundary"]
 
 
 def test_process_parameter_status_keeps_statuses_and_readiness_separate():

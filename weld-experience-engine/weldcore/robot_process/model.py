@@ -108,8 +108,4 @@ class RobotProcessPackageDraft:
     evidence_boundary: tuple[str, ...]
 
     def to_dict(self) -> dict[str, Any]:
-        data = _model_dict(self)
-        data["evidence_boundary"] = [
-            item for item in data["evidence_boundary"] if item != "not_ready_for_robot_execution"
-        ]
-        return data
+        return _model_dict(self)
