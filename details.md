@@ -1,6 +1,6 @@
 # 焊接技能大师平台项目进展说明
 
-更新时间：2026-06-04
+更新时间：2026-06-05
 
 这份文件用于跟踪 A02「焊接技能大师平台」的实际进展、已有能力、待补能力和下一步计划。它面向项目负责人、业务人员、工艺人员和非技术读者，尽量用直白语言说明项目现在到底走到哪一步。
 
@@ -51,11 +51,11 @@
 - POC、MVP、gate 和报告命令保留，但放回“证据”和“历史支撑”的位置。
 - `stiffened-panel-fillet` 保留为历史资料 gate 和行业实例，不再作为默认项目主线。
 - simlite 保留为 L0 稳定仿真和测试工具，不被写成最终类机器人仿真方案。
-- ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部生态保留为 adapter 候选，不作为当前基础依赖。
+- ManiSkill/SAPIEN 只在独立 conda 环境里做本机小规模试跑，用来检查外部仿真任务能否接入项目数据结构，不作为当前基础依赖。
 
 ## 下一步
 
-当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 `WeldSkillUnit` 做 R0 baseline 和 R2 候选路线 bake-off，把仿真尝试、失败边界、评分和 Rerun 回放沉淀为数字资产证据。
+当前下一步已经从路线准备推进到最小仿真验证：先用两个核心 `WeldSkillUnit` 做对照试跑，并优先在独立 conda 环境运行 ManiSkill/SAPIEN 本机轻量任务，检查任务生成、运行记录和结果转换是否能走通。更细的任务、demo、raw artifact、adapter 和经验级数据证据说明放在 `docs/simulation/` 中维护。
 
 这意味着项目会继续回答三个问题：
 
@@ -82,7 +82,8 @@
 - `docs/strategy/`：公司级 Physical AI 判断与当前项目承接关系。
 - `docs/architecture/`：五层架构、模块边界和 adapter 原则。
 - `docs/skill-assets/`：`WeldSkillPackage` 与焊缝技能单元路线。
-- `docs/simulation/`：类机器人仿真路线、simlite 边界和外部 adapter 候选。
+- `docs/simulation/`：类机器人仿真路线、simlite 边界、外部 adapter 候选和 ManiSkill/SAPIEN 开发环境说明。
+- `scripts/run_maniskill_spike.sh`：ManiSkill/SAPIEN 本机轻量 spike 启动脚本。
 - `docs/evidence/`：资料来源、字段覆盖、证据报告和质量边界。
 - `docs/archive/`：POC、MVP、gate、白皮书和旧计划归档。
 - `weld-experience-engine/`：可运行的焊接技能资产引擎、测试和报告命令。
@@ -103,7 +104,8 @@ uv run pytest -q
 - 不要把 `stiffened-panel-fillet` 写成当前默认项目主线。
 - 不要把 simlite 写成最终类机器人仿真路线。
 - 不要把 Rerun 写成仿真器、机器人控制总线或生产数据库。
-- 不要把外部仿真器或机器人生态写成项目核心对象；它们仍是候选或工业参考路线。
+- 不要把外部仿真器或机器人生态写成项目核心对象；它们仍是候选或工业参考路线，不代表最终仿真器选择。
+- 不要把 ManiSkill/SAPIEN 最小闭环产物写成机器人可执行工艺包。
 - 不要把公开资料、合成数据、仿真输出或报告结论写成真实焊接质量验证。
 - 不要把资料证据、输入规范或仿真假设写成 WPS/PQR。
 - 不要删除历史成果；历史材料应继续保留在归档目录中。

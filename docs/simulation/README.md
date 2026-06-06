@@ -11,3 +11,4 @@
 ## 当前入口
 
 - [类机器人仿真路线](robot-like-simulation-route.md)
+- [ManiSkill/SAPIEN 本机轻量环境](maniskill-sapien-dev-env.md)
