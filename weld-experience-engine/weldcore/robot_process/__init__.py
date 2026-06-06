@@ -7,6 +7,7 @@ from .model import (
     RobotProcessDraftStatus,
     RobotProcessPackageDraft,
 )
+from .pipeline import build_robot_process_package_draft
 
 __all__ = [
     "BASE_ROBOT_PROCESS_EVIDENCE_BOUNDARY",
@@ -16,4 +17,5 @@ __all__ = [
     "RobotExecutionSpec",
     "RobotProcessDraftStatus",
     "RobotProcessPackageDraft",
+    "build_robot_process_package_draft",
 ]
