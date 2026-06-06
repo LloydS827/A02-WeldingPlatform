@@ -64,7 +64,7 @@ def _missing_robot_context(evidence_bundle: SimulationEvidenceBundle) -> tuple[s
     return tuple(
         field
         for field in REQUIRED_ROBOT_CONTEXT
-        if not planning_result.get(field)
+        if not _context_available(planning_result, field)
     )
 
 
@@ -96,7 +96,11 @@ def _robot_execution_spec(
 
 
 def _context_status(planning_result: dict[str, Any], key: str) -> str:
-    return "available" if planning_result.get(key) else "missing"
+    return "available" if _context_available(planning_result, key) else "missing"
+
+
+def _context_available(planning_result: dict[str, Any], key: str) -> bool:
+    return key in planning_result and planning_result[key] is not None
 
 
 def _source_evidence(evidence_bundle: SimulationEvidenceBundle) -> dict[str, Any]:

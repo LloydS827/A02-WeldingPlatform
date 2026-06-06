@@ -121,6 +121,30 @@ def test_readiness_priority_detects_missing_orientation_before_robot_context():
     assert draft.readiness == "blocked_by_missing_orientation"
 
 
+def test_robot_context_treats_falsy_present_results_as_available():
+    bundle = _completed_bundle()
+    adapter_result = replace(
+        bundle.adapter_result,
+        planning_result={
+            **bundle.adapter_result.planning_result,
+            "robot_model": "test-robot",
+            "workpiece_frame": "workpiece",
+            "tcp_calibration": "calibrated",
+            "reachability_result": True,
+            "collision_result": False,
+            "joint_limit_result": False,
+        },
+    )
+    bundle = replace(bundle, adapter_result=adapter_result)
+
+    draft = build_robot_process_package_draft(bundle)
+
+    assert draft.readiness == "draft"
+    assert draft.robot_execution_spec.collision_status == "available"
+    assert draft.robot_execution_spec.joint_limit_status == "available"
+    assert draft.robot_execution_spec.missing_robot_context == ()
+
+
 def test_process_parameter_groups_record_future_sources_without_manual_json():
     draft = build_robot_process_package_draft(_completed_bundle())
 
