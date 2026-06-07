@@ -68,6 +68,12 @@ simlite 是 L0 稳定仿真和测试工具，用于保持默认项目可验证�
 
 ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部仿真器和机器人生态是 adapter 候选。它们可以在后续用于机器人任务、运动学、可达性、碰撞、示教数据或 benchmark 评估，但不能替代 `SkillDataset -> WeldSkillPackage -> evaluation/evidence` 这条核心模型。
 
+## 机器人工艺候选与预检边界
+
+`weldcore.robot_process` 可以把 `SimulationEvidenceBundle` 转成 `RobotProcessPackageDraft`，并用 `RobotContextSpec` 与轻量 `RobotFeasibilityResult` 表达机器人上下文和可执行性预检结果。
+
+当前默认只提供 `mock_6axis_welding_robot` 和 `lightweight_rule` 预检，用于验证数据结构与决策 pipeline。它最多把候选草案推进到 `ready_for_expert_review`，不表示机器人可以执行，也不表示 MoveIt/Gazebo、真实机器人、焊机过程参数或焊接质量已经验证。
+
 ## 当前边界
 
 - 不把 POC / MVP 输出写成真实焊接质量结论。
