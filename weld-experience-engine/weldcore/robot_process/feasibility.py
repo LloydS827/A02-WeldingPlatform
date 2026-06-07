@@ -136,6 +136,7 @@ def update_robot_process_draft_with_feasibility(
         execution_spec = replace(
             execution_spec,
             robot_model=robot_context.robot_model,
+            tcp_frame=robot_context.tcp_frame,
             workpiece_frame=robot_context.workpiece_frame,
             missing_robot_context=missing_context,
         )

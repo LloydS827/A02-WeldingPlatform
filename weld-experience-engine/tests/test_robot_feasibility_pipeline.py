@@ -98,6 +98,7 @@ def test_missing_tcp_frame_blocks_with_frame_context_reason():
     updated = update_robot_process_draft_with_feasibility(draft, context, None)
 
     assert updated.readiness == "blocked_by_missing_frame_context"
+    assert updated.robot_execution_spec.tcp_frame is None
     assert "tcp_frame" in updated.robot_execution_spec.missing_robot_context
 
 
@@ -194,7 +195,7 @@ def test_incomplete_feasibility_result_blocks_without_hiding_result():
 
 def test_mock_context_and_passed_lightweight_result_reaches_expert_review_only():
     draft = _completed_draft()
-    context = default_mock_robot_context()
+    context = replace(default_mock_robot_context(), tcp_frame="context_torch_tcp")
     result = build_robot_feasibility_result(draft, context)
 
     updated = update_robot_process_draft_with_feasibility(draft, context, result)
@@ -203,6 +204,7 @@ def test_mock_context_and_passed_lightweight_result_reaches_expert_review_only()
     assert updated.readiness == "ready_for_expert_review"
     assert updated.readiness != "ready_for_robot_execution"
     assert updated.robot_execution_spec.robot_model == "mock_6axis_welding_robot"
+    assert updated.robot_execution_spec.tcp_frame == "context_torch_tcp"
     assert updated.robot_execution_spec.workpiece_frame == "workpiece"
     assert updated.robot_execution_spec.reachability_status == "passed"
     assert updated.robot_execution_spec.collision_status == "assumed"
