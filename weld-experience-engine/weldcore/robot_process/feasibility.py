@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from .model import (
+    RobotExecutionReadiness,
     RobotContextSpec,
     RobotFeasibilityAdapterHint,
     RobotFeasibilityProbe,
@@ -117,3 +120,126 @@ def build_robot_feasibility_result(
             "orientation_points": len(orientation),
         },
     )
+
+
+def update_robot_process_draft_with_feasibility(
+    draft: RobotProcessPackageDraft,
+    robot_context: RobotContextSpec | None,
+    feasibility_result: RobotFeasibilityResult | None,
+) -> RobotProcessPackageDraft:
+    readiness = _updated_readiness(draft, robot_context, feasibility_result)
+    status = "blocked" if readiness.startswith("blocked_by_") else "draft"
+    execution_spec = draft.robot_execution_spec
+    missing_context = _missing_context_fields(robot_context)
+
+    if robot_context is not None:
+        execution_spec = replace(
+            execution_spec,
+            robot_model=robot_context.robot_model,
+            workpiece_frame=robot_context.workpiece_frame,
+            missing_robot_context=missing_context,
+        )
+    if feasibility_result is not None:
+        execution_spec = replace(
+            execution_spec,
+            reachability_status=feasibility_result.reachability_status,
+            collision_status=feasibility_result.collision_status,
+            joint_limit_status=feasibility_result.joint_limit_status,
+            execution_notes=_append_unique(
+                execution_spec.execution_notes,
+                (
+                    feasibility_result.status,
+                    feasibility_result.evidence_source,
+                    readiness,
+                )
+                + feasibility_result.blocking_reasons,
+            ),
+        )
+
+    return replace(
+        draft,
+        status=status,
+        readiness=readiness,
+        robot_execution_spec=execution_spec,
+        evidence_boundary=_append_unique(
+            draft.evidence_boundary,
+            _context_boundaries(robot_context) + _result_boundaries(feasibility_result),
+        ),
+    )
+
+
+def _updated_readiness(
+    draft: RobotProcessPackageDraft,
+    robot_context: RobotContextSpec | None,
+    feasibility_result: RobotFeasibilityResult | None,
+) -> RobotExecutionReadiness:
+    if draft.readiness != "blocked_by_missing_robot_context" and draft.readiness.startswith(
+        "blocked_by_"
+    ):
+        return draft.readiness
+    if robot_context is None:
+        return "blocked_by_missing_robot_context"
+
+    missing_context = _missing_context_fields(robot_context)
+    if "robot_model" in missing_context:
+        return "blocked_by_missing_robot_identity"
+    if any(field in missing_context for field in ("base_frame", "workpiece_frame", "tcp_frame")):
+        return "blocked_by_missing_frame_context"
+    if "tcp_calibration" in missing_context:
+        return "blocked_by_missing_tcp_calibration"
+    if feasibility_result is None:
+        return "blocked_by_missing_feasibility_result"
+    if feasibility_result.reachability_status == "failed":
+        return "blocked_by_failed_reachability"
+    if feasibility_result.collision_status == "failed":
+        return "blocked_by_failed_collision_check"
+    if feasibility_result.joint_limit_status == "failed":
+        return "blocked_by_failed_joint_limit_check"
+    if feasibility_result.status == "passed" and not feasibility_result.blocking_reasons:
+        return "ready_for_expert_review"
+    return "blocked_by_incomplete_feasibility_result"
+
+
+def _missing_context_fields(robot_context: RobotContextSpec | None) -> tuple[str, ...]:
+    if robot_context is None:
+        return (
+            "robot_model",
+            "base_frame",
+            "workpiece_frame",
+            "tcp_frame",
+            "tcp_calibration",
+            "joint_limits_source",
+        )
+
+    missing: list[str] = []
+    if robot_context.robot_model is None:
+        missing.append("robot_model")
+    if robot_context.base_frame is None:
+        missing.append("base_frame")
+    if robot_context.workpiece_frame is None:
+        missing.append("workpiece_frame")
+    if robot_context.tcp_frame is None:
+        missing.append("tcp_frame")
+    if robot_context.tcp_calibration_status in (None, "unknown"):
+        missing.append("tcp_calibration")
+    if robot_context.joint_limits_source is None:
+        missing.append("joint_limits_source")
+    return tuple(missing)
+
+
+def _context_boundaries(robot_context: RobotContextSpec | None) -> tuple[str, ...]:
+    return () if robot_context is None else robot_context.evidence_notes
+
+
+def _result_boundaries(
+    feasibility_result: RobotFeasibilityResult | None,
+) -> tuple[str, ...]:
+    return () if feasibility_result is None else feasibility_result.evidence_boundary
+
+
+def _append_unique(existing: tuple[str, ...], additions: tuple[str, ...]) -> tuple[str, ...]:
+    values = list(existing)
+    for item in additions:
+        if item not in values:
+            values.append(item)
+    return tuple(values)

@@ -4,6 +4,7 @@ from .feasibility import (
     MOCK_CONTEXT_EVIDENCE_BOUNDARY,
     build_robot_feasibility_result,
     default_mock_robot_context,
+    update_robot_process_draft_with_feasibility,
 )
 from .model import (
     BASE_ROBOT_PROCESS_EVIDENCE_BOUNDARY,
@@ -48,4 +49,5 @@ __all__ = [
     "build_robot_feasibility_result",
     "build_robot_process_package_draft",
     "default_mock_robot_context",
+    "update_robot_process_draft_with_feasibility",
 ]
