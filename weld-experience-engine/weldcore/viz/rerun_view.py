@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..model.trajectory import Trajectory
+from .rerun_bridge import _set_rerun_time_seconds
 
 
 def log_trajectory(ideal: Trajectory, recomposed: Trajectory, name: str = "weld") -> bool:
@@ -17,6 +18,6 @@ def log_trajectory(ideal: Trajectory, recomposed: Trajectory, name: str = "weld"
         (recomposed, f"{name}/recomposed", [255, 128, 0]),
     ):
         for sample in traj.samples:
-            rr.set_time_seconds("weld_time", sample.t)
+            _set_rerun_time_seconds(rr, "weld_time", sample.t)
             rr.log(path, rr.Points3D([[sample.x, sample.y, sample.z]], colors=[color]))
     return True
