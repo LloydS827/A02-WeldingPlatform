@@ -1,3 +1,10 @@
+from .feasibility import (
+    DEFAULT_REQUESTED_CHECKS,
+    LIGHTWEIGHT_FEASIBILITY_EVIDENCE_BOUNDARY,
+    MOCK_CONTEXT_EVIDENCE_BOUNDARY,
+    build_robot_feasibility_result,
+    default_mock_robot_context,
+)
 from .model import (
     BASE_ROBOT_PROCESS_EVIDENCE_BOUNDARY,
     ProcessParameterStatus,
@@ -20,6 +27,9 @@ from .pipeline import build_robot_process_package_draft
 
 __all__ = [
     "BASE_ROBOT_PROCESS_EVIDENCE_BOUNDARY",
+    "DEFAULT_REQUESTED_CHECKS",
+    "LIGHTWEIGHT_FEASIBILITY_EVIDENCE_BOUNDARY",
+    "MOCK_CONTEXT_EVIDENCE_BOUNDARY",
     "ProcessParameterStatus",
     "ProcessParameterStatusValue",
     "RobotContextSource",
@@ -35,5 +45,7 @@ __all__ = [
     "RobotFeasibilityStrategy",
     "RobotProcessDraftStatus",
     "RobotProcessPackageDraft",
+    "build_robot_feasibility_result",
     "build_robot_process_package_draft",
+    "default_mock_robot_context",
 ]
