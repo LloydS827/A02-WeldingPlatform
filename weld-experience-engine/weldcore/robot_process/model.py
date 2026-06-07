@@ -16,8 +16,47 @@ RobotExecutionReadiness = Literal[
     "blocked_by_missing_trajectory",
     "blocked_by_missing_orientation",
     "blocked_by_missing_robot_context",
+    "blocked_by_missing_robot_identity",
+    "blocked_by_missing_frame_context",
+    "blocked_by_missing_tcp_calibration",
+    "blocked_by_missing_feasibility_result",
+    "blocked_by_incomplete_feasibility_result",
+    "blocked_by_failed_reachability",
+    "blocked_by_failed_collision_check",
+    "blocked_by_failed_joint_limit_check",
     "ready_for_expert_review",
     "ready_for_robot_execution",
+]
+RobotContextSource = Literal[
+    "mock",
+    "manual_precheck",
+    "lightweight_rule",
+    "moveit_future",
+    "gazebo_future",
+    "real_robot_future",
+]
+RobotFeasibilityStrategy = Literal["manual_precheck", "lightweight_rule"]
+RobotFeasibilityAdapterHint = Literal[
+    "manual_precheck",
+    "lightweight_rule",
+    "moveit_future",
+    "gazebo_future",
+    "real_robot_future",
+]
+RobotFeasibilityCheck = Literal[
+    "reachability",
+    "collision",
+    "joint_limits",
+    "path_continuity",
+    "orientation_feasibility",
+]
+RobotFeasibilityStatus = Literal["passed", "failed", "incomplete"]
+RobotFeasibilityCheckStatus = Literal[
+    "passed",
+    "failed",
+    "missing",
+    "not_checked",
+    "assumed",
 ]
 ProcessParameterStatusValue = Literal[
     "available_from_simulation",
@@ -89,6 +128,62 @@ class RobotExecutionSpec:
     joint_limit_status: str
     execution_notes: tuple[str, ...]
     missing_robot_context: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class RobotContextSpec:
+    context_id: str
+    robot_model: str | None
+    robot_family: str | None
+    base_frame: str | None
+    tcp_frame: str | None
+    tcp_calibration_status: str | None
+    workpiece_frame: str | None
+    tool_payload: dict[str, Any]
+    joint_limits_source: str | None
+    workspace_hint: dict[str, Any]
+    context_source: RobotContextSource
+    evidence_notes: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class RobotFeasibilityProbe:
+    probe_id: str
+    draft_id: str
+    context_id: str
+    strategy: RobotFeasibilityStrategy
+    requested_checks: tuple[RobotFeasibilityCheck, ...]
+    adapter_hint: RobotFeasibilityAdapterHint
+    evidence_notes: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class RobotFeasibilityResult:
+    result_id: str
+    probe_id: str
+    draft_id: str
+    context_id: str
+    status: RobotFeasibilityStatus
+    reachability_status: RobotFeasibilityCheckStatus
+    collision_status: RobotFeasibilityCheckStatus
+    joint_limit_status: RobotFeasibilityCheckStatus
+    path_continuity_status: RobotFeasibilityCheckStatus
+    orientation_feasibility_status: RobotFeasibilityCheckStatus
+    blocking_reasons: tuple[str, ...]
+    warning_reasons: tuple[str, ...]
+    evidence_source: str
+    adapter_hint: RobotFeasibilityAdapterHint
+    evidence_boundary: tuple[str, ...]
+    metrics: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)

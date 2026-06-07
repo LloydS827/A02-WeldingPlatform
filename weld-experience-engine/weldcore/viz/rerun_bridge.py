@@ -7,6 +7,13 @@ from ..model.experiment import TransferExperiment
 from ..model.skill import SkillSample, WeldSkillPackage
 
 
+def _set_rerun_time_seconds(rr, timeline: str, seconds: float) -> None:
+    if hasattr(rr, "set_time_seconds"):
+        rr.set_time_seconds(timeline, seconds)
+        return
+    rr.set_time(timeline, duration=seconds)
+
+
 def log_skill_transfer(
     sample: SkillSample,
     package: WeldSkillPackage,
@@ -21,14 +28,14 @@ def log_skill_transfer(
 
     rr.init(f"weld-skill-transfer-{experiment.experiment_id}", spawn=spawn)
     for point in sample.trajectory.samples:
-        rr.set_time_seconds("weld_time", point.t)
+        _set_rerun_time_seconds(rr, "weld_time", point.t)
         rr.log(
             "source/tcp",
             rr.Points3D([[point.x, point.y, point.z]], colors=[[0, 128, 255]]),
         )
 
     for point in experiment.recomposed_trajectory.samples:
-        rr.set_time_seconds("weld_time", point.t)
+        _set_rerun_time_seconds(rr, "weld_time", point.t)
         rr.log(
             "target/transferred_tcp",
             rr.Points3D([[point.x, point.y, point.z]], colors=[[255, 128, 0]]),
@@ -71,7 +78,7 @@ def log_simulation_dataset_evidence(
             ),
         )
         for point in sample.trajectory.samples:
-            rr.set_time_seconds("weld_time", point.t)
+            _set_rerun_time_seconds(rr, "weld_time", point.t)
             rr.log(
                 f"{sample_path}/tcp",
                 rr.Points3D([[point.x, point.y, point.z]], colors=[[0, 128, 255]]),
