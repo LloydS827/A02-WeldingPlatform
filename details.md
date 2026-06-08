@@ -148,7 +148,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-最近一次主分支完整验证结果为 `252 passed`。
+本分支最近一次完整验证结果为 `261 passed`。
 
 报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。
 
