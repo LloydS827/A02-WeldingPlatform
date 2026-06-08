@@ -29,6 +29,8 @@ from .routes import (
     SimulationAdapterStatus,
     default_simulation_adapter_routes,
     get_default_batch_route,
+    run_adapter_route,
+    run_comparison_routes,
 )
 from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_specs
 
@@ -61,6 +63,8 @@ __all__ = [
     "get_default_batch_route",
     "maniskill_task_config_from_spec",
     "read_json_artifact",
+    "run_adapter_route",
+    "run_comparison_routes",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",
     "run_simlite_reference",

@@ -88,3 +88,67 @@ def get_default_batch_route() -> SimulationAdapterRoute:
     if len(defaults) != 1:
         raise ValueError("Expected exactly one default simulation adapter route")
     return defaults[0]
+
+
+def run_adapter_route(
+    route_id: str,
+    task_spec: SimulationTaskSpec,
+    routes: tuple[SimulationAdapterRoute, ...] | None = None,
+) -> SimulatorAdapterResult:
+    route = _route_by_id(route_id, routes)
+    try:
+        return route.runner(task_spec)
+    except Exception:
+        return _failed_route_result(
+            route_id=route_id,
+            task_spec=task_spec,
+            failure_boundary=("simulation_run_failed",),
+        )
+
+
+def run_comparison_routes(
+    task_spec: SimulationTaskSpec,
+    routes: tuple[SimulationAdapterRoute, ...] | None = None,
+) -> tuple[SimulatorAdapterResult, ...]:
+    selected_routes = default_simulation_adapter_routes() if routes is None else routes
+    return tuple(
+        run_adapter_route(route.route_id, task_spec, routes=selected_routes)
+        for route in selected_routes
+    )
+
+
+def _route_by_id(
+    route_id: str,
+    routes: tuple[SimulationAdapterRoute, ...] | None,
+) -> SimulationAdapterRoute:
+    selected_routes = default_simulation_adapter_routes() if routes is None else routes
+    for route in selected_routes:
+        if route.route_id == route_id:
+            return route
+    raise ValueError(f"Unknown simulation adapter route: {route_id}")
+
+
+def _failed_route_result(
+    route_id: str,
+    task_spec: SimulationTaskSpec,
+    failure_boundary: tuple[str, ...],
+) -> SimulatorAdapterResult:
+    return SimulatorAdapterResult(
+        adapter_name=route_id,
+        task_id=task_spec.task_id,
+        status="failed",
+        tcp_trajectory=(),
+        tool_orientation=(),
+        planning_result={
+            "attempted": True,
+            "validated_task_contract": False,
+            "task_status": "failed",
+        },
+        failure_boundary=failure_boundary,
+        metrics={
+            "same_task_attempted": 1.0,
+            "task_contract_outputs_ready": 0.0,
+        },
+        artifacts={},
+        evidence_notes=("not_final_simulator_selection",),
+    )
