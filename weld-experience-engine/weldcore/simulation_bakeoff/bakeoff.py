@@ -9,6 +9,7 @@ from weldcore.simulation_bakeoff.model import (
     SimulationTaskSpec,
 )
 from weldcore.simulation_bakeoff.routes import (
+    SimulationAdapterRoute,
     default_simulation_adapter_routes,
     run_adapter_route,
 )
@@ -38,21 +39,22 @@ class MinimalBakeoffResult:
         }
 
 
-def _route_ids() -> tuple[str, ...]:
-    return tuple(route.route_id for route in default_simulation_adapter_routes())
+def _route_ids(routes: tuple[SimulationAdapterRoute, ...]) -> tuple[str, ...]:
+    return tuple(route.route_id for route in routes)
 
 
 def run_minimal_simulation_bakeoff() -> MinimalBakeoffResult:
     task_specs = default_simulation_task_specs()
-    route_ids = _route_ids()
+    routes = default_simulation_adapter_routes()
+    route_ids = _route_ids(routes)
     evidence_bundles = tuple(
         build_simulation_evidence_bundle(
-            task_spec, run_adapter_route(route_id, task_spec)
+            task_spec, run_adapter_route(route_id, task_spec, routes=routes)
         )
         for route_id in route_ids
         for task_spec in task_specs
     )
-    scorecard = _build_scorecard(task_specs, evidence_bundles)
+    scorecard = _build_scorecard(task_specs, evidence_bundles, route_ids)
     return MinimalBakeoffResult(
         task_specs=task_specs,
         evidence_bundles=evidence_bundles,
@@ -63,9 +65,9 @@ def run_minimal_simulation_bakeoff() -> MinimalBakeoffResult:
 def _build_scorecard(
     task_specs: tuple[SimulationTaskSpec, ...],
     evidence_bundles: tuple[SimulationEvidenceBundle, ...],
+    route_ids: tuple[str, ...],
 ) -> BakeoffScorecard:
     expected_task_ids = tuple(task_spec.task_id for task_spec in task_specs)
-    route_ids = _route_ids()
     route_dimension_scores = {
         route_id: _score_route(route_id, expected_task_ids, evidence_bundles)
         for route_id in route_ids
