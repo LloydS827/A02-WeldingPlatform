@@ -37,7 +37,7 @@ h1, h2, h3 {
 h1 { margin-top: 0; font-size: 2rem; }
 h2 { padding-top: 0.5em; border-top: 1px solid var(--line); font-size: 1.35rem; }
 h3 { font-size: 1.1rem; }
-p, ul, ol, pre, table { margin: 0.75em 0; }
+p, ul, ol, pre { margin: 0.75em 0; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code {
@@ -56,9 +56,6 @@ pre {
 }
 pre code { padding: 0; background: transparent; color: inherit; }
 li { margin: 0.35em 0; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }
-th { background: #f3f5f7; }
 .meta {
   margin-bottom: 24px;
   padding-bottom: 18px;
@@ -74,104 +71,119 @@ th { background: #f3f5f7; }
 <body>
   <main>
     <div class="meta">HTML 阅读版；维护源：<a href="README.md">README.md</a></div>
-<h1>Physical AI 焊接技能资产底座</h1>
-<h2>一句话定义</h2>
-<p>本仓库支撑 A02「焊接技能大师平台」在 Physical AI 方向下的研发，目标是把焊接经验、工艺知识、动作数据、仿真结果和证据边界沉淀为可学习、可迁移、可执行、可审计的工业技能资产。</p>
-<h2>阅读版</h2>
-<ul>
-<li><a href="README.html">README HTML 阅读版</a></li>
-<li><a href="details.html">项目进展说明 HTML 阅读版</a></li>
-</ul>
-<h2>当前阶段</h2>
-<p>当前工作是第一阶段项目级重构：把默认入口从 POC / MVP / gate / 报告集合，收束为以 <code>WeldSkillPackage</code> 为核心对象的 Physical AI 焊接技能资产底座。</p>
-<p>这一阶段重点不是新增仿真器、锁定单一场景或扩展业务页面，而是让仓库默认结构、文档入口、运行验证和证据边界与公司级 Physical AI for Welding 方向一致。</p>
-<p>第二阶段才进入焊缝技能单元与类机器人仿真路线。<code>stiffened-panel-fillet</code> 现在保留为历史资料 gate 和行业实例，不再作为仓库默认研发主线。</p>
-<h2>核心对象：WeldSkillPackage</h2>
-<p><code>WeldSkillPackage</code> 是本项目的核心对象，用于承载一个焊接技能资产的来源、任务语义、轨迹、姿态、工艺参数、适用范围、迁移规则、失败边界、机器人执行建议和证据状态。</p>
-<p>当前核心链路是：</p>
-<pre><code>工艺知识 / 动作经验 / 过程数据 / 仿真输出
--&gt; SkillDataset
--&gt; WeldSkillPackage
--&gt; evaluation / evidence</code></pre>
-<p>外部仿真器、机器人生态、报告命令和可视化工具都应围绕这条链路提供输入、适配、评测或证据，而不是替代 <code>WeldSkillPackage</code> 成为项目核心。</p>
-<h2>当前主线</h2>
-<ol>
-<li>对齐战略：以 <a href="docs/strategy/README.md">战略文档</a> 中的 Physical AI 公司顶层判断为依据，明确本仓库服务工业技能资产沉淀。</li>
-<li>对齐架构：用 <a href="docs/architecture/README.md">架构总览</a> 约束模块边界、adapter 原则和五层系统关系。</li>
-<li>对齐资产对象：用 <a href="docs/skill-assets/README.md">技能资产</a> 说明 <code>WeldSkillPackage</code> 和后续焊缝技能单元的关系。</li>
-<li>对齐仿真边界：用 <a href="docs/simulation/README.md">仿真路线</a> 说明 simlite、类机器人仿真和外部仿真器 adapter 的边界。</li>
-<li>对齐证据边界：用 <a href="docs/evidence/README.md">证据与边界</a> 区分软件验证、资料证据、仿真假设、真实质量验证和 WPS/PQR。</li>
-<li>保留历史成果：通过 <a href="docs/archive/README.md">历史证据与归档</a> 保存 POC、MVP、gate、白皮书和旧计划。</li>
-</ol>
-<h2>已完成基础能力</h2>
-<ul>
-<li>已有可运行的 <code>weldcore</code> 引擎，详见 <a href="weld-experience-engine/README.md">weld-experience-engine/README.md</a>。</li>
-<li>已有 <code>SkillDataset</code>、<code>SkillSample</code>、<code>WeldSkillPackage</code>、迁移评测和 evidence 输出的基础数据结构。</li>
-<li>已跑通经验结构化 POC、技能迁移 MVP、资料底座 gate、<code>SyntheticSkillDataset v2</code> 输入规范 gate 和仿真输出接入 gate。</li>
-<li>已有 simlite/mock bundle 作为 L0 稳定仿真和测试工具。</li>
-<li>已明确 ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部生态只能作为 adapter 候选或后续评估对象。</li>
-<li>已归档前期 POC、MVP、gate、白皮书和旧计划材料，避免把历史阶段误当成当前默认主线。</li>
-</ul>
-<p>这些基础能力说明软件和数据结构层面的验证路径已经存在，但不代表真实焊接质量、WPS/PQR 或最终仿真器路线已经完成。</p>
-<h2>当前目录结构</h2>
-<pre><code>.
-├── README.md
-├── details.md                         # 面向非技术读者的阶段说明和维护台账
-├── docs/
-│   ├── strategy/                       # Physical AI 公司战略与项目承接关系
-│   ├── architecture/                   # 五层架构、模块边界和 adapter 原则
-│   ├── skill-assets/                   # WeldSkillPackage 与焊接技能单元
-│   ├── simulation/                     # 类机器人仿真路线和 simlite 边界
-│   ├── evidence/                       # 资料来源、字段覆盖、证据报告和质量边界
-│   └── archive/                        # POC、MVP、gate、白皮书和旧计划归档
-└── weld-experience-engine/
-    ├── README.md
-    ├── pyproject.toml
-    ├── tests/
-    └── weldcore/</code></pre>
-<h2>如何验证</h2>
-<p>默认验证路径保持为可安装、可运行、可测试：</p>
-<pre><code>cd weld-experience-engine
+    <h1>Physical AI 焊接技能资产底座</h1>
+
+    <h2>一句话定义</h2>
+    <p>本仓库支撑 A02「焊接技能大师平台」在 Physical AI for Welding 方向下的研发。当前目标不是先做完整业务系统、真实机器人控制或正式焊接工艺评定，而是把焊接经验、工艺语义、动作轨迹、仿真输出和证据边界沉淀为可学习、可迁移、可审计、后续可接机器人执行验证的技能资产数据结构。</p>
+
+    <h2>文件入口</h2>
+    <ul>
+      <li><a href="README.html">README HTML 阅读版</a></li>
+      <li><a href="details.html">项目进展记录 HTML 阅读版</a></li>
+    </ul>
+    <p><code>README.md</code> 是项目入口，面向任何新读者说明项目定位、当前能力、如何运行和边界。</p>
+    <p><code>details.md</code> 是阶段更新记录，面向项目讨论记录每天或每一轮完成了什么、下一步要做什么、哪些判断发生了变化。</p>
+
+    <h2>当前定位</h2>
+    <p>当前项目已经从早期 POC / MVP / gate / 报告集合，收束为以 <code>WeldSkillPackage</code> 和 <code>WeldSkillUnit</code> 为核心的焊接技能资产底座。</p>
+    <p>现阶段主线是：<strong>把仿真路线到技能数据结构这段做扎实，并通过反证工作确认候选仿真软件和 adapter 是否真的能稳定产生可积累的数据</strong>。</p>
+    <ol>
+      <li>一个焊接技能单元能否稳定生成仿真任务。</li>
+      <li>不同仿真路线能否按同一输出契约返回结果。</li>
+      <li>仿真结果能否转成经验数据、证据包和机器人候选草案。</li>
+      <li>哪些结论来自软件和仿真证据，哪些必须等待专家或真机验证。</li>
+      <li>哪个仿真软件和 adapter 路线适合成为后续数据积累的默认入口。</li>
+    </ol>
+
+    <h2>核心链路</h2>
+    <pre><code>WeldSkillUnit
+-&gt; SimulationTaskSpec
+-&gt; simlite / ManiSkill-SAPIEN / Gazebo-MoveIt candidate adapter
+-&gt; SimulatorAdapterResult
+-&gt; SimulationEvidenceBundle
+-&gt; SkillDataset / experience dataset
+-&gt; RobotProcessPackageDraft
+-&gt; RobotContextSpec + RobotFeasibilityResult
+-&gt; ready_for_expert_review 或 blocked_*</code></pre>
+    <ul>
+      <li><code>WeldSkillUnit</code> 描述可复用、可训练、可评测的焊接动作能力。</li>
+      <li><code>SimulationTaskSpec</code> 把技能单元转成仿真任务输入。</li>
+      <li>仿真 adapter 负责尝试运行或明确记录失败边界。</li>
+      <li><code>SimulationEvidenceBundle</code> 汇总任务、adapter 结果、转换后的数据和证据状态。</li>
+      <li><code>SkillDataset</code> / experience dataset 是技能数据积累的当前承载形态。</li>
+      <li><code>RobotProcessPackageDraft</code> 是未来机器人执行候选包草案，不是正式工艺包。</li>
+      <li><code>RobotContextSpec</code> 与 <code>RobotFeasibilityResult</code> 只做上下文表达和轻量可行性预检，不代表真实机器人已可执行。</li>
+    </ul>
+    <p><code>ready_for_expert_review</code> 只表示这条候选草案具备进入专家审查的结构条件；<code>ready_for_robot_execution</code> 当前仍是保留状态，不应被默认触达。</p>
+
+    <h2>已完成能力</h2>
+    <ul>
+      <li>可运行的 <code>weldcore</code> 引擎。</li>
+      <li><code>SkillDataset</code>、<code>SkillSample</code>、<code>WeldSkillPackage</code>、迁移评测和 evidence 输出的基础数据结构。</li>
+      <li><code>WeldSkillUnit</code> 最小框架和默认技能单元。</li>
+      <li><code>SimulationTaskSpec</code>、<code>SimulatorAdapterResult</code> 和 <code>SimulationEvidenceBundle</code> 最小仿真证据结构。</li>
+      <li>simlite/mock bundle 作为 L0 稳定仿真和测试基线。</li>
+      <li>ManiSkill/SAPIEN 本机轻量闭环。</li>
+      <li>Gazebo/MoveIt 候选路线的统一失败边界记录。</li>
+      <li>从 <code>SimulationEvidenceBundle</code> 到 <code>RobotProcessPackageDraft</code> 的机器人候选草案转换。</li>
+      <li><code>RobotContextSpec</code>、<code>RobotFeasibilityProbe</code>、<code>RobotFeasibilityResult</code> 和轻量机器人上下文预检接口。</li>
+      <li>焊接工艺参数 Excel 表格作为工程师参数参考纳入仓库。</li>
+      <li>前期 POC、MVP、gate、白皮书和旧计划材料已归档。</li>
+    </ul>
+    <p>这些能力说明软件结构、仿真接入和数据证据路径已经有了前半段闭环，但不代表真实焊接质量、正式 WPS/PQR、最终仿真软件选择或真实机器人执行已经完成。</p>
+
+    <h2>下一阶段方向</h2>
+    <p>下一阶段应优先做 <strong>仿真到技能数据结构的收束与反证验证</strong>。</p>
+    <ul>
+      <li>哪条仿真路线可以稳定生成 <code>SimulationEvidenceBundle</code>。</li>
+      <li>哪些字段可以作为后续技能数据积累的稳定字段。</li>
+      <li>哪些字段仍是假设、mock、adapter 占位或人工补充。</li>
+      <li>ManiSkill/SAPIEN、Gazebo/MoveIt、simlite 在当前阶段分别适合承担什么角色。</li>
+      <li>开始积累数据前，默认仿真入口、任务契约和证据报告还缺什么。</li>
+    </ul>
+
+    <h2>如何验证</h2>
+    <pre><code>cd weld-experience-engine
 uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
-<p>报告命令仍然可用，但它们是技能资产证据、证据边界/仿真接入证据或历史支撑，不是默认研发主线本身。</p>
-<p>技能资产证据命令：</p>
-<pre><code>uv run python -m weldcore.report.mvp_report</code></pre>
-<p><code>mvp_report</code> 用于证明早期 <code>WeldSkillPackage</code> 闭环仍有效。</p>
-<p>证据边界/仿真接入证据命令：</p>
-<pre><code>uv run python -m weldcore.report.data_foundation_report
+    <p>常用报告命令：</p>
+    <pre><code>uv run python -m weldcore.report.mvp_report
+uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
 uv run python -m weldcore.report.simulation_ingest_report
 uv run python -m weldcore.report.simulation_bakeoff_report</code></pre>
-<p><code>simulation_bakeoff_report</code> 用于生成第一轮 <code>WeldSkillUnit</code> 仿真最小验证证据；它记录 R0 baseline、ManiSkill/SAPIEN 与 Gazebo/MoveIt 的同任务尝试和失败边界，不表示最终仿真器已选择。</p>
-<p>历史支撑命令：</p>
-<pre><code>uv run python -m weldcore.report.generate
-uv run python -m weldcore.report.scenario_report</code></pre>
-<p>这些命令用于复盘 POC、MVP、资料 gate、输入规范 gate 和仿真输出接入 gate 的证据链。它们不能被写成真实焊接质量验证、完整外部仿真器集成或 WPS/PQR。</p>
-<h2>当前不做事项</h2>
-<ul>
-<li>不把 <code>stiffened-panel-fillet</code> 作为默认项目主线；它现在是历史资料 gate 和行业实例。</li>
-<li>不在第一阶段选择最终仿真器。</li>
-<li>不把 simlite 夸大为类机器人仿真路线；simlite 只是 L0 稳定仿真和测试工具。</li>
-<li>不把 ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等 adapter 候选变成基础依赖。</li>
-<li>不把公开资料、合成样本、仿真输出或报告结论写成真实焊接质量验证。</li>
-<li>不把当前输入规范、资料证据或仿真假设写成 WPS/PQR。</li>
-<li>不删除历史成果；历史材料统一保留在归档目录。</li>
-</ul>
-<h2>历史证据与归档</h2>
-<p>历史 POC、MVP、gate、旧计划和白皮书已统一归档，入口见 <a href="docs/archive/README.md">docs/archive/README.md</a>。</p>
-<p>白皮书历史材料位于 <a href="docs/archive/whitepaper/report/">docs/archive/whitepaper/report/</a>，仅作为历史论证和支撑材料引用，不再作为默认项目入口。</p>
-<h2>Agent 维护规则</h2>
-<p><code>details.md</code> 是面向用户、业务人员和非技术读者的项目阶段台账。后续任何 Agent 在推进本项目时，都必须检查 <a href="details.md">details.md</a> 是否需要同步更新。</p>
-<p>需要更新 <code>details.md</code> 的情况包括：</p>
-<ul>
-<li>项目阶段、范围或默认主线发生变化。</li>
-<li><code>WeldSkillPackage</code>、焊缝技能单元、仿真路线、证据边界或 adapter 边界发生变化。</li>
-<li>新增或移除重要基础能力、报告命令、验证路径或交付物。</li>
-<li>真实焊接质量验证、WPS/PQR、最终仿真器选择等边界判断发生变化。</li>
-</ul>
-<p>更新时必须用非技术读者能理解的直白语言，明确区分“已经完成”“正在验证”“后续需要补充”，不要把软件原型、仿真结果或公开资料证据夸大为真实生产结论。</p>
-<p>面向读者的入口文档、阶段说明和路线说明更新时，必须同步创建或刷新同目录 HTML 阅读版。尤其是根目录 <code>README.md</code> 和 <code>details.md</code>：Markdown 是维护源，HTML 是面向项目负责人、业务人员和非技术读者的阅读副本；后续新增 README 或类似说明文档时，也应保留相邻的 <code>.html</code> 阅读版链接。</p>
+    <p><code>simulation_bakeoff_report</code> 用于生成 <code>WeldSkillUnit</code> 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。</p>
+
+    <h2>当前目录结构</h2>
+    <pre><code>.
+├── README.md
+├── README.html
+├── details.md
+├── details.html
+├── docs/
+│   ├── strategy/
+│   ├── architecture/
+│   ├── skill-assets/
+│   ├── simulation/
+│   ├── evidence/
+│   ├── archive/
+│   └── superpowers/
+└── weld-experience-engine/</code></pre>
+
+    <h2>当前不做事项</h2>
+    <ul>
+      <li>不把 <code>stiffened-panel-fillet</code> 作为默认项目主线。</li>
+      <li>不把 simlite 写成最终仿真器。</li>
+      <li>不把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac、ROS 等候选路线写成已经完成选型。</li>
+      <li>不把候选 adapter 的失败记录写成项目失败；失败边界本身就是当前反证工作的一部分。</li>
+      <li>不把 <code>RobotProcessPackageDraft</code> 写成正式机器人工艺包。</li>
+      <li>不把 <code>RobotFeasibilityResult</code> 写成真实机器人可达性、碰撞或关节限制验证。</li>
+      <li>不把公开资料、合成数据、仿真输出或报告结论写成真实焊接质量验证。</li>
+      <li>不把资料证据、输入规范、仿真假设或工程师参考表格写成 WPS/PQR。</li>
+    </ul>
+
+    <h2>Agent 维护规则</h2>
+    <p>后续推进本项目时，应先判断是否需要同步更新 <a href="details.md">details.md</a>。更新入口文档、阶段说明或路线说明时，必须同步刷新同目录 HTML 阅读版。</p>
   </main>
 </body>
 </html>
