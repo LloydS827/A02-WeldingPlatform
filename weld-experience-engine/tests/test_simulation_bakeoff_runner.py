@@ -1,4 +1,7 @@
-from weldcore.simulation_bakeoff import run_minimal_simulation_bakeoff
+from weldcore.simulation_bakeoff import (
+    default_simulation_adapter_routes,
+    run_minimal_simulation_bakeoff,
+)
 
 
 def test_minimal_bakeoff_attempts_same_two_tasks_across_routes():
@@ -52,6 +55,17 @@ def test_minimal_bakeoff_has_r0_completed_evidence_and_no_final_selection():
         "engineering_access_cost": 1.0,
     }
     assert result.scorecard.route_scores["simlite_reference"] == 0.82
+
+
+def test_minimal_bakeoff_scorecard_uses_registered_route_ids():
+    result = run_minimal_simulation_bakeoff()
+
+    registered_route_ids = {
+        route.route_id for route in default_simulation_adapter_routes()
+    }
+
+    assert set(result.scorecard.route_dimension_scores) == registered_route_ids
+    assert set(result.scorecard.route_scores) == registered_route_ids
 
 
 def test_minimal_bakeoff_scores_external_failures_as_boundaries():
