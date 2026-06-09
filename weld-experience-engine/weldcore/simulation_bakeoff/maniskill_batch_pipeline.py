@@ -47,6 +47,7 @@ def run_maniskill_batch_pipeline(
 
         try:
             config = maniskill_task_config_from_spec(task_spec)
+            write_json_artifact(sample_dir / "task_config.json", config)
         except Exception:
             failure_boundary = ("task_generation_failed",)
             failure_artifact = _failure_artifact(plan, failure_boundary)
@@ -59,10 +60,10 @@ def run_maniskill_batch_pipeline(
                 )
             )
             continue
-        write_json_artifact(sample_dir / "task_config.json", config)
 
         try:
             demo = generate_rule_based_demo(config)
+            write_json_artifact(sample_dir / "demo.json", demo)
         except Exception:
             failure_boundary = ("demo_generation_failed",)
             failure_artifact = _failure_artifact(plan, failure_boundary)
@@ -75,12 +76,40 @@ def run_maniskill_batch_pipeline(
                 )
             )
             continue
-        write_json_artifact(sample_dir / "demo.json", demo)
 
-        artifact = run_maniskill_lightweight(config, demo)
-        write_json_artifact(raw_artifact_path, artifact)
+        try:
+            artifact = run_maniskill_lightweight(config, demo)
+        except Exception:
+            failure_boundary = ("simulation_run_failed",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                )
+            )
+            continue
+
+        try:
+            write_json_artifact(raw_artifact_path, artifact)
+        except Exception:
+            # Without a persisted raw artifact, the failure artifact is the stable
+            # per-sample URI and records that the sample data contract is incomplete.
+            failure_boundary = ("data_contract_incomplete",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                )
+            )
+            continue
+
         raw_artifact_uri = _sample_uri(plan.sample_id, "raw_artifact.json")
-
         if artifact.status == "failed":
             failure_artifact = _failure_artifact(
                 plan,

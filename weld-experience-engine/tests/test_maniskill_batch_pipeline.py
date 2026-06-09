@@ -109,6 +109,69 @@ def test_batch_pipeline_uses_failure_artifact_uri_when_task_generation_fails(
         assert not (sample_dir / "raw_artifact.json").exists()
 
 
+def test_batch_pipeline_records_runner_exceptions_as_failed_samples(
+    tmp_path,
+    monkeypatch,
+):
+    def fail_runner(config, demo):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_batch_pipeline."
+        "run_maniskill_lightweight",
+        fail_runner,
+    )
+
+    result = run_maniskill_batch_pipeline(outdir=tmp_path, batch_id="batch-test")
+
+    assert result["requested_sample_count"] == 20
+    assert result["completed_sample_count"] == 0
+    assert result["failed_sample_count"] == 20
+    assert result["failure_boundaries"] == ["simulation_run_failed"]
+    assert (tmp_path / "batch-test" / "batch_result.json").exists()
+    for sample_run in result["sample_runs"]:
+        sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
+        assert sample_run["status"] == "failed"
+        assert sample_run["raw_artifact_uri"].endswith("failure_artifact.json")
+        assert sample_run["failure_boundary"] == ["simulation_run_failed"]
+        assert (sample_dir / "failure_artifact.json").exists()
+        assert not (sample_dir / "raw_artifact.json").exists()
+
+
+def test_batch_pipeline_records_per_sample_demo_write_failures(
+    tmp_path,
+    monkeypatch,
+):
+    from weldcore.simulation_bakeoff import maniskill_batch_pipeline
+
+    original_write = maniskill_batch_pipeline.write_json_artifact
+
+    def fail_demo_write(path, data):
+        if path.name == "demo.json":
+            raise RuntimeError("demo write failed")
+        original_write(path, data)
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_batch_pipeline.write_json_artifact",
+        fail_demo_write,
+    )
+
+    result = run_maniskill_batch_pipeline(outdir=tmp_path, batch_id="batch-test")
+
+    assert result["requested_sample_count"] == 20
+    assert result["completed_sample_count"] == 0
+    assert result["failed_sample_count"] == 20
+    assert result["failure_boundaries"] == ["demo_generation_failed"]
+    assert (tmp_path / "batch-test" / "batch_result.json").exists()
+    for sample_run in result["sample_runs"]:
+        sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
+        assert sample_run["status"] == "failed"
+        assert sample_run["raw_artifact_uri"].endswith("failure_artifact.json")
+        assert sample_run["failure_boundary"] == ["demo_generation_failed"]
+        assert (sample_dir / "failure_artifact.json").exists()
+        assert not (sample_dir / "demo.json").exists()
+
+
 def test_batch_pipeline_keeps_comparison_routes_as_metadata_only(tmp_path, monkeypatch):
     _mock_completed_backend(monkeypatch)
 
