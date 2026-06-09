@@ -16,6 +16,10 @@ FailureBoundary = Literal[
     "simulation_run_failed",
     "artifact_missing",
     "adapter_conversion_failed",
+    "data_contract_incomplete",
+    "batch_generation_incomplete",
+    "sample_generation_failed",
+    "experience_dataset_export_failed",
 ]
 
 
