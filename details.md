@@ -45,6 +45,7 @@ WeldSkillUnit
 - 新增 `run_maniskill_batch_pipeline` 和 CLI，可输出 `batch_spec.json`、`batch_result.json` 以及每条样本的 raw artifact、adapter result、evidence bundle、experience dataset 或 failure artifact。
 - `comparison_route_ids=("simlite_reference",)` 当前只作为对照元数据，不触发 simlite 逐样本运行，也不计入 requested / completed / failed / skipped。
 - 对 task generation、demo generation、runner exception、artifact write、adapter conversion、dataset export 和 evidence export 建立样本级失败边界，单条样本失败不会中断整个 batch。
+- completed 样本的 raw artifact、adapter result、experience dataset 和 evidence bundle 已按 `sample_id` 做内部身份收束，避免后续数据积累时出现同一 task 下多条样本 ID 混淆。
 - 第二轮只做小批量入口和 batch summary，不做最终仿真器定型或入口锁定报告。
 - 第三轮再基于小批量结果形成数据积累前置报告，判断默认入口、字段覆盖和失败边界是否足以支持持续积累。
 
