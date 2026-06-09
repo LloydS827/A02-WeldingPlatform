@@ -172,6 +172,56 @@ def test_batch_pipeline_records_per_sample_demo_write_failures(
         assert not (sample_dir / "demo.json").exists()
 
 
+def test_batch_pipeline_uses_fallback_when_failure_artifact_write_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from weldcore.simulation_bakeoff import maniskill_batch_pipeline
+
+    original_write = maniskill_batch_pipeline.write_json_artifact
+
+    def fail_failure_artifact_write(path, data):
+        if path.name == "failure_artifact.json":
+            raise RuntimeError("failure artifact write failed")
+        original_write(path, data)
+
+    def fail_runner(config, demo):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_batch_pipeline.write_json_artifact",
+        fail_failure_artifact_write,
+    )
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_batch_pipeline."
+        "run_maniskill_lightweight",
+        fail_runner,
+    )
+
+    result = run_maniskill_batch_pipeline(outdir=tmp_path, batch_id="batch-test")
+
+    assert result["requested_sample_count"] == 20
+    assert result["completed_sample_count"] == 0
+    assert result["failed_sample_count"] == 20
+    assert result["failure_boundaries"] == ["simulation_run_failed"]
+    assert (tmp_path / "batch-test" / "batch_result.json").exists()
+    for sample_run in result["sample_runs"]:
+        sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
+        fallback_path = sample_dir / "failure_artifact_write_failed.json"
+        fallback_artifact = json.loads(fallback_path.read_text(encoding="utf-8"))
+        assert sample_run["status"] == "failed"
+        assert sample_run["raw_artifact_uri"].endswith(
+            "failure_artifact_write_failed.json"
+        )
+        assert (sample_dir / "failure_artifact_write_failed.json").exists()
+        assert not (sample_dir / "failure_artifact.json").exists()
+        assert fallback_artifact["failure_boundary"] == [
+            "simulation_run_failed",
+            "data_contract_incomplete",
+        ]
+        assert "failure_artifact_write_failed" in fallback_artifact["evidence_notes"]
+
+
 def test_batch_pipeline_keeps_comparison_routes_as_metadata_only(tmp_path, monkeypatch):
     _mock_completed_backend(monkeypatch)
 

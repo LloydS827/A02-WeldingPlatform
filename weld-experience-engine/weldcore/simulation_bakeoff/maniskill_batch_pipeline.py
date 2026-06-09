@@ -43,20 +43,22 @@ def run_maniskill_batch_pipeline(
         task_spec = task_specs_by_id[plan.task_id]
         sample_dir = batch_dir / "samples" / plan.sample_id
         raw_artifact_path = sample_dir / "raw_artifact.json"
-        failure_artifact_path = sample_dir / "failure_artifact.json"
 
         try:
             config = maniskill_task_config_from_spec(task_spec)
             write_json_artifact(sample_dir / "task_config.json", config)
         except Exception:
             failure_boundary = ("task_generation_failed",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            failure_artifact_uri = _write_failure_artifact(
+                sample_dir,
+                plan,
+                failure_boundary,
+            )
             sample_runs.append(
                 _failed_sample_run(
                     plan,
                     failure_boundary,
-                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                    failure_artifact_uri,
                 )
             )
             continue
@@ -66,13 +68,16 @@ def run_maniskill_batch_pipeline(
             write_json_artifact(sample_dir / "demo.json", demo)
         except Exception:
             failure_boundary = ("demo_generation_failed",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            failure_artifact_uri = _write_failure_artifact(
+                sample_dir,
+                plan,
+                failure_boundary,
+            )
             sample_runs.append(
                 _failed_sample_run(
                     plan,
                     failure_boundary,
-                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                    failure_artifact_uri,
                 )
             )
             continue
@@ -81,13 +86,16 @@ def run_maniskill_batch_pipeline(
             artifact = run_maniskill_lightweight(config, demo)
         except Exception:
             failure_boundary = ("simulation_run_failed",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            failure_artifact_uri = _write_failure_artifact(
+                sample_dir,
+                plan,
+                failure_boundary,
+            )
             sample_runs.append(
                 _failed_sample_run(
                     plan,
                     failure_boundary,
-                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                    failure_artifact_uri,
                 )
             )
             continue
@@ -98,25 +106,28 @@ def run_maniskill_batch_pipeline(
             # Without a persisted raw artifact, the failure artifact is the stable
             # per-sample URI and records that the sample data contract is incomplete.
             failure_boundary = ("data_contract_incomplete",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            failure_artifact_uri = _write_failure_artifact(
+                sample_dir,
+                plan,
+                failure_boundary,
+            )
             sample_runs.append(
                 _failed_sample_run(
                     plan,
                     failure_boundary,
-                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                    failure_artifact_uri,
                 )
             )
             continue
 
         raw_artifact_uri = _sample_uri(plan.sample_id, "raw_artifact.json")
         if artifact.status == "failed":
-            failure_artifact = _failure_artifact(
+            _write_failure_artifact(
+                sample_dir,
                 plan,
                 artifact.failure_boundary,
                 source_artifact=artifact,
             )
-            write_json_artifact(failure_artifact_path, failure_artifact)
             sample_runs.append(
                 _failed_sample_run(plan, artifact.failure_boundary, raw_artifact_uri)
             )
@@ -128,8 +139,7 @@ def run_maniskill_batch_pipeline(
             write_json_artifact(adapter_result_path, adapter_result)
         except Exception:
             failure_boundary = ("adapter_conversion_failed",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            _write_failure_artifact(sample_dir, plan, failure_boundary)
             sample_runs.append(
                 _failed_sample_run(plan, failure_boundary, raw_artifact_uri)
             )
@@ -141,8 +151,7 @@ def run_maniskill_batch_pipeline(
             write_json_artifact(experience_dataset_path, experience_dataset)
         except Exception:
             failure_boundary = ("experience_dataset_export_failed",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            _write_failure_artifact(sample_dir, plan, failure_boundary)
             sample_runs.append(
                 _failed_sample_run(
                     plan,
@@ -162,8 +171,7 @@ def run_maniskill_batch_pipeline(
             write_json_artifact(evidence_bundle_path, evidence_bundle)
         except Exception:
             failure_boundary = ("data_contract_incomplete",)
-            failure_artifact = _failure_artifact(plan, failure_boundary)
-            write_json_artifact(failure_artifact_path, failure_artifact)
+            _write_failure_artifact(sample_dir, plan, failure_boundary)
             sample_runs.append(
                 _failed_sample_run(
                     plan,
@@ -220,6 +228,35 @@ def _sample_uri(sample_id: str, artifact_name: str) -> str:
     return str(Path("samples") / sample_id / artifact_name)
 
 
+def _write_failure_artifact(
+    sample_dir: Path,
+    plan: SimulationSamplePlan,
+    failure_boundary: tuple[FailureBoundary, ...],
+    *,
+    source_artifact: RawManiSkillArtifact | None = None,
+) -> str:
+    failure_artifact = _failure_artifact(
+        plan,
+        failure_boundary,
+        source_artifact=source_artifact,
+    )
+    try:
+        write_json_artifact(sample_dir / "failure_artifact.json", failure_artifact)
+        return _sample_uri(plan.sample_id, "failure_artifact.json")
+    except Exception:
+        fallback_artifact = _failure_artifact(
+            plan,
+            _with_data_contract_incomplete(failure_boundary),
+            source_artifact=source_artifact,
+            extra_evidence_notes=("failure_artifact_write_failed",),
+        )
+        write_json_artifact(
+            sample_dir / "failure_artifact_write_failed.json",
+            fallback_artifact,
+        )
+        return _sample_uri(plan.sample_id, "failure_artifact_write_failed.json")
+
+
 def _failed_sample_run(
     plan: SimulationSamplePlan,
     failure_boundary: tuple[FailureBoundary, ...],
@@ -252,6 +289,7 @@ def _failure_artifact(
     failure_boundary: tuple[FailureBoundary, ...],
     *,
     source_artifact: RawManiSkillArtifact | None = None,
+    extra_evidence_notes: tuple[str, ...] = (),
 ) -> RawManiSkillArtifact:
     task_state = {}
     metrics: dict[str, float] = {
@@ -284,8 +322,16 @@ def _failure_artifact(
         metrics=metrics,
         failure_boundary=failure_boundary,
         artifacts={},
-        evidence_notes=plan.evidence_notes,
+        evidence_notes=(*plan.evidence_notes, *extra_evidence_notes),
     )
+
+
+def _with_data_contract_incomplete(
+    failure_boundary: tuple[FailureBoundary, ...],
+) -> tuple[FailureBoundary, ...]:
+    if "data_contract_incomplete" in failure_boundary:
+        return failure_boundary
+    return (*failure_boundary, "data_contract_incomplete")
 
 
 def main(argv: list[str] | None = None) -> None:
