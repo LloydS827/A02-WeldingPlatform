@@ -1,0 +1,275 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+from weldcore.simulation_bakeoff.batch import (
+    SimulationSamplePlan,
+    SimulationSampleRun,
+    default_maniskill_batch_spec,
+    iter_batch_sample_plans,
+    summarize_sample_runs,
+)
+from weldcore.simulation_bakeoff.evidence import build_simulation_evidence_bundle
+from weldcore.simulation_bakeoff.maniskill_adapter import (
+    adapt_maniskill_artifact,
+    build_maniskill_experience_dataset,
+)
+from weldcore.simulation_bakeoff.maniskill_contract import (
+    FailureBoundary,
+    RawManiSkillArtifact,
+    write_json_artifact,
+)
+from weldcore.simulation_bakeoff.maniskill_demo import generate_rule_based_demo
+from weldcore.simulation_bakeoff.maniskill_runner import run_maniskill_lightweight
+from weldcore.simulation_bakeoff.maniskill_tasks import maniskill_task_config_from_spec
+
+
+def run_maniskill_batch_pipeline(
+    outdir: str | Path = "artifacts/simulation/maniskill-sapien-batches",
+    batch_id: str = "maniskill-sapien-default-batch",
+) -> dict[str, Any]:
+    output_root = Path(outdir)
+    spec = default_maniskill_batch_spec(batch_id=batch_id, output_root=str(outdir))
+    batch_dir = output_root / batch_id
+    write_json_artifact(batch_dir / "batch_spec.json", spec)
+
+    task_specs_by_id = {task.task_id: task for task in spec.task_specs}
+    sample_plans = tuple(iter_batch_sample_plans(spec))
+    sample_runs = []
+    for plan in sample_plans:
+        task_spec = task_specs_by_id[plan.task_id]
+        sample_dir = batch_dir / "samples" / plan.sample_id
+        raw_artifact_path = sample_dir / "raw_artifact.json"
+        failure_artifact_path = sample_dir / "failure_artifact.json"
+
+        try:
+            config = maniskill_task_config_from_spec(task_spec)
+        except Exception:
+            failure_boundary = ("task_generation_failed",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                )
+            )
+            continue
+        write_json_artifact(sample_dir / "task_config.json", config)
+
+        try:
+            demo = generate_rule_based_demo(config)
+        except Exception:
+            failure_boundary = ("demo_generation_failed",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    _sample_uri(plan.sample_id, "failure_artifact.json"),
+                )
+            )
+            continue
+        write_json_artifact(sample_dir / "demo.json", demo)
+
+        artifact = run_maniskill_lightweight(config, demo)
+        write_json_artifact(raw_artifact_path, artifact)
+        raw_artifact_uri = _sample_uri(plan.sample_id, "raw_artifact.json")
+
+        if artifact.status == "failed":
+            failure_artifact = _failure_artifact(
+                plan,
+                artifact.failure_boundary,
+                source_artifact=artifact,
+            )
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(plan, artifact.failure_boundary, raw_artifact_uri)
+            )
+            continue
+
+        adapter_result_path = sample_dir / "adapter_result.json"
+        try:
+            adapter_result = adapt_maniskill_artifact(task_spec, artifact)
+            write_json_artifact(adapter_result_path, adapter_result)
+        except Exception:
+            failure_boundary = ("adapter_conversion_failed",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(plan, failure_boundary, raw_artifact_uri)
+            )
+            continue
+
+        experience_dataset_path = sample_dir / "experience_dataset.json"
+        try:
+            experience_dataset = build_maniskill_experience_dataset(task_spec, artifact)
+            write_json_artifact(experience_dataset_path, experience_dataset)
+        except Exception:
+            failure_boundary = ("experience_dataset_export_failed",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    raw_artifact_uri,
+                    adapter_result_uri=_sample_uri(
+                        plan.sample_id,
+                        "adapter_result.json",
+                    ),
+                )
+            )
+            continue
+
+        evidence_bundle_path = sample_dir / "evidence_bundle.json"
+        try:
+            evidence_bundle = build_simulation_evidence_bundle(task_spec, adapter_result)
+            write_json_artifact(evidence_bundle_path, evidence_bundle)
+        except Exception:
+            failure_boundary = ("data_contract_incomplete",)
+            failure_artifact = _failure_artifact(plan, failure_boundary)
+            write_json_artifact(failure_artifact_path, failure_artifact)
+            sample_runs.append(
+                _failed_sample_run(
+                    plan,
+                    failure_boundary,
+                    raw_artifact_uri,
+                    adapter_result_uri=_sample_uri(
+                        plan.sample_id,
+                        "adapter_result.json",
+                    ),
+                    experience_dataset_uri=_sample_uri(
+                        plan.sample_id,
+                        "experience_dataset.json",
+                    ),
+                )
+            )
+            continue
+
+        sample_runs.append(
+            SimulationSampleRun(
+                batch_id=plan.batch_id,
+                sample_id=plan.sample_id,
+                task_id=plan.task_id,
+                route_id=plan.route_id,
+                seed=plan.seed,
+                variation_policy=plan.variation_policy,
+                variation_descriptor=plan.variation_descriptor,
+                status="completed",
+                raw_artifact_uri=raw_artifact_uri,
+                adapter_result_uri=_sample_uri(plan.sample_id, "adapter_result.json"),
+                evidence_bundle_uri=_sample_uri(plan.sample_id, "evidence_bundle.json"),
+                experience_dataset_uri=_sample_uri(
+                    plan.sample_id,
+                    "experience_dataset.json",
+                ),
+                failure_boundary=(),
+                evidence_notes=plan.evidence_notes,
+            )
+        )
+
+    result = summarize_sample_runs(
+        batch_id=spec.batch_id,
+        route_id=spec.route_id,
+        task_count=len(spec.task_specs),
+        requested_sample_count=len(sample_plans),
+        sample_runs=sample_runs,
+        stage_boundary=spec.stage_boundary,
+    )
+    payload = result.to_dict()
+    write_json_artifact(batch_dir / "batch_result.json", payload)
+    return payload
+
+
+def _sample_uri(sample_id: str, artifact_name: str) -> str:
+    return str(Path("samples") / sample_id / artifact_name)
+
+
+def _failed_sample_run(
+    plan: SimulationSamplePlan,
+    failure_boundary: tuple[FailureBoundary, ...],
+    raw_artifact_uri: str,
+    *,
+    adapter_result_uri: str | None = None,
+    evidence_bundle_uri: str | None = None,
+    experience_dataset_uri: str | None = None,
+) -> SimulationSampleRun:
+    return SimulationSampleRun(
+        batch_id=plan.batch_id,
+        sample_id=plan.sample_id,
+        task_id=plan.task_id,
+        route_id=plan.route_id,
+        seed=plan.seed,
+        variation_policy=plan.variation_policy,
+        variation_descriptor=plan.variation_descriptor,
+        status="failed",
+        raw_artifact_uri=raw_artifact_uri,
+        adapter_result_uri=adapter_result_uri,
+        evidence_bundle_uri=evidence_bundle_uri,
+        experience_dataset_uri=experience_dataset_uri,
+        failure_boundary=failure_boundary,
+        evidence_notes=plan.evidence_notes,
+    )
+
+
+def _failure_artifact(
+    plan: SimulationSamplePlan,
+    failure_boundary: tuple[FailureBoundary, ...],
+    *,
+    source_artifact: RawManiSkillArtifact | None = None,
+) -> RawManiSkillArtifact:
+    task_state = {}
+    metrics: dict[str, float] = {
+        "same_task_attempted": 1.0,
+        "task_contract_outputs_ready": 0.0,
+    }
+    if source_artifact is not None:
+        task_state.update(source_artifact.task_state)
+        metrics.update(source_artifact.metrics)
+    task_state.update(
+        {
+            "attempted": True,
+            "batch_id": plan.batch_id,
+            "sample_id": plan.sample_id,
+            "seed": plan.seed,
+            "variation_policy": plan.variation_policy,
+            "variation_descriptor": plan.variation_descriptor,
+            "task_status": "failed",
+        }
+    )
+    metrics["task_contract_outputs_ready"] = 0.0
+
+    return RawManiSkillArtifact(
+        run_id=f"maniskill-{plan.sample_id}",
+        task_id=plan.task_id,
+        status="failed",
+        tcp_trajectory=(),
+        tool_orientation=(),
+        task_state=task_state,
+        metrics=metrics,
+        failure_boundary=failure_boundary,
+        artifacts={},
+        evidence_notes=plan.evidence_notes,
+    )
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--outdir",
+        default="artifacts/simulation/maniskill-sapien-batches",
+    )
+    parser.add_argument("--batch-id", default="maniskill-sapien-default-batch")
+    args = parser.parse_args(argv)
+    result = run_maniskill_batch_pipeline(args.outdir, batch_id=args.batch_id)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
