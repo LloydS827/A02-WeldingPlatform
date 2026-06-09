@@ -1,6 +1,8 @@
 import pytest
 
 from weldcore.simulation_bakeoff import (
+    DEFAULT_ACCUMULATION_SCALE_PLAN,
+    DEFAULT_ACCUMULATION_STAGE_BOUNDARY,
     SimulationAccumulationBatchSpec,
     default_maniskill_accumulation_spec,
     determine_accumulation_status,
@@ -22,6 +24,17 @@ def test_default_accumulation_spec_requests_one_hundred_samples():
     assert spec.resume_policy == "reuse_existing_batch_result_unless_force"
     assert spec.stage_boundary == "simulation_accumulation_not_real_welding_quality"
     assert spec.batch_id_prefix == "maniskill-sapien-accumulation"
+
+
+def test_accumulation_constants_are_public_api():
+    assert (
+        DEFAULT_ACCUMULATION_STAGE_BOUNDARY
+        == "simulation_accumulation_not_real_welding_quality"
+    )
+    assert (
+        DEFAULT_ACCUMULATION_SCALE_PLAN
+        == "phase_1_100_requested_samples_then_phase_2_500_requested_samples"
+    )
 
 
 def test_accumulation_spec_rejects_mismatched_requested_count():

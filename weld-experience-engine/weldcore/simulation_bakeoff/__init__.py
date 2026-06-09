@@ -1,6 +1,8 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
 from .accumulation import (
     AccumulationStatus,
+    DEFAULT_ACCUMULATION_SCALE_PLAN,
+    DEFAULT_ACCUMULATION_STAGE_BOUNDARY,
     SimulationAccumulationBatchSpec,
     default_maniskill_accumulation_spec,
     determine_accumulation_status,
@@ -54,6 +56,8 @@ from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_s
 
 __all__ = [
     "DEFAULT_SIMULATION_TASK_SPECS",
+    "DEFAULT_ACCUMULATION_SCALE_PLAN",
+    "DEFAULT_ACCUMULATION_STAGE_BOUNDARY",
     "AccumulationStatus",
     "BakeoffScorecard",
     "ExperienceDataset",
