@@ -1,4 +1,10 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
+from .accumulation import (
+    AccumulationStatus,
+    SimulationAccumulationBatchSpec,
+    default_maniskill_accumulation_spec,
+    determine_accumulation_status,
+)
 from .bakeoff import MinimalBakeoffResult, run_minimal_simulation_bakeoff
 from .batch import (
     SampleRunStatus,
@@ -48,6 +54,7 @@ from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_s
 
 __all__ = [
     "DEFAULT_SIMULATION_TASK_SPECS",
+    "AccumulationStatus",
     "BakeoffScorecard",
     "ExperienceDataset",
     "FailureBoundary",
@@ -60,6 +67,7 @@ __all__ = [
     "SimulationAdapterRoute",
     "SimulationAdapterRunner",
     "SimulationAdapterStatus",
+    "SimulationAccumulationBatchSpec",
     "SimulationBatchResult",
     "SimulationBatchSpec",
     "SimulationEvidenceBundle",
@@ -74,10 +82,12 @@ __all__ = [
     "attempt_maniskill_sapien",
     "build_maniskill_experience_dataset",
     "build_simulation_evidence_bundle",
+    "default_maniskill_accumulation_spec",
     "default_maniskill_batch_spec",
     "default_maniskill_task_configs",
     "default_simulation_adapter_routes",
     "default_simulation_task_specs",
+    "determine_accumulation_status",
     "generate_rule_based_demo",
     "get_default_batch_route",
     "iter_batch_sample_plans",
