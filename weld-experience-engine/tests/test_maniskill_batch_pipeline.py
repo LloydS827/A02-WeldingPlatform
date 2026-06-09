@@ -203,7 +203,10 @@ def test_batch_pipeline_uses_fallback_when_failure_artifact_write_fails(
     assert result["requested_sample_count"] == 20
     assert result["completed_sample_count"] == 0
     assert result["failed_sample_count"] == 20
-    assert result["failure_boundaries"] == ["simulation_run_failed"]
+    assert result["failure_boundaries"] == [
+        "simulation_run_failed",
+        "data_contract_incomplete",
+    ]
     assert (tmp_path / "batch-test" / "batch_result.json").exists()
     for sample_run in result["sample_runs"]:
         sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
@@ -213,6 +216,10 @@ def test_batch_pipeline_uses_fallback_when_failure_artifact_write_fails(
         assert sample_run["raw_artifact_uri"].endswith(
             "failure_artifact_write_failed.json"
         )
+        assert sample_run["failure_boundary"] == [
+            "simulation_run_failed",
+            "data_contract_incomplete",
+        ]
         assert (sample_dir / "failure_artifact_write_failed.json").exists()
         assert not (sample_dir / "failure_artifact.json").exists()
         assert fallback_artifact["failure_boundary"] == [
@@ -275,6 +282,24 @@ def test_batch_pipeline_uses_unavailable_uri_when_failure_artifact_writes_fail(
         assert not (sample_dir / "failure_artifact.json").exists()
         assert not (sample_dir / "failure_artifact_write_failed.json").exists()
         assert not (sample_dir / "failure_artifact_unavailable.json").exists()
+
+
+def test_batch_pipeline_cli_prints_batch_result(tmp_path, monkeypatch, capsys):
+    from weldcore.simulation_bakeoff import maniskill_batch_pipeline
+
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner._maniskill_backend_available",
+        lambda: False,
+    )
+
+    maniskill_batch_pipeline.main(
+        ["--outdir", str(tmp_path), "--batch-id", "batch-cli-test"]
+    )
+
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["batch_id"] == "batch-cli-test"
+    assert printed["requested_sample_count"] == 20
+    assert (tmp_path / "batch-cli-test" / "batch_result.json").exists()
 
 
 def test_batch_pipeline_keeps_comparison_routes_as_metadata_only(tmp_path, monkeypatch):

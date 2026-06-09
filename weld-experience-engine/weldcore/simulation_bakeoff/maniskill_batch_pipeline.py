@@ -290,7 +290,7 @@ def _write_failure_artifact(
             )
             return (
                 _sample_uri(plan.sample_id, "failure_artifact_write_failed.json"),
-                failure_boundary,
+                fallback_failure_boundary,
             )
         except Exception:
             return (
