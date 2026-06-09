@@ -45,6 +45,7 @@ def test_batch_pipeline_writes_twenty_completed_primary_samples(tmp_path, monkey
     assert json.loads(result_path.read_text(encoding="utf-8")) == result
     assert len(result["sample_runs"]) == 20
 
+    dataset_ids = set()
     for sample_run in result["sample_runs"]:
         assert sample_run["status"] == "completed"
         sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
@@ -55,6 +56,43 @@ def test_batch_pipeline_writes_twenty_completed_primary_samples(tmp_path, monkey
         assert (sample_dir / "evidence_bundle.json").exists()
         assert (sample_dir / "experience_dataset.json").exists()
         assert not (sample_dir / "failure_artifact.json").exists()
+
+        raw_artifact = json.loads(
+            (sample_dir / "raw_artifact.json").read_text(encoding="utf-8")
+        )
+        experience_dataset = json.loads(
+            (sample_dir / "experience_dataset.json").read_text(encoding="utf-8")
+        )
+        adapter_result = json.loads(
+            (sample_dir / "adapter_result.json").read_text(encoding="utf-8")
+        )
+        evidence_bundle = json.loads(
+            (sample_dir / "evidence_bundle.json").read_text(encoding="utf-8")
+        )
+
+        sample_id = sample_run["sample_id"]
+        assert raw_artifact["run_id"] == f"maniskill-{sample_id}"
+        assert raw_artifact["task_state"]["sample_id"] == sample_id
+        assert raw_artifact["task_state"]["seed"] == sample_run["seed"]
+        assert raw_artifact["task_state"]["batch_id"] == "batch-test"
+        assert adapter_result["planning_result"]["sample_id"] == sample_id
+        assert adapter_result["planning_result"]["seed"] == sample_run["seed"]
+        assert adapter_result["artifacts"]["sample_id"] == sample_id
+        assert experience_dataset["dataset_id"] == f"experience-maniskill-{sample_id}"
+        assert experience_dataset["samples"] == [sample_id]
+        assert evidence_bundle["bundle_id"] == f"evidence-maniskill-{sample_id}"
+        assert sample_id in evidence_bundle["run_record"]["simulation_run_id"]
+        assert evidence_bundle["run_record"]["seed"] == sample_run["seed"]
+        assert evidence_bundle["dataset"]["dataset_id"] == (
+            f"dataset-maniskill_sapien-{sample_id}"
+        )
+        assert evidence_bundle["dataset"]["samples"][0]["sample_id"] == sample_id
+        assert evidence_bundle["dataset"]["samples"][0]["metadata"]["sample_id"] == (
+            sample_id
+        )
+        dataset_ids.add(experience_dataset["dataset_id"])
+
+    assert len(dataset_ids) == 20
 
 
 def test_batch_pipeline_records_environment_missing_as_twenty_failed_samples(

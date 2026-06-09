@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from weldcore.simulation_bakeoff.maniskill_adapter import (
     build_maniskill_experience_dataset,
 )
 from weldcore.simulation_bakeoff.maniskill_contract import (
+    ExperienceDataset,
     FailureBoundary,
     RawManiSkillArtifact,
     write_json_artifact,
@@ -25,6 +27,10 @@ from weldcore.simulation_bakeoff.maniskill_contract import (
 from weldcore.simulation_bakeoff.maniskill_demo import generate_rule_based_demo
 from weldcore.simulation_bakeoff.maniskill_runner import run_maniskill_lightweight
 from weldcore.simulation_bakeoff.maniskill_tasks import maniskill_task_config_from_spec
+from weldcore.simulation_bakeoff.model import (
+    SimulationEvidenceBundle,
+    SimulatorAdapterResult,
+)
 
 
 def run_maniskill_batch_pipeline(
@@ -99,6 +105,7 @@ def run_maniskill_batch_pipeline(
                 )
             )
             continue
+        artifact = _sample_scoped_raw_artifact(plan, artifact)
 
         try:
             write_json_artifact(raw_artifact_path, artifact)
@@ -143,6 +150,7 @@ def run_maniskill_batch_pipeline(
         adapter_result_path = sample_dir / "adapter_result.json"
         try:
             adapter_result = adapt_maniskill_artifact(task_spec, artifact)
+            adapter_result = _sample_scoped_adapter_result(plan, adapter_result)
             write_json_artifact(adapter_result_path, adapter_result)
         except Exception:
             failure_boundary = ("adapter_conversion_failed",)
@@ -166,6 +174,10 @@ def run_maniskill_batch_pipeline(
         experience_dataset_path = sample_dir / "experience_dataset.json"
         try:
             experience_dataset = build_maniskill_experience_dataset(task_spec, artifact)
+            experience_dataset = _sample_scoped_experience_dataset(
+                plan,
+                experience_dataset,
+            )
             write_json_artifact(experience_dataset_path, experience_dataset)
         except Exception:
             failure_boundary = ("experience_dataset_export_failed",)
@@ -193,6 +205,7 @@ def run_maniskill_batch_pipeline(
         evidence_bundle_path = sample_dir / "evidence_bundle.json"
         try:
             evidence_bundle = build_simulation_evidence_bundle(task_spec, adapter_result)
+            evidence_bundle = _sample_scoped_evidence_bundle(plan, evidence_bundle)
             write_json_artifact(evidence_bundle_path, evidence_bundle)
         except Exception:
             failure_boundary = ("data_contract_incomplete",)
@@ -258,6 +271,95 @@ def run_maniskill_batch_pipeline(
 
 def _sample_uri(sample_id: str, artifact_name: str) -> str:
     return str(Path("samples") / sample_id / artifact_name)
+
+
+def _sample_metadata(plan: SimulationSamplePlan) -> dict[str, Any]:
+    return {
+        "batch_id": plan.batch_id,
+        "sample_id": plan.sample_id,
+        "seed": plan.seed,
+        "variation_policy": plan.variation_policy,
+        "variation_descriptor": plan.variation_descriptor,
+    }
+
+
+def _sample_artifact_metadata(plan: SimulationSamplePlan) -> dict[str, str]:
+    return {
+        "batch_id": plan.batch_id,
+        "sample_id": plan.sample_id,
+        "seed": str(plan.seed),
+        "variation_policy": plan.variation_policy,
+    }
+
+
+def _sample_scoped_raw_artifact(
+    plan: SimulationSamplePlan,
+    artifact: RawManiSkillArtifact,
+) -> RawManiSkillArtifact:
+    return replace(
+        artifact,
+        run_id=f"maniskill-{plan.sample_id}",
+        task_state={**artifact.task_state, **_sample_metadata(plan)},
+        artifacts={**artifact.artifacts, **_sample_artifact_metadata(plan)},
+    )
+
+
+def _sample_scoped_adapter_result(
+    plan: SimulationSamplePlan,
+    adapter_result: SimulatorAdapterResult,
+) -> SimulatorAdapterResult:
+    return replace(
+        adapter_result,
+        planning_result={
+            **adapter_result.planning_result,
+            **_sample_metadata(plan),
+        },
+        artifacts={**adapter_result.artifacts, **_sample_artifact_metadata(plan)},
+    )
+
+
+def _sample_scoped_experience_dataset(
+    plan: SimulationSamplePlan,
+    experience_dataset: ExperienceDataset,
+) -> ExperienceDataset:
+    return replace(
+        experience_dataset,
+        dataset_id=f"experience-maniskill-{plan.sample_id}",
+        samples=(plan.sample_id,),
+    )
+
+
+def _sample_scoped_evidence_bundle(
+    plan: SimulationSamplePlan,
+    evidence_bundle: SimulationEvidenceBundle,
+) -> SimulationEvidenceBundle:
+    run_record = replace(
+        evidence_bundle.run_record,
+        simulation_run_id=f"run-maniskill_sapien-{plan.sample_id}",
+        seed=plan.seed,
+        output_bundle_uris=[_sample_uri(plan.sample_id, "evidence_bundle.json")],
+    )
+    dataset = evidence_bundle.dataset
+    if dataset is not None:
+        samples = [
+            replace(
+                sample,
+                sample_id=plan.sample_id,
+                metadata={**sample.metadata, **_sample_metadata(plan)},
+            )
+            for sample in dataset.samples
+        ]
+        dataset = replace(
+            dataset,
+            dataset_id=f"dataset-maniskill_sapien-{plan.sample_id}",
+            samples=samples,
+        )
+    return replace(
+        evidence_bundle,
+        bundle_id=f"evidence-maniskill-{plan.sample_id}",
+        run_record=run_record,
+        dataset=dataset,
+    )
 
 
 def _write_failure_artifact(
