@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import posixpath
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from weldcore.simulation_bakeoff.batch import VariationPolicy, _model_dict
+from weldcore.simulation_bakeoff.batch import (
+    SimulationBatchResult,
+    SimulationSampleRun,
+    VariationPolicy,
+    _model_dict,
+)
 from weldcore.simulation_bakeoff.model import SimulationTaskSpec
 from weldcore.simulation_bakeoff.task_specs import default_simulation_task_specs
 
@@ -38,6 +44,78 @@ class SimulationAccumulationBatchSpec:
     scale_plan: str
     resume_policy: str
     stage_boundary: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SimulationDatasetIndexItem:
+    accumulation_id: str
+    batch_id: str
+    sample_id: str
+    task_id: str
+    route_id: str
+    seed: int
+    variation_policy: VariationPolicy
+    status: str
+    raw_artifact_uri: str
+    adapter_result_uri: str | None
+    experience_dataset_uri: str | None
+    evidence_bundle_uri: str | None
+    failure_boundary: tuple[str, ...]
+    failure_artifact_uri: str | None
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SimulationFieldCoverageSummary:
+    requested_sample_coverage: dict[str, float]
+    completed_sample_coverage: dict[str, float]
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SimulationDatasetIndex:
+    accumulation_id: str
+    route_id: str
+    batch_ids: tuple[str, ...]
+    requested_sample_count: int
+    completed_sample_count: int
+    failed_sample_count: int
+    skipped_sample_count: int
+    index_items: tuple[SimulationDatasetIndexItem, ...]
+    failure_boundaries: tuple[str, ...]
+    dataset_uris: tuple[str, ...]
+    evidence_bundle_uris: tuple[str, ...]
+    batch_root_uris: dict[str, str]
+    batch_result_uris: dict[str, str]
+    field_coverage_summary: SimulationFieldCoverageSummary
+    created_at: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SimulationAccumulationReport:
+    accumulation_id: str
+    status: AccumulationStatus
+    requested_sample_count: int
+    completed_sample_count: int
+    failed_sample_count: int
+    skipped_sample_count: int
+    completion_ratio: float
+    dominant_failure_boundaries: tuple[str, ...]
+    dataset_index_uri: str
+    batch_result_uris: tuple[str, ...]
+    readiness_for_next_scale: str
+    next_scale_recommendation: str
+    known_limitations: tuple[str, ...]
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)
@@ -90,6 +168,104 @@ def default_maniskill_accumulation_spec(
     )
 
 
+def build_simulation_dataset_index(
+    *,
+    accumulation_id: str,
+    batch_results: tuple[SimulationBatchResult, ...],
+    batch_root_uris: dict[str, str],
+    batch_result_uris: dict[str, str],
+    created_at: str = "not_recorded",
+) -> SimulationDatasetIndex:
+    if not batch_results:
+        raise ValueError("batch_results must not be empty")
+
+    index_items: list[SimulationDatasetIndexItem] = []
+    dataset_uris: list[str] = []
+    evidence_bundle_uris: list[str] = []
+    failure_boundaries: list[str] = []
+    seen_failure_boundaries: set[str] = set()
+
+    for batch_result in batch_results:
+        for boundary in batch_result.failure_boundaries:
+            if boundary not in seen_failure_boundaries:
+                failure_boundaries.append(boundary)
+                seen_failure_boundaries.add(boundary)
+
+        for sample_run in batch_result.sample_runs:
+            item = _dataset_index_item(accumulation_id, sample_run)
+            index_items.append(item)
+            if item.experience_dataset_uri is not None:
+                dataset_uris.append(item.experience_dataset_uri)
+            if item.evidence_bundle_uri is not None:
+                evidence_bundle_uris.append(item.evidence_bundle_uri)
+
+    items = tuple(index_items)
+    return SimulationDatasetIndex(
+        accumulation_id=accumulation_id,
+        route_id=batch_results[0].route_id,
+        batch_ids=tuple(result.batch_id for result in batch_results),
+        requested_sample_count=sum(
+            result.requested_sample_count for result in batch_results
+        ),
+        completed_sample_count=sum(
+            result.completed_sample_count for result in batch_results
+        ),
+        failed_sample_count=sum(result.failed_sample_count for result in batch_results),
+        skipped_sample_count=sum(
+            result.skipped_sample_count for result in batch_results
+        ),
+        index_items=items,
+        failure_boundaries=tuple(failure_boundaries),
+        dataset_uris=tuple(dataset_uris),
+        evidence_bundle_uris=tuple(evidence_bundle_uris),
+        batch_root_uris=dict(batch_root_uris),
+        batch_result_uris=dict(batch_result_uris),
+        field_coverage_summary=_field_coverage_summary(items),
+        created_at=created_at,
+    )
+
+
+def build_simulation_accumulation_report(
+    *,
+    dataset_index: SimulationDatasetIndex,
+    dataset_index_uri: str,
+) -> SimulationAccumulationReport:
+    status = determine_accumulation_status(
+        requested_sample_count=dataset_index.requested_sample_count,
+        completed_sample_count=dataset_index.completed_sample_count,
+        failed_sample_count=dataset_index.failed_sample_count,
+        skipped_sample_count=dataset_index.skipped_sample_count,
+        failure_boundaries=dataset_index.failure_boundaries,
+    )
+    return SimulationAccumulationReport(
+        accumulation_id=dataset_index.accumulation_id,
+        status=status,
+        requested_sample_count=dataset_index.requested_sample_count,
+        completed_sample_count=dataset_index.completed_sample_count,
+        failed_sample_count=dataset_index.failed_sample_count,
+        skipped_sample_count=dataset_index.skipped_sample_count,
+        completion_ratio=round(
+            dataset_index.completed_sample_count
+            / dataset_index.requested_sample_count,
+            6,
+        ),
+        dominant_failure_boundaries=dataset_index.failure_boundaries,
+        dataset_index_uri=dataset_index_uri,
+        batch_result_uris=tuple(dataset_index.batch_result_uris.values()),
+        readiness_for_next_scale=_readiness_for_next_scale(status),
+        next_scale_recommendation=(
+            "continue_phase_1_then_review_before_"
+            "phase_2_500_requested_samples"
+        ),
+        known_limitations=(
+            "simulation_accumulation_not_real_welding_quality",
+            "not_real_welding_quality",
+            "not_final_simulator_selection",
+            "not_robot_execution_validation",
+        ),
+    )
+
+
 def determine_accumulation_status(
     *,
     requested_sample_count: int,
@@ -114,3 +290,94 @@ def determine_accumulation_status(
     ):
         return "ready_to_scale_with_conditions"
     return "accumulating_completed_samples"
+
+
+def _dataset_index_item(
+    accumulation_id: str,
+    sample_run: SimulationSampleRun,
+) -> SimulationDatasetIndexItem:
+    artifact_uris = (
+        sample_run.raw_artifact_uri,
+        sample_run.adapter_result_uri,
+        sample_run.experience_dataset_uri,
+        sample_run.evidence_bundle_uri,
+    )
+    for artifact_uri in artifact_uris:
+        _validate_relative_batch_root_uri(artifact_uri)
+
+    return SimulationDatasetIndexItem(
+        accumulation_id=accumulation_id,
+        batch_id=sample_run.batch_id,
+        sample_id=sample_run.sample_id,
+        task_id=sample_run.task_id,
+        route_id=sample_run.route_id,
+        seed=sample_run.seed,
+        variation_policy=sample_run.variation_policy,
+        status=sample_run.status,
+        raw_artifact_uri=sample_run.raw_artifact_uri,
+        adapter_result_uri=sample_run.adapter_result_uri,
+        experience_dataset_uri=sample_run.experience_dataset_uri,
+        evidence_bundle_uri=sample_run.evidence_bundle_uri,
+        failure_boundary=sample_run.failure_boundary,
+        failure_artifact_uri=_failure_artifact_uri(sample_run),
+    )
+
+
+def _validate_relative_batch_root_uri(artifact_uri: str | None) -> None:
+    if artifact_uri is not None and artifact_uri.startswith("/"):
+        raise ValueError("item artifact URIs must be relative batch root paths")
+
+
+def _failure_artifact_uri(sample_run: SimulationSampleRun) -> str | None:
+    if sample_run.status == "completed":
+        return None
+    if "failure_artifact" in sample_run.raw_artifact_uri:
+        return sample_run.raw_artifact_uri
+    sample_dir = posixpath.dirname(sample_run.raw_artifact_uri)
+    if not sample_dir:
+        return "failure_artifact.json"
+    return posixpath.join(sample_dir, "failure_artifact.json")
+
+
+def _field_coverage_summary(
+    index_items: tuple[SimulationDatasetIndexItem, ...],
+) -> SimulationFieldCoverageSummary:
+    completed_items = tuple(item for item in index_items if item.status == "completed")
+    return SimulationFieldCoverageSummary(
+        requested_sample_coverage=_coverage_for_items(index_items),
+        completed_sample_coverage=_coverage_for_items(completed_items),
+    )
+
+
+def _coverage_for_items(
+    index_items: tuple[SimulationDatasetIndexItem, ...],
+) -> dict[str, float]:
+    coverage_fields = (
+        "raw_artifact_uri",
+        "adapter_result_uri",
+        "experience_dataset_uri",
+        "evidence_bundle_uri",
+        "failure_artifact_uri",
+    )
+    denominator = len(index_items)
+    if denominator == 0:
+        return {field: 0.0 for field in coverage_fields}
+    return {
+        field: round(
+            sum(1 for item in index_items if getattr(item, field) is not None)
+            / denominator,
+            6,
+        )
+        for field in coverage_fields
+    }
+
+
+def _readiness_for_next_scale(status: AccumulationStatus) -> str:
+    readiness_by_status = {
+        "ready_to_scale_with_conditions": "ready_with_conditions",
+        "accumulating_with_failures": "continue_accumulating_with_failure_review",
+        "blocked_by_environment": "blocked_until_environment_available",
+        "blocked_by_pipeline_failure": "blocked_until_pipeline_failure_resolved",
+        "accumulating_completed_samples": "continue_accumulating_until_target_reached",
+    }
+    return readiness_by_status[status]
