@@ -133,13 +133,14 @@ li { margin: 0.35em 0; }
     <p>这些能力说明软件结构、仿真接入和数据证据路径已经有了前半段闭环，但不代表真实焊接质量、正式 WPS/PQR、最终仿真软件选择或真实机器人执行已经完成。</p>
 
     <h2>下一阶段方向</h2>
-    <p>下一阶段应优先做 <strong>仿真到技能数据结构的收束与反证验证</strong>。</p>
+    <p>下一阶段应优先做 <strong>ManiSkill/SAPIEN 小批量默认仿真入口</strong>。</p>
+    <p>具体来说，先不要急着扩大仿真任务数量，也不要直接投入重型机器人集成。更合适的任务是在统一仿真 adapter registry 之上，围绕少量核心 <code>WeldSkillUnit</code>，把 ManiSkill/SAPIEN 作为阶段性默认 route 跑通小批量样本入口，并继续保留 simlite 与 Gazebo/MoveIt 的对照和失败边界角色。</p>
     <ul>
-      <li>哪条仿真路线可以稳定生成 <code>SimulationEvidenceBundle</code>。</li>
-      <li>哪些字段可以作为后续技能数据积累的稳定字段。</li>
-      <li>哪些字段仍是假设、mock、adapter 占位或人工补充。</li>
-      <li>ManiSkill/SAPIEN、Gazebo/MoveIt、simlite 在当前阶段分别适合承担什么角色。</li>
-      <li>开始积累数据前，默认仿真入口、任务契约和证据报告还缺什么。</li>
+      <li><code>SimulationBatchSpec</code> / <code>SimulationBatchResult</code> 如何表达小批量运行请求和结果。</li>
+      <li>两个核心 <code>WeldSkillUnit</code> 每个约 10 条运行样本能否稳定形成 raw artifact、adapter result、<code>SimulationEvidenceBundle</code> 和 experience dataset。</li>
+      <li>每条样本如何追踪 <code>batch_id</code>、<code>task_id</code>、<code>sample_id</code>、<code>seed</code>、<code>variation_policy</code>、证据路径和失败边界。</li>
+      <li>哪些字段可以作为后续技能数据积累的稳定字段，哪些仍是假设、mock、adapter 占位或人工补充。</li>
+      <li>第三轮进入数据积累前，默认仿真入口锁定和字段覆盖报告还缺什么证据。</li>
     </ul>
 
     <h2>如何验证</h2>
