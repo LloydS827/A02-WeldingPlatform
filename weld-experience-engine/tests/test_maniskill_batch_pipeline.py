@@ -95,6 +95,30 @@ def test_batch_pipeline_writes_twenty_completed_primary_samples(tmp_path, monkey
     assert len(dataset_ids) == 20
 
 
+def test_batch_pipeline_accepts_custom_sample_count_and_seed(
+    tmp_path,
+    monkeypatch,
+):
+    _mock_completed_backend(monkeypatch)
+
+    result = run_maniskill_batch_pipeline(
+        outdir=tmp_path,
+        batch_id="batch-custom",
+        samples_per_task=2,
+        seed_start=50,
+    )
+
+    assert result["requested_sample_count"] == 4
+    assert result["completed_sample_count"] == 4
+    seeds = [sample["seed"] for sample in result["sample_runs"]]
+    assert seeds == [50, 51, 52, 53]
+    batch_spec = json.loads(
+        (tmp_path / "batch-custom" / "batch_spec.json").read_text(encoding="utf-8")
+    )
+    assert batch_spec["samples_per_task"] == 2
+    assert batch_spec["seed_start"] == 50
+
+
 def test_batch_pipeline_records_environment_missing_as_twenty_failed_samples(
     tmp_path,
     monkeypatch,
@@ -338,6 +362,36 @@ def test_batch_pipeline_cli_prints_batch_result(tmp_path, monkeypatch, capsys):
     assert printed["batch_id"] == "batch-cli-test"
     assert printed["requested_sample_count"] == 20
     assert (tmp_path / "batch-cli-test" / "batch_result.json").exists()
+
+
+def test_batch_pipeline_cli_accepts_sample_count_and_seed(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    monkeypatch.setattr(
+        "weldcore.simulation_bakeoff.maniskill_runner._maniskill_backend_available",
+        lambda: False,
+    )
+
+    from weldcore.simulation_bakeoff import maniskill_batch_pipeline
+
+    maniskill_batch_pipeline.main(
+        [
+            "--outdir",
+            str(tmp_path),
+            "--batch-id",
+            "batch-cli-custom",
+            "--samples-per-task",
+            "2",
+            "--seed-start",
+            "10",
+        ]
+    )
+
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["requested_sample_count"] == 4
+    assert [sample["seed"] for sample in printed["sample_runs"]] == [10, 11, 12, 13]
 
 
 def test_batch_pipeline_keeps_comparison_routes_as_metadata_only(tmp_path, monkeypatch):

@@ -36,9 +36,17 @@ from weldcore.simulation_bakeoff.model import (
 def run_maniskill_batch_pipeline(
     outdir: str | Path = "artifacts/simulation/maniskill-sapien-batches",
     batch_id: str = "maniskill-sapien-default-batch",
+    *,
+    samples_per_task: int = 10,
+    seed_start: int = 0,
 ) -> dict[str, Any]:
     output_root = Path(outdir)
-    spec = default_maniskill_batch_spec(batch_id=batch_id, output_root=str(outdir))
+    spec = default_maniskill_batch_spec(
+        batch_id=batch_id,
+        output_root=str(outdir),
+        samples_per_task=samples_per_task,
+        seed_start=seed_start,
+    )
     batch_dir = output_root / batch_id
     write_json_artifact(batch_dir / "batch_spec.json", spec)
 
@@ -496,8 +504,15 @@ def main(argv: list[str] | None = None) -> None:
         default="artifacts/simulation/maniskill-sapien-batches",
     )
     parser.add_argument("--batch-id", default="maniskill-sapien-default-batch")
+    parser.add_argument("--samples-per-task", type=int, default=10)
+    parser.add_argument("--seed-start", type=int, default=0)
     args = parser.parse_args(argv)
-    result = run_maniskill_batch_pipeline(args.outdir, batch_id=args.batch_id)
+    result = run_maniskill_batch_pipeline(
+        args.outdir,
+        batch_id=args.batch_id,
+        samples_per_task=args.samples_per_task,
+        seed_start=args.seed_start,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
