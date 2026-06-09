@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
-from weldcore.simulation_bakeoff.adapters import (
-    attempt_gazebo_moveit,
-    attempt_maniskill_sapien,
-    run_simlite_reference,
-)
 from weldcore.simulation_bakeoff.evidence import build_simulation_evidence_bundle
 from weldcore.simulation_bakeoff.model import (
     BakeoffScorecard,
     SimulationEvidenceBundle,
     SimulationTaskSpec,
-    SimulatorAdapterResult,
+)
+from weldcore.simulation_bakeoff.routes import (
+    SimulationAdapterRoute,
+    default_simulation_adapter_routes,
+    run_adapter_route,
 )
 from weldcore.simulation_bakeoff.task_specs import default_simulation_task_specs
 
@@ -24,16 +22,6 @@ DIMENSION_WEIGHTS = {
     "skill_unit_expression": 0.20,
     "engineering_access_cost": 0.15,
 }
-
-ROUTE_RUNNERS: tuple[
-    tuple[str, Callable[[SimulationTaskSpec], SimulatorAdapterResult]],
-    ...,
-] = (
-    ("simlite_reference", run_simlite_reference),
-    ("maniskill_sapien", attempt_maniskill_sapien),
-    ("gazebo_moveit", attempt_gazebo_moveit),
-)
-
 
 @dataclass(frozen=True)
 class MinimalBakeoffResult:
@@ -51,14 +39,22 @@ class MinimalBakeoffResult:
         }
 
 
+def _route_ids(routes: tuple[SimulationAdapterRoute, ...]) -> tuple[str, ...]:
+    return tuple(route.route_id for route in routes)
+
+
 def run_minimal_simulation_bakeoff() -> MinimalBakeoffResult:
     task_specs = default_simulation_task_specs()
+    routes = default_simulation_adapter_routes()
+    route_ids = _route_ids(routes)
     evidence_bundles = tuple(
-        build_simulation_evidence_bundle(task_spec, route_runner(task_spec))
-        for _route_name, route_runner in ROUTE_RUNNERS
+        build_simulation_evidence_bundle(
+            task_spec, run_adapter_route(route_id, task_spec, routes=routes)
+        )
+        for route_id in route_ids
         for task_spec in task_specs
     )
-    scorecard = _build_scorecard(task_specs, evidence_bundles)
+    scorecard = _build_scorecard(task_specs, evidence_bundles, route_ids)
     return MinimalBakeoffResult(
         task_specs=task_specs,
         evidence_bundles=evidence_bundles,
@@ -69,21 +65,22 @@ def run_minimal_simulation_bakeoff() -> MinimalBakeoffResult:
 def _build_scorecard(
     task_specs: tuple[SimulationTaskSpec, ...],
     evidence_bundles: tuple[SimulationEvidenceBundle, ...],
+    route_ids: tuple[str, ...],
 ) -> BakeoffScorecard:
     expected_task_ids = tuple(task_spec.task_id for task_spec in task_specs)
     route_dimension_scores = {
-        route_name: _score_route(route_name, expected_task_ids, evidence_bundles)
-        for route_name, _route_runner in ROUTE_RUNNERS
+        route_id: _score_route(route_id, expected_task_ids, evidence_bundles)
+        for route_id in route_ids
     }
     route_scores = {
-        route_name: _weighted_total(dimension_scores)
-        for route_name, dimension_scores in route_dimension_scores.items()
+        route_id: _weighted_total(dimension_scores)
+        for route_id, dimension_scores in route_dimension_scores.items()
     }
     external_routes_completed = [
-        route_name
-        for route_name, _route_runner in ROUTE_RUNNERS
-        if route_name != "simlite_reference"
-        and _route_completed_all_tasks(route_name, expected_task_ids, evidence_bundles)
+        route_id
+        for route_id in route_ids
+        if route_id != "simlite_reference"
+        and _route_completed_all_tasks(route_id, expected_task_ids, evidence_bundles)
     ]
     return BakeoffScorecard(
         dimension_weights=dict(DIMENSION_WEIGHTS),

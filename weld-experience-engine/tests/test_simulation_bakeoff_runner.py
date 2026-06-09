@@ -1,4 +1,10 @@
-from weldcore.simulation_bakeoff import run_minimal_simulation_bakeoff
+import weldcore.simulation_bakeoff.bakeoff as bakeoff_module
+from weldcore.simulation_bakeoff import (
+    SimulationAdapterRoute,
+    SimulatorAdapterResult,
+    default_simulation_adapter_routes,
+    run_minimal_simulation_bakeoff,
+)
 
 
 def test_minimal_bakeoff_attempts_same_two_tasks_across_routes():
@@ -52,6 +58,83 @@ def test_minimal_bakeoff_has_r0_completed_evidence_and_no_final_selection():
         "engineering_access_cost": 1.0,
     }
     assert result.scorecard.route_scores["simlite_reference"] == 0.82
+
+
+def test_minimal_bakeoff_scorecard_uses_registered_route_ids():
+    result = run_minimal_simulation_bakeoff()
+
+    registered_route_ids = tuple(
+        route.route_id for route in default_simulation_adapter_routes()
+    )
+    evidence_route_ids = tuple(
+        dict.fromkeys(
+            bundle.adapter_result.adapter_name for bundle in result.evidence_bundles
+        )
+    )
+    evidence_adapter_order = tuple(
+        bundle.adapter_result.adapter_name for bundle in result.evidence_bundles
+    )
+    expected_evidence_adapter_order = tuple(
+        route_id for route_id in registered_route_ids for _task in result.task_specs
+    )
+
+    assert tuple(result.scorecard.route_dimension_scores) == registered_route_ids
+    assert tuple(result.scorecard.route_scores) == registered_route_ids
+    assert evidence_route_ids == registered_route_ids
+    assert evidence_adapter_order == expected_evidence_adapter_order
+
+
+def test_minimal_bakeoff_uses_single_registered_route_snapshot(monkeypatch):
+    route_id = "snapshot_route"
+
+    def run_snapshot_route(task_spec):
+        return SimulatorAdapterResult(
+            adapter_name=route_id,
+            task_id=task_spec.task_id,
+            status="completed",
+            tcp_trajectory=task_spec.seam_path,
+            tool_orientation=task_spec.seam_path,
+            planning_result={
+                "attempted": True,
+                "validated_task_contract": True,
+                "task_status": "completed",
+            },
+            failure_boundary=(),
+            metrics={
+                "same_task_attempted": 1.0,
+                "task_contract_outputs_ready": 1.0,
+            },
+            artifacts={},
+            evidence_notes=("snapshot_route",),
+        )
+
+    routes = (
+        SimulationAdapterRoute(
+            route_id=route_id,
+            display_name="Snapshot route",
+            role="planning_candidate",
+            status="available",
+            runner=run_snapshot_route,
+            default_for_batch=False,
+            dependency_boundary=(),
+            evidence_boundary=("snapshot_route",),
+        ),
+    )
+    monkeypatch.setattr(
+        bakeoff_module,
+        "default_simulation_adapter_routes",
+        lambda: routes,
+    )
+
+    result = run_minimal_simulation_bakeoff()
+
+    assert tuple(result.scorecard.route_dimension_scores) == (route_id,)
+    assert tuple(result.scorecard.route_scores) == (route_id,)
+    assert tuple(
+        dict.fromkeys(
+            bundle.adapter_result.adapter_name for bundle in result.evidence_bundles
+        )
+    ) == (route_id,)
 
 
 def test_minimal_bakeoff_scores_external_failures_as_boundaries():

@@ -22,6 +22,16 @@ from .model import (
     SimulationTaskSpec,
     SimulatorAdapterResult,
 )
+from .routes import (
+    SimulationAdapterRole,
+    SimulationAdapterRoute,
+    SimulationAdapterRunner,
+    SimulationAdapterStatus,
+    default_simulation_adapter_routes,
+    get_default_batch_route,
+    run_adapter_route,
+    run_comparison_routes,
+)
 from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_specs
 
 __all__ = [
@@ -33,6 +43,10 @@ __all__ = [
     "MinimalBakeoffResult",
     "RawManiSkillArtifact",
     "RuleBasedDemo",
+    "SimulationAdapterRole",
+    "SimulationAdapterRoute",
+    "SimulationAdapterRunner",
+    "SimulationAdapterStatus",
     "SimulationEvidenceBundle",
     "SimulationPathPoint",
     "SimulationTaskSpec",
@@ -43,10 +57,14 @@ __all__ = [
     "build_maniskill_experience_dataset",
     "build_simulation_evidence_bundle",
     "default_maniskill_task_configs",
+    "default_simulation_adapter_routes",
     "default_simulation_task_specs",
     "generate_rule_based_demo",
+    "get_default_batch_route",
     "maniskill_task_config_from_spec",
     "read_json_artifact",
+    "run_adapter_route",
+    "run_comparison_routes",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",
     "run_simlite_reference",
