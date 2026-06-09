@@ -124,6 +124,7 @@ li { margin: 0.35em 0; }
       <li><code>SimulationTaskSpec</code>、<code>SimulatorAdapterResult</code> 和 <code>SimulationEvidenceBundle</code> 最小仿真证据结构。</li>
       <li>simlite/mock bundle 作为 L0 稳定仿真和测试基线。</li>
       <li>ManiSkill/SAPIEN 本机轻量闭环。</li>
+      <li>ManiSkill/SAPIEN 小批量默认仿真入口：<code>SimulationBatchSpec</code>、<code>SimulationSampleRun</code>、<code>SimulationBatchResult</code> 和 2 个默认任务 x 10 条 primary 样本的 batch summary 契约。</li>
       <li>Gazebo/MoveIt 候选路线的统一失败边界记录。</li>
       <li>从 <code>SimulationEvidenceBundle</code> 到 <code>RobotProcessPackageDraft</code> 的机器人候选草案转换。</li>
       <li><code>RobotContextSpec</code>、<code>RobotFeasibilityProbe</code>、<code>RobotFeasibilityResult</code> 和轻量机器人上下文预检接口。</li>
@@ -133,14 +134,14 @@ li { margin: 0.35em 0; }
     <p>这些能力说明软件结构、仿真接入和数据证据路径已经有了前半段闭环，但不代表真实焊接质量、正式 WPS/PQR、最终仿真软件选择或真实机器人执行已经完成。</p>
 
     <h2>下一阶段方向</h2>
-    <p>下一阶段应优先做 <strong>ManiSkill/SAPIEN 小批量默认仿真入口</strong>。</p>
-    <p>具体来说，先不要急着扩大仿真任务数量，也不要直接投入重型机器人集成。更合适的任务是在统一仿真 adapter registry 之上，围绕少量核心 <code>WeldSkillUnit</code>，把 ManiSkill/SAPIEN 作为阶段性默认 route 跑通小批量样本入口，并继续保留 simlite 与 Gazebo/MoveIt 的对照和失败边界角色。</p>
+    <p>下一阶段应优先做 <strong>数据积累前置报告与入口锁定</strong>。</p>
+    <p>ManiSkill/SAPIEN 小批量默认仿真入口已经具备软件入口和 batch result 契约。下一步不应立刻扩大样本规模，也不应直接投入重型机器人集成；更合适的是基于小批量结果，形成字段覆盖、失败边界和可积累字段报告，判断该入口是否可以作为下一轮数据积累的条件性默认入口。</p>
     <ul>
-      <li><code>SimulationBatchSpec</code> / <code>SimulationBatchResult</code> 如何表达小批量运行请求和结果。</li>
-      <li>两个核心 <code>WeldSkillUnit</code> 每个约 10 条运行样本能否稳定形成 raw artifact、adapter result、<code>SimulationEvidenceBundle</code> 和 experience dataset。</li>
-      <li>每条样本如何追踪 <code>batch_id</code>、<code>task_id</code>、<code>sample_id</code>、<code>seed</code>、<code>variation_policy</code>、证据路径和失败边界。</li>
+      <li>小批量入口在当前环境下的 completed / failed / skipped 分布和失败边界。</li>
+      <li>raw artifact、adapter result、<code>SimulationEvidenceBundle</code>、experience dataset 的字段覆盖率。</li>
       <li>哪些字段可以作为后续技能数据积累的稳定字段，哪些仍是假设、mock、adapter 占位或人工补充。</li>
-      <li>第三轮进入数据积累前，默认仿真入口锁定和字段覆盖报告还缺什么证据。</li>
+      <li>ManiSkill/SAPIEN 是否允许进入 <code>locked_with_conditions</code> 或 <code>locked_for_next_batch</code>。</li>
+      <li>若不能锁定，应该回退到 simlite 基线、继续反证，还是补充环境依赖。</li>
     </ul>
 
     <h2>如何验证</h2>
@@ -154,6 +155,10 @@ uv run python -m weldcore.report.synthetic_v2_input_report
 uv run python -m weldcore.report.simulation_ingest_report
 uv run python -m weldcore.report.simulation_bakeoff_report</code></pre>
     <p><code>simulation_bakeoff_report</code> 用于生成 <code>WeldSkillUnit</code> 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。</p>
+    <p>可选小批量仿真入口命令：</p>
+    <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-batches</code></pre>
+    <p>该命令生成 2 个默认任务 x 10 条 ManiSkill/SAPIEN primary 样本的 batch spec 和 batch result。若本机缺少真实 ManiSkill/SAPIEN 环境，样本会以 <code>environment_missing</code> 等 failure boundary 记录；这不表示真实焊接质量验证、最终仿真器选型或真实机器人执行已经完成。</p>
 
     <h2>当前目录结构</h2>
     <pre><code>.

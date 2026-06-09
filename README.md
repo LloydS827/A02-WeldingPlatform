@@ -66,6 +66,7 @@ WeldSkillUnit
 - `SimulationTaskSpec`、`SimulatorAdapterResult` 和 `SimulationEvidenceBundle` 最小仿真证据结构。
 - simlite/mock bundle 作为 L0 稳定仿真和测试基线。
 - ManiSkill/SAPIEN 本机轻量闭环，用于验证外部仿真输出能否接入项目数据结构。
+- ManiSkill/SAPIEN 小批量默认仿真入口：`SimulationBatchSpec`、`SimulationSampleRun`、`SimulationBatchResult` 和 2 个默认任务 x 10 条 primary 样本的 batch summary 契约。
 - Gazebo/MoveIt 候选路线的统一失败边界记录。
 - 从 `SimulationEvidenceBundle` 到 `RobotProcessPackageDraft` 的机器人候选草案转换。
 - `RobotContextSpec`、`RobotFeasibilityProbe`、`RobotFeasibilityResult` 和轻量机器人上下文预检接口。
@@ -77,17 +78,17 @@ WeldSkillUnit
 
 ## 下一阶段方向
 
-下一阶段应优先做 **ManiSkill/SAPIEN 小批量默认仿真入口**。
+下一阶段应优先做 **数据积累前置报告与入口锁定**。
 
-具体来说，先不要急着扩大仿真任务数量，也不要直接投入重型机器人集成。更合适的任务是在统一仿真 adapter registry 之上，围绕少量核心 `WeldSkillUnit`，把 ManiSkill/SAPIEN 作为阶段性默认 route 跑通小批量样本入口，并继续保留 simlite 与 Gazebo/MoveIt 的对照和失败边界角色。
+ManiSkill/SAPIEN 小批量默认仿真入口已经具备软件入口和 batch result 契约。下一步不应立刻扩大样本规模，也不应直接投入重型机器人集成；更合适的是基于小批量结果，形成字段覆盖、失败边界和可积累字段报告，判断该入口是否可以作为下一轮数据积累的条件性默认入口。
 
 下一阶段要形成的判断包括：
 
-- `SimulationBatchSpec` / `SimulationBatchResult` 如何表达小批量运行请求和结果。
-- 两个核心 `WeldSkillUnit` 每个约 10 条运行样本能否稳定形成 raw artifact、adapter result、`SimulationEvidenceBundle` 和 experience dataset。
-- 每条样本如何追踪 `batch_id`、`task_id`、`sample_id`、`seed`、`variation_policy`、证据路径和失败边界。
+- 小批量入口在当前环境下的 completed / failed / skipped 分布和失败边界。
+- raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 的字段覆盖率。
 - 哪些字段可以作为后续技能数据积累的稳定字段，哪些仍是假设、mock、adapter 占位或人工补充。
-- 第三轮进入数据积累前，默认仿真入口锁定和字段覆盖报告还缺什么证据。
+- ManiSkill/SAPIEN 是否允许进入 `locked_with_conditions` 或 `locked_for_next_batch`。
+- 若不能锁定，应该回退到 simlite 基线、继续反证，还是补充环境依赖。
 
 ## 如何验证
 
@@ -110,6 +111,15 @@ uv run python -m weldcore.report.simulation_bakeoff_report
 ```
 
 其中 `simulation_bakeoff_report` 用于生成 `WeldSkillUnit` 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。
+
+可选小批量仿真入口命令：
+
+```bash
+uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-batches
+```
+
+该命令生成 2 个默认任务 x 10 条 ManiSkill/SAPIEN primary 样本的 batch spec 和 batch result。若本机缺少真实 ManiSkill/SAPIEN 环境，样本会以 `environment_missing` 等 failure boundary 记录；这不表示真实焊接质量验证、最终仿真器选型或真实机器人执行已经完成。
 
 历史支撑命令仍然保留：
 
