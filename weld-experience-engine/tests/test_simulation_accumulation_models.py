@@ -45,6 +45,16 @@ def test_accumulation_spec_rejects_mismatched_requested_count():
         )
 
 
+def test_accumulation_spec_rejects_zero_samples_per_task():
+    with pytest.raises(ValueError, match="samples_per_task must be positive"):
+        default_maniskill_accumulation_spec(samples_per_task=0)
+
+
+def test_accumulation_spec_rejects_empty_task_specs():
+    with pytest.raises(ValueError, match="task_specs must not be empty"):
+        default_maniskill_accumulation_spec(task_specs=())
+
+
 @pytest.mark.parametrize(
     (
         "requested",

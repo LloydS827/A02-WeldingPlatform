@@ -62,6 +62,10 @@ def default_maniskill_accumulation_spec(
     resolved_task_specs = (
         default_simulation_task_specs() if task_specs is None else task_specs
     )
+    if samples_per_task <= 0:
+        raise ValueError("samples_per_task must be positive")
+    if not resolved_task_specs:
+        raise ValueError("task_specs must not be empty")
     derived_target = len(resolved_task_specs) * samples_per_task
     if target_requested_sample_count is not None:
         if target_requested_sample_count != derived_target:
