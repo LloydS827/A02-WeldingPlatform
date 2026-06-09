@@ -1,6 +1,6 @@
 # 焊接技能大师平台项目进展记录
 
-更新时间：2026-06-08
+更新时间：2026-06-09
 
 这份文件用于记录 A02「焊接技能大师平台」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 [README.md](README.md)。
 
@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry。下一轮应在该统一入口下推进 ManiSkill/SAPIEN 小批量默认仿真入口。
+项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry，以及 ManiSkill/SAPIEN 小批量默认仿真入口的软件实现。下一轮应基于小批量结果做数据积累前置报告与入口锁定判断。
 
 ## 当前主线判断
 
@@ -36,6 +36,18 @@ WeldSkillUnit
 这里的“反证工作”很重要：候选仿真软件不是因为名字先进就自动成为主线，而要通过同一组任务、同一套输出契约和同一份证据报告证明它能接入项目数据结构；不能接入的地方也要明确记录失败原因。
 
 ## 近期更新
+
+### 2026-06-09
+
+- 确认第二轮主线为 ManiSkill/SAPIEN 小批量默认仿真入口。
+- 样本口径采用“运行样本优先”：每条样本代表一次可追踪运行尝试，携带 `seed`、`variation_policy`、证据路径和失败边界。
+- 新增 `SimulationBatchSpec`、`SimulationSamplePlan`、`SimulationSampleRun` 和 `SimulationBatchResult`，默认表达 2 个任务 x 10 条 ManiSkill/SAPIEN primary 样本。
+- 新增 `run_maniskill_batch_pipeline` 和 CLI，可输出 `batch_spec.json`、`batch_result.json` 以及每条样本的 raw artifact、adapter result、evidence bundle、experience dataset 或 failure artifact。
+- `comparison_route_ids=("simlite_reference",)` 当前只作为对照元数据，不触发 simlite 逐样本运行，也不计入 requested / completed / failed / skipped。
+- 对 task generation、demo generation、runner exception、artifact write、adapter conversion、dataset export 和 evidence export 建立样本级失败边界，单条样本失败不会中断整个 batch。
+- completed 样本的 raw artifact、adapter result、experience dataset 和 evidence bundle 已按 `sample_id` 做内部身份收束，避免后续数据积累时出现同一 task 下多条样本 ID 混淆。
+- 第二轮只做小批量入口和 batch summary，不做最终仿真器定型或入口锁定报告。
+- 第三轮再基于小批量结果形成数据积累前置报告，判断默认入口、字段覆盖和失败边界是否足以支持持续积累。
 
 ### 2026-06-08
 
@@ -87,6 +99,7 @@ WeldSkillUnit
 - 从仿真证据到机器人候选草案的转换。
 - 机器人上下文和轻量可执行性预检接口。
 - 统一仿真 adapter facade / registry。
+- ManiSkill/SAPIEN 小批量默认仿真入口和 batch summary 契约。
 - 报告命令和历史证据归档。
 
 这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证。
@@ -94,7 +107,7 @@ WeldSkillUnit
 ## 尚未完成
 
 - 最终仿真软件选型尚未完成。
-- 持续积累仿真数据的默认入口尚未确定。
+- 持续积累仿真数据的默认入口尚未锁定。
 - 候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需反证。
 - 经验数据与技能资产之间的字段追踪还需要进一步收束。
 - 专家审查记录结构尚未作为主线对象实现。
@@ -103,19 +116,18 @@ WeldSkillUnit
 
 ## 下一步建议
 
-推荐下一阶段任务是：**ManiSkill/SAPIEN 小批量默认仿真入口**。
+推荐下一阶段任务是：**数据积累前置报告与入口锁定**。
 
-目标不是扩大成完整仿真平台，而是在统一 adapter registry 之上，用少量核心 `WeldSkillUnit` 把数据链路推进到可以开始小批量积累：
+目标不是立刻扩大样本规模，而是基于当前小批量入口的实际输出，判断 ManiSkill/SAPIEN 是否可以作为下一轮数据积累的条件性默认入口：
 
-1. 固定一组最小但代表性的仿真任务。
-2. 以 ManiSkill/SAPIEN 作为阶段性默认 route，生成每个任务约 10 条样本。
-3. 保持 simlite 作为 L0 对照，Gazebo/MoveIt 作为失败边界和机器人规划候选。
-4. 统一生成 raw artifact、`SimulatorAdapterResult`、`SimulationEvidenceBundle` 和 experience dataset。
-5. 明确哪些字段可以进入 `SkillDataset` / experience dataset。
-6. 明确哪些字段仍是 mock、假设、失败边界或人工补充。
-7. 为第三轮入口锁定报告准备字段覆盖和失败边界证据。
+1. 汇总 2 个默认任务 x 10 条 primary 样本的 completed / failed / skipped 分布。
+2. 汇总 raw artifact、adapter result、`SimulationEvidenceBundle` 和 experience dataset 的字段覆盖率。
+3. 区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。
+4. 记录样本级 failure boundary，尤其是 `environment_missing`、`simulation_run_failed`、`data_contract_incomplete` 等。
+5. 判断是否允许进入 `locked_with_conditions` 或 `locked_for_next_batch`。
+6. 若不能锁定，明确是继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。
 
-这一步完成后，才适合进入“真正开始积累数据”的阶段。
+只有这份前置报告通过后，才适合进入“真正开始积累数据”的阶段。
 
 ## 暂缓事项
 
@@ -148,7 +160,16 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-本分支最近一次完整验证结果为 `261 passed`。
+当前分支最近一次完整验证结果为 `273 passed`。
+
+可选小批量入口命令：
+
+```bash
+uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-batches
+```
+
+该命令在缺少真实 ManiSkill/SAPIEN 环境时会输出 `environment_missing` failure boundary；这属于当前反证边界，不表示仿真入口失败，也不表示最终仿真器已经选型。
 
 报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。
 

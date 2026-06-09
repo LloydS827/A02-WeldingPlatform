@@ -1,5 +1,16 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
 from .bakeoff import MinimalBakeoffResult, run_minimal_simulation_bakeoff
+from .batch import (
+    SampleRunStatus,
+    SimulationBatchResult,
+    SimulationBatchSpec,
+    SimulationSamplePlan,
+    SimulationSampleRun,
+    VariationPolicy,
+    default_maniskill_batch_spec,
+    iter_batch_sample_plans,
+    summarize_sample_runs,
+)
 from .evidence import build_simulation_evidence_bundle
 from .maniskill_adapter import adapt_maniskill_artifact, build_maniskill_experience_dataset
 from .maniskill_contract import (
@@ -12,6 +23,7 @@ from .maniskill_contract import (
     write_json_artifact,
 )
 from .maniskill_demo import generate_rule_based_demo
+from .maniskill_batch_pipeline import run_maniskill_batch_pipeline
 from .maniskill_pipeline import run_maniskill_spike_pipeline
 from .maniskill_runner import run_maniskill_lightweight
 from .maniskill_tasks import default_maniskill_task_configs, maniskill_task_config_from_spec
@@ -43,31 +55,41 @@ __all__ = [
     "MinimalBakeoffResult",
     "RawManiSkillArtifact",
     "RuleBasedDemo",
+    "SampleRunStatus",
     "SimulationAdapterRole",
     "SimulationAdapterRoute",
     "SimulationAdapterRunner",
     "SimulationAdapterStatus",
+    "SimulationBatchResult",
+    "SimulationBatchSpec",
     "SimulationEvidenceBundle",
     "SimulationPathPoint",
+    "SimulationSamplePlan",
+    "SimulationSampleRun",
     "SimulationTaskSpec",
     "SimulatorAdapterResult",
+    "VariationPolicy",
     "adapt_maniskill_artifact",
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
     "build_maniskill_experience_dataset",
     "build_simulation_evidence_bundle",
+    "default_maniskill_batch_spec",
     "default_maniskill_task_configs",
     "default_simulation_adapter_routes",
     "default_simulation_task_specs",
     "generate_rule_based_demo",
     "get_default_batch_route",
+    "iter_batch_sample_plans",
     "maniskill_task_config_from_spec",
     "read_json_artifact",
     "run_adapter_route",
     "run_comparison_routes",
+    "run_maniskill_batch_pipeline",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",
     "run_simlite_reference",
     "run_minimal_simulation_bakeoff",
+    "summarize_sample_runs",
     "write_json_artifact",
 ]

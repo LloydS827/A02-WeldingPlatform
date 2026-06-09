@@ -72,7 +72,7 @@ li { margin: 0.35em 0; }
   <main>
     <div class="meta">HTML 阅读版；维护源：<a href="details.md">details.md</a></div>
     <h1>焊接技能大师平台项目进展记录</h1>
-    <p>更新时间：2026-06-08</p>
+    <p>更新时间：2026-06-09</p>
     <p>这份文件用于记录 A02「焊接技能大师平台」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 <a href="README.md">README.md</a>。</p>
 
     <h2>文件定位</h2>
@@ -83,7 +83,7 @@ li { margin: 0.35em 0; }
     <p>本文件应同步维护 <a href="details.html">HTML 阅读版</a>。更新根目录 <code>README.md</code>、本文件或类似面向读者的阶段/路线说明时，也要同步刷新对应 <code>.html</code> 阅读副本。</p>
 
     <h2>当前一句话状态</h2>
-    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry。下一轮应在该统一入口下推进 ManiSkill/SAPIEN 小批量默认仿真入口。</p>
+    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry，以及 ManiSkill/SAPIEN 小批量默认仿真入口的软件实现。下一轮应基于小批量结果做数据积累前置报告与入口锁定判断。</p>
 
     <h2>当前主线判断</h2>
     <p>现在不适合直接扩大仿真规模，也不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成。</p>
@@ -98,6 +98,19 @@ li { margin: 0.35em 0; }
     <p>这里的“反证工作”很重要：候选仿真软件不是因为名字先进就自动成为主线，而要通过同一组任务、同一套输出契约和同一份证据报告证明它能接入项目数据结构；不能接入的地方也要明确记录失败原因。</p>
 
     <h2>近期更新</h2>
+    <h3>2026-06-09</h3>
+    <ul>
+      <li>确认第二轮主线为 ManiSkill/SAPIEN 小批量默认仿真入口。</li>
+      <li>样本口径采用“运行样本优先”：每条样本代表一次可追踪运行尝试，携带 <code>seed</code>、<code>variation_policy</code>、证据路径和失败边界。</li>
+      <li>新增 <code>SimulationBatchSpec</code>、<code>SimulationSamplePlan</code>、<code>SimulationSampleRun</code> 和 <code>SimulationBatchResult</code>，默认表达 2 个任务 x 10 条 ManiSkill/SAPIEN primary 样本。</li>
+      <li>新增 <code>run_maniskill_batch_pipeline</code> 和 CLI，可输出 <code>batch_spec.json</code>、<code>batch_result.json</code> 以及每条样本的 raw artifact、adapter result、evidence bundle、experience dataset 或 failure artifact。</li>
+      <li><code>comparison_route_ids=("simlite_reference",)</code> 当前只作为对照元数据，不触发 simlite 逐样本运行，也不计入 requested / completed / failed / skipped。</li>
+      <li>对 task generation、demo generation、runner exception、artifact write、adapter conversion、dataset export 和 evidence export 建立样本级失败边界，单条样本失败不会中断整个 batch。</li>
+      <li>completed 样本的 raw artifact、adapter result、experience dataset 和 evidence bundle 已按 <code>sample_id</code> 做内部身份收束，避免后续数据积累时出现同一 task 下多条样本 ID 混淆。</li>
+      <li>第二轮只做小批量入口和 batch summary，不做最终仿真器定型或入口锁定报告。</li>
+      <li>第三轮再基于小批量结果形成数据积累前置报告，判断默认入口、字段覆盖和失败边界是否足以支持持续积累。</li>
+    </ul>
+
     <h3>2026-06-08</h3>
     <ul>
       <li>完成统一仿真 adapter 第一轮 facade / registry：simlite、ManiSkill/SAPIEN、Gazebo/MoveIt 已进入同一 route 元数据和执行入口。</li>
@@ -153,6 +166,7 @@ li { margin: 0.35em 0; }
       <li>从仿真证据到机器人候选草案的转换。</li>
       <li>机器人上下文和轻量可执行性预检接口。</li>
       <li>统一仿真 adapter facade / registry。</li>
+      <li>ManiSkill/SAPIEN 小批量默认仿真入口和 batch summary 契约。</li>
       <li>报告命令和历史证据归档。</li>
     </ul>
     <p>这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证。</p>
@@ -160,7 +174,7 @@ li { margin: 0.35em 0; }
     <h2>尚未完成</h2>
     <ul>
       <li>最终仿真软件选型尚未完成。</li>
-      <li>持续积累仿真数据的默认入口尚未确定。</li>
+      <li>持续积累仿真数据的默认入口尚未锁定。</li>
       <li>候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需反证。</li>
       <li>经验数据与技能资产之间的字段追踪还需要进一步收束。</li>
       <li>专家审查记录结构尚未作为主线对象实现。</li>
@@ -169,17 +183,17 @@ li { margin: 0.35em 0; }
     </ul>
 
     <h2>下一步建议</h2>
-    <p>推荐下一阶段任务是：<strong>ManiSkill/SAPIEN 小批量默认仿真入口</strong>。</p>
+    <p>推荐下一阶段任务是：<strong>数据积累前置报告与入口锁定</strong>。</p>
+    <p>目标不是立刻扩大样本规模，而是基于当前小批量入口的实际输出，判断 ManiSkill/SAPIEN 是否可以作为下一轮数据积累的条件性默认入口：</p>
     <ol>
-      <li>固定一组最小但代表性的仿真任务。</li>
-      <li>以 ManiSkill/SAPIEN 作为阶段性默认 route，生成每个任务约 10 条样本。</li>
-      <li>保持 simlite 作为 L0 对照，Gazebo/MoveIt 作为失败边界和机器人规划候选。</li>
-      <li>统一生成 raw artifact、<code>SimulatorAdapterResult</code>、<code>SimulationEvidenceBundle</code> 和 experience dataset。</li>
-      <li>明确哪些数据可以进入 <code>SkillDataset</code> / experience dataset。</li>
-      <li>明确哪些字段仍是 mock、假设、失败边界或人工补充。</li>
-      <li>为第三轮入口锁定报告准备字段覆盖和失败边界证据。</li>
+      <li>汇总 2 个默认任务 x 10 条 primary 样本的 completed / failed / skipped 分布。</li>
+      <li>汇总 raw artifact、adapter result、<code>SimulationEvidenceBundle</code> 和 experience dataset 的字段覆盖率。</li>
+      <li>区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。</li>
+      <li>记录样本级 failure boundary，尤其是 <code>environment_missing</code>、<code>simulation_run_failed</code>、<code>data_contract_incomplete</code> 等。</li>
+      <li>判断是否允许进入 <code>locked_with_conditions</code> 或 <code>locked_for_next_batch</code>。</li>
+      <li>若不能锁定，明确是继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。</li>
     </ol>
-    <p>这一步完成后，才适合进入“真正开始积累数据”的阶段。</p>
+    <p>只有这份前置报告通过后，才适合进入“真正开始积累数据”的阶段。</p>
 
     <h2>暂缓事项</h2>
     <ul>
@@ -203,7 +217,11 @@ li { margin: 0.35em 0; }
     <pre><code>cd weld-experience-engine
 uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
-    <p>本分支最近一次完整验证结果为 <code>261 passed</code>。</p>
+    <p>当前分支最近一次完整验证结果为 <code>273 passed</code>。</p>
+    <p>可选小批量入口命令：</p>
+    <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-batches</code></pre>
+    <p>该命令在缺少真实 ManiSkill/SAPIEN 环境时会输出 <code>environment_missing</code> failure boundary；这属于当前反证边界，不表示仿真入口失败，也不表示最终仿真器已经选型。</p>
 
     <h2>风险提醒</h2>
     <ul>
