@@ -36,9 +36,17 @@ from weldcore.simulation_bakeoff.model import (
 def run_maniskill_batch_pipeline(
     outdir: str | Path = "artifacts/simulation/maniskill-sapien-batches",
     batch_id: str = "maniskill-sapien-default-batch",
+    *,
+    samples_per_task: int = 10,
+    seed_start: int = 0,
 ) -> dict[str, Any]:
     output_root = Path(outdir)
-    spec = default_maniskill_batch_spec(batch_id=batch_id, output_root=str(outdir))
+    spec = default_maniskill_batch_spec(
+        batch_id=batch_id,
+        output_root=str(outdir),
+        samples_per_task=samples_per_task,
+        seed_start=seed_start,
+    )
     batch_dir = output_root / batch_id
     write_json_artifact(batch_dir / "batch_spec.json", spec)
 
@@ -65,6 +73,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -84,6 +93,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -102,6 +112,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -123,6 +134,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -140,6 +152,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     extra_evidence_notes=_unavailable_evidence_notes(
                         failure_artifact_uri,
                     ),
@@ -164,6 +177,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     extra_evidence_notes=_unavailable_evidence_notes(
                         failure_artifact_uri,
                     ),
@@ -191,6 +205,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     adapter_result_uri=_sample_uri(
                         plan.sample_id,
                         "adapter_result.json",
@@ -219,6 +234,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     adapter_result_uri=_sample_uri(
                         plan.sample_id,
                         "adapter_result.json",
@@ -409,6 +425,7 @@ def _failed_sample_run(
     adapter_result_uri: str | None = None,
     evidence_bundle_uri: str | None = None,
     experience_dataset_uri: str | None = None,
+    failure_artifact_uri: str | None = None,
     extra_evidence_notes: tuple[str, ...] = (),
 ) -> SimulationSampleRun:
     return SimulationSampleRun(
@@ -430,6 +447,7 @@ def _failed_sample_run(
             *_unavailable_evidence_notes(raw_artifact_uri),
             *extra_evidence_notes,
         ),
+        failure_artifact_uri=failure_artifact_uri,
     )
 
 
@@ -496,8 +514,15 @@ def main(argv: list[str] | None = None) -> None:
         default="artifacts/simulation/maniskill-sapien-batches",
     )
     parser.add_argument("--batch-id", default="maniskill-sapien-default-batch")
+    parser.add_argument("--samples-per-task", type=int, default=10)
+    parser.add_argument("--seed-start", type=int, default=0)
     args = parser.parse_args(argv)
-    result = run_maniskill_batch_pipeline(args.outdir, batch_id=args.batch_id)
+    result = run_maniskill_batch_pipeline(
+        args.outdir,
+        batch_id=args.batch_id,
+        samples_per_task=args.samples_per_task,
+        seed_start=args.seed_start,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

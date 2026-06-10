@@ -1,4 +1,18 @@
 from .adapters import attempt_gazebo_moveit, attempt_maniskill_sapien, run_simlite_reference
+from .accumulation import (
+    AccumulationStatus,
+    DEFAULT_ACCUMULATION_SCALE_PLAN,
+    DEFAULT_ACCUMULATION_STAGE_BOUNDARY,
+    SimulationAccumulationBatchSpec,
+    SimulationAccumulationReport,
+    SimulationDatasetIndex,
+    SimulationDatasetIndexItem,
+    SimulationFieldCoverageSummary,
+    build_simulation_accumulation_report,
+    build_simulation_dataset_index,
+    default_maniskill_accumulation_spec,
+    determine_accumulation_status,
+)
 from .bakeoff import MinimalBakeoffResult, run_minimal_simulation_bakeoff
 from .batch import (
     SampleRunStatus,
@@ -23,6 +37,7 @@ from .maniskill_contract import (
     write_json_artifact,
 )
 from .maniskill_demo import generate_rule_based_demo
+from .maniskill_accumulation_pipeline import run_maniskill_accumulation_pipeline
 from .maniskill_batch_pipeline import run_maniskill_batch_pipeline
 from .maniskill_pipeline import run_maniskill_spike_pipeline
 from .maniskill_runner import run_maniskill_lightweight
@@ -48,6 +63,9 @@ from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_s
 
 __all__ = [
     "DEFAULT_SIMULATION_TASK_SPECS",
+    "DEFAULT_ACCUMULATION_SCALE_PLAN",
+    "DEFAULT_ACCUMULATION_STAGE_BOUNDARY",
+    "AccumulationStatus",
     "BakeoffScorecard",
     "ExperienceDataset",
     "FailureBoundary",
@@ -60,9 +78,14 @@ __all__ = [
     "SimulationAdapterRoute",
     "SimulationAdapterRunner",
     "SimulationAdapterStatus",
+    "SimulationAccumulationBatchSpec",
+    "SimulationAccumulationReport",
     "SimulationBatchResult",
     "SimulationBatchSpec",
+    "SimulationDatasetIndex",
+    "SimulationDatasetIndexItem",
     "SimulationEvidenceBundle",
+    "SimulationFieldCoverageSummary",
     "SimulationPathPoint",
     "SimulationSamplePlan",
     "SimulationSampleRun",
@@ -73,11 +96,15 @@ __all__ = [
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
     "build_maniskill_experience_dataset",
+    "build_simulation_accumulation_report",
+    "build_simulation_dataset_index",
     "build_simulation_evidence_bundle",
+    "default_maniskill_accumulation_spec",
     "default_maniskill_batch_spec",
     "default_maniskill_task_configs",
     "default_simulation_adapter_routes",
     "default_simulation_task_specs",
+    "determine_accumulation_status",
     "generate_rule_based_demo",
     "get_default_batch_route",
     "iter_batch_sample_plans",
@@ -85,6 +112,7 @@ __all__ = [
     "read_json_artifact",
     "run_adapter_route",
     "run_comparison_routes",
+    "run_maniskill_accumulation_pipeline",
     "run_maniskill_batch_pipeline",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",

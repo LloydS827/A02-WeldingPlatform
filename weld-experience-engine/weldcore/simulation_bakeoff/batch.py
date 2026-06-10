@@ -87,6 +87,7 @@ class SimulationSampleRun:
     experience_dataset_uri: str | None
     failure_boundary: tuple[str, ...]
     evidence_notes: tuple[str, ...]
+    failure_artifact_uri: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)

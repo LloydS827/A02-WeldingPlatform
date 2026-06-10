@@ -15,67 +15,28 @@
   --code-bg: #f3f5f7;
 }
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  line-height: 1.72;
-}
-main {
-  width: min(960px, calc(100% - 40px));
-  margin: 32px auto 56px;
-  padding: 42px 48px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-h1, h2, h3 {
-  line-height: 1.28;
-  margin: 1.3em 0 0.55em;
-}
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; line-height: 1.72; }
+main { width: min(960px, calc(100% - 40px)); margin: 32px auto 56px; padding: 42px 48px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
+h1, h2, h3 { line-height: 1.28; margin: 1.3em 0 0.55em; }
 h1 { margin-top: 0; font-size: 2rem; }
 h2 { padding-top: 0.5em; border-top: 1px solid var(--line); font-size: 1.35rem; }
 h3 { font-size: 1.1rem; }
 p, ul, ol, pre { margin: 0.75em 0; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-code {
-  padding: 0.12em 0.35em;
-  border-radius: 4px;
-  background: var(--code-bg);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.92em;
-}
-pre {
-  overflow-x: auto;
-  padding: 14px 16px;
-  border-radius: 6px;
-  background: #111827;
-  color: #f9fafb;
-}
+code { padding: 0.12em 0.35em; border-radius: 4px; background: var(--code-bg); font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.92em; }
+pre { overflow-x: auto; padding: 14px 16px; border-radius: 6px; background: #111827; color: #f9fafb; }
 pre code { padding: 0; background: transparent; color: inherit; }
 li { margin: 0.35em 0; }
-.meta {
-  margin-bottom: 24px;
-  padding-bottom: 18px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--line);
-  font-size: 0.92rem;
-}
-@media (max-width: 720px) {
-  main { width: 100%; margin: 0; padding: 24px 18px 40px; border: 0; border-radius: 0; }
-  h1 { font-size: 1.65rem; }
-}</style>
+.meta { margin-bottom: 24px; padding-bottom: 18px; color: var(--muted); border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+@media (max-width: 720px) { main { width: 100%; margin: 0; padding: 24px 18px 40px; border: 0; border-radius: 0; } h1 { font-size: 1.65rem; } }</style>
 </head>
 <body>
   <main>
     <div class="meta">HTML 阅读版；维护源：<a href="README.md">README.md</a></div>
     <h1>Physical AI 焊接技能资产底座</h1>
-
     <h2>一句话定义</h2>
     <p>本仓库支撑 A02「焊接技能大师平台」在 Physical AI for Welding 方向下的研发。当前目标不是先做完整业务系统、真实机器人控制或正式焊接工艺评定，而是把焊接经验、工艺语义、动作轨迹、仿真输出和证据边界沉淀为可学习、可迁移、可审计、后续可接机器人执行验证的技能资产数据结构。</p>
-
     <h2>文件入口</h2>
     <ul>
       <li><a href="README.html">README HTML 阅读版</a></li>
@@ -83,19 +44,20 @@ li { margin: 0.35em 0; }
     </ul>
     <p><code>README.md</code> 是项目入口，面向任何新读者说明项目定位、当前能力、如何运行和边界。</p>
     <p><code>details.md</code> 是阶段更新记录，面向项目讨论记录每天或每一轮完成了什么、下一步要做什么、哪些判断发生了变化。</p>
-
     <h2>当前定位</h2>
     <p>当前项目已经从早期 POC / MVP / gate / 报告集合，收束为以 <code>WeldSkillPackage</code> 和 <code>WeldSkillUnit</code> 为核心的焊接技能资产底座。</p>
-    <p>现阶段主线是：<strong>把仿真路线到技能数据结构这段做扎实，并通过反证工作确认候选仿真软件和 adapter 是否真的能稳定产生可积累的数据</strong>。</p>
+    <p>现阶段主线是：<strong>把仿真路线到技能数据结构这段做扎实，并开始通过 ManiSkill/SAPIEN 仿真入口积累可索引、可追踪、可审查的数据</strong>。</p>
+    <p>这意味着当前重点不是直接进入真实机器人执行或真实焊接质量结论，而是先回答：</p>
     <ol>
       <li>一个焊接技能单元能否稳定生成仿真任务。</li>
       <li>不同仿真路线能否按同一输出契约返回结果。</li>
       <li>仿真结果能否转成经验数据、证据包和机器人候选草案。</li>
       <li>哪些结论来自软件和仿真证据，哪些必须等待专家或真机验证。</li>
-      <li>哪个仿真软件和 adapter 路线适合成为后续数据积累的默认入口。</li>
+      <li>仿真样本能否进入 accumulation index 和 accumulation report。</li>
+      <li>后续 500、1000+ requested samples 的规模化仿真应如何分批、复用和审查。</li>
     </ol>
-
     <h2>核心链路</h2>
+    <p>当前核心链路是：</p>
     <pre><code>WeldSkillUnit
 -&gt; SimulationTaskSpec
 -&gt; simlite / ManiSkill-SAPIEN / Gazebo-MoveIt candidate adapter
@@ -105,6 +67,7 @@ li { margin: 0.35em 0; }
 -&gt; RobotProcessPackageDraft
 -&gt; RobotContextSpec + RobotFeasibilityResult
 -&gt; ready_for_expert_review 或 blocked_*</code></pre>
+    <p>这条链路的含义是：</p>
     <ul>
       <li><code>WeldSkillUnit</code> 描述可复用、可训练、可评测的焊接动作能力。</li>
       <li><code>SimulationTaskSpec</code> 把技能单元转成仿真任务输入。</li>
@@ -115,36 +78,40 @@ li { margin: 0.35em 0; }
       <li><code>RobotContextSpec</code> 与 <code>RobotFeasibilityResult</code> 只做上下文表达和轻量可行性预检，不代表真实机器人已可执行。</li>
     </ul>
     <p><code>ready_for_expert_review</code> 只表示这条候选草案具备进入专家审查的结构条件；<code>ready_for_robot_execution</code> 当前仍是保留状态，不应被默认触达。</p>
-
     <h2>已完成能力</h2>
+    <p>项目当前已经完成以下基础能力：</p>
     <ul>
-      <li>可运行的 <code>weldcore</code> 引擎。</li>
+      <li>可运行的 <code>weldcore</code> 引擎，详见 <a href="weld-experience-engine/README.md">weld-experience-engine/README.md</a>。</li>
       <li><code>SkillDataset</code>、<code>SkillSample</code>、<code>WeldSkillPackage</code>、迁移评测和 evidence 输出的基础数据结构。</li>
-      <li><code>WeldSkillUnit</code> 最小框架和默认技能单元。</li>
+      <li>经验结构化 POC、技能迁移 MVP、资料底座 gate、<code>SyntheticSkillDataset v2</code> 输入规范 gate 和仿真输出接入 gate。</li>
+      <li><code>WeldSkillUnit</code> 最小框架，以及长直横焊沿缝跟踪、包角横焊转角过渡等默认技能单元。</li>
       <li><code>SimulationTaskSpec</code>、<code>SimulatorAdapterResult</code> 和 <code>SimulationEvidenceBundle</code> 最小仿真证据结构。</li>
       <li>simlite/mock bundle 作为 L0 稳定仿真和测试基线。</li>
-      <li>ManiSkill/SAPIEN 本机轻量闭环。</li>
+      <li>ManiSkill/SAPIEN 本机轻量闭环，用于验证外部仿真输出能否接入项目数据结构。</li>
       <li>ManiSkill/SAPIEN 小批量默认仿真入口：<code>SimulationBatchSpec</code>、<code>SimulationSampleRun</code>、<code>SimulationBatchResult</code> 和 2 个默认任务 x 10 条 primary 样本的 batch summary 契约。</li>
+      <li>ManiSkill/SAPIEN 仿真数据积累启动层：<code>SimulationAccumulationBatchSpec</code>、<code>SimulationDatasetIndex</code>、<code>SimulationAccumulationReport</code> 和 2 个默认任务 x 50 条 requested samples 的 accumulation report 契约。</li>
       <li>Gazebo/MoveIt 候选路线的统一失败边界记录。</li>
       <li>从 <code>SimulationEvidenceBundle</code> 到 <code>RobotProcessPackageDraft</code> 的机器人候选草案转换。</li>
       <li><code>RobotContextSpec</code>、<code>RobotFeasibilityProbe</code>、<code>RobotFeasibilityResult</code> 和轻量机器人上下文预检接口。</li>
-      <li>焊接工艺参数 Excel 表格作为工程师参数参考纳入仓库。</li>
-      <li>前期 POC、MVP、gate、白皮书和旧计划材料已归档。</li>
+      <li>Rerun 证据回放兼容处理。</li>
+      <li>焊接工艺参数 Excel 表格作为参考资料纳入仓库；它是工程师参数参考，不是当前主流程的主数据源。</li>
+      <li>前期 POC、MVP、gate、白皮书和旧计划材料已归档，避免历史阶段继续占据默认入口。</li>
     </ul>
     <p>这些能力说明软件结构、仿真接入和数据证据路径已经有了前半段闭环，但不代表真实焊接质量、正式 WPS/PQR、最终仿真软件选择或真实机器人执行已经完成。</p>
-
     <h2>下一阶段方向</h2>
-    <p>下一阶段应优先做 <strong>数据积累前置报告与入口锁定</strong>。</p>
-    <p>ManiSkill/SAPIEN 小批量默认仿真入口已经具备软件入口和 batch result 契约。下一步不应立刻扩大样本规模，也不应直接投入重型机器人集成；更合适的是基于小批量结果，形成字段覆盖、失败边界和可积累字段报告，判断该入口是否可以作为下一轮数据积累的条件性默认入口。</p>
+    <p>下一阶段应优先做 <strong>规模化仿真运行与条件性入口锁定</strong>。</p>
+    <p>ManiSkill/SAPIEN 小批量默认仿真入口和 accumulation 启动层已经具备软件入口、batch result、dataset index 和 accumulation report 契约。下一步不应跳到真实机器人控制或重型调度系统，而应在保持当前数据契约稳定的前提下，把 accumulation run 扩展为多个 batch shard，并形成 500 requested samples 级别的条件性入口判断。</p>
+    <p>下一阶段要形成的判断包括：</p>
     <ul>
-      <li>小批量入口在当前环境下的 completed / failed / skipped 分布和失败边界。</li>
-      <li>raw artifact、adapter result、<code>SimulationEvidenceBundle</code>、experience dataset 的字段覆盖率。</li>
+      <li>Phase 1 accumulation 在当前环境下的 completed / failed / skipped 分布和失败边界。</li>
+      <li><code>dataset_index.json</code> 中 raw artifact、adapter result、<code>SimulationEvidenceBundle</code>、experience dataset 和 failure artifact 的覆盖情况。</li>
       <li>哪些字段可以作为后续技能数据积累的稳定字段，哪些仍是假设、mock、adapter 占位或人工补充。</li>
-      <li>ManiSkill/SAPIEN 是否允许进入 <code>locked_with_conditions</code> 或 <code>locked_for_next_batch</code>。</li>
-      <li>若不能锁定，应该回退到 simlite 基线、继续反证，还是补充环境依赖。</li>
+      <li>Phase 2 是否采用 5 个 batch shard x 100 requested samples，或 2 个任务 x 250 requested samples。</li>
+      <li>ManiSkill/SAPIEN 是否允许进入 <code>locked_for_next_batch_with_conditions</code>。</li>
+      <li>若不能条件性锁定，应该继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。</li>
     </ul>
-
     <h2>如何验证</h2>
+    <p>默认验证路径保持为可安装、可运行、可测试：</p>
     <pre><code>cd weld-experience-engine
 uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
@@ -154,42 +121,61 @@ uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
 uv run python -m weldcore.report.simulation_ingest_report
 uv run python -m weldcore.report.simulation_bakeoff_report</code></pre>
-    <p><code>simulation_bakeoff_report</code> 用于生成 <code>WeldSkillUnit</code> 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。</p>
+    <p>其中 <code>simulation_bakeoff_report</code> 用于生成 <code>WeldSkillUnit</code> 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。</p>
     <p>可选小批量仿真入口命令：</p>
     <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
   --outdir artifacts/simulation/maniskill-sapien-batches</code></pre>
     <p>该命令生成 2 个默认任务 x 10 条 ManiSkill/SAPIEN primary 样本的 batch spec 和 batch result。若本机缺少真实 ManiSkill/SAPIEN 环境，样本会以 <code>environment_missing</code> 等 failure boundary 记录；这不表示真实焊接质量验证、最终仿真器选型或真实机器人执行已经完成。</p>
-
+    <p>可选仿真数据积累入口命令：</p>
+    <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-accumulations</code></pre>
+    <p>该命令默认请求 2 个默认任务 x 50 条 ManiSkill/SAPIEN samples，共 100 requested samples，并输出 <code>accumulation_spec.json</code>、<code>dataset_index.json</code> 和 <code>accumulation_report.json</code>。若本机缺少真实 ManiSkill/SAPIEN 环境，报告会进入 <code>blocked_by_environment</code>；这属于环境边界和反证记录，不表示项目失败，也不表示最终仿真器已经选型。</p>
+    <p>历史支撑命令仍然保留：</p>
+    <pre><code>uv run python -m weldcore.report.generate
+uv run python -m weldcore.report.scenario_report</code></pre>
+    <p>这些报告只能用于软件证据、资料证据、仿真接入证据和历史复盘，不能写成真实焊接质量验证、完整外部仿真器集成或正式 WPS/PQR。</p>
     <h2>当前目录结构</h2>
     <pre><code>.
 ├── README.md
 ├── README.html
-├── details.md
+├── details.md                         # 阶段更新记录和下一步计划
 ├── details.html
 ├── docs/
-│   ├── strategy/
-│   ├── architecture/
-│   ├── skill-assets/
-│   ├── simulation/
-│   ├── evidence/
-│   ├── archive/
-│   └── superpowers/
-└── weld-experience-engine/</code></pre>
-
+│   ├── strategy/                       # Physical AI 公司战略与项目承接关系
+│   ├── architecture/                   # 五层架构、模块边界和 adapter 原则
+│   ├── skill-assets/                   # WeldSkillPackage 与 WeldSkillUnit
+│   ├── simulation/                     # 仿真路线、simlite 边界和外部 adapter 候选
+│   ├── evidence/                       # 资料来源、字段覆盖、证据报告和质量边界
+│   ├── archive/                        # POC、MVP、gate、白皮书和旧计划归档
+│   └── superpowers/                    # 设计与实施计划记录
+└── weld-experience-engine/
+    ├── README.md
+    ├── pyproject.toml
+    ├── tests/
+    └── weldcore/</code></pre>
     <h2>当前不做事项</h2>
     <ul>
-      <li>不把 <code>stiffened-panel-fillet</code> 作为默认项目主线。</li>
-      <li>不把 simlite 写成最终仿真器。</li>
+      <li>不把 <code>stiffened-panel-fillet</code> 作为默认项目主线；它现在是历史资料 gate 和行业实例。</li>
+      <li>不把 simlite 写成最终仿真器；它只是 L0 稳定基线。</li>
       <li>不把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac、ROS 等候选路线写成已经完成选型。</li>
       <li>不把候选 adapter 的失败记录写成项目失败；失败边界本身就是当前反证工作的一部分。</li>
       <li>不把 <code>RobotProcessPackageDraft</code> 写成正式机器人工艺包。</li>
       <li>不把 <code>RobotFeasibilityResult</code> 写成真实机器人可达性、碰撞或关节限制验证。</li>
       <li>不把公开资料、合成数据、仿真输出或报告结论写成真实焊接质量验证。</li>
       <li>不把资料证据、输入规范、仿真假设或工程师参考表格写成 WPS/PQR。</li>
+      <li>不删除历史成果；历史材料统一保留在归档目录。</li>
     </ul>
-
     <h2>Agent 维护规则</h2>
-    <p>后续推进本项目时，应先判断是否需要同步更新 <a href="details.md">details.md</a>。更新入口文档、阶段说明或路线说明时，必须同步刷新同目录 HTML 阅读版。</p>
+    <p>后续推进本项目时，应先判断是否需要同步更新 <a href="details.md">details.md</a>。</p>
+    <p>需要更新 <code>details.md</code> 的情况包括：</p>
+    <ul>
+      <li>项目阶段、范围或默认主线发生变化。</li>
+      <li><code>WeldSkillPackage</code>、<code>WeldSkillUnit</code>、仿真路线、证据边界或 adapter 边界发生变化。</li>
+      <li>新增或移除重要基础能力、报告命令、验证路径或交付物。</li>
+      <li>下一步计划、风险判断或阶段优先级发生变化。</li>
+      <li>真实焊接质量验证、WPS/PQR、最终仿真器选择等边界判断发生变化。</li>
+    </ul>
+    <p>更新入口文档、阶段说明或路线说明时，必须同步刷新同目录 HTML 阅读版。尤其是根目录 <code>README.md</code> 和 <code>details.md</code>：Markdown 是维护源，HTML 是面向项目负责人、业务人员、工艺人员和非技术读者的阅读副本。</p>
   </main>
 </body>
 </html>
