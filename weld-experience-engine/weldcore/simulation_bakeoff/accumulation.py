@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import posixpath
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -18,8 +19,19 @@ AccumulationStatus = Literal[
     "accumulating_with_failures",
     "blocked_by_environment",
     "blocked_by_pipeline_failure",
+    "locked_for_next_batch_with_conditions",
     "ready_to_scale_with_conditions",
 ]
+ShardRunStatus = Literal[
+    "completed_new_run",
+    "reused_existing_result",
+    "failed_to_load_existing_result",
+    "rerun_forced",
+]
+
+ALLOWED_LOCK_FAILURE_BOUNDARIES = frozenset(
+    {"environment_missing", "simulation_run_failed"}
+)
 
 DEFAULT_ACCUMULATION_STAGE_BOUNDARY = (
     "simulation_accumulation_not_real_welding_quality"
@@ -39,11 +51,28 @@ class SimulationAccumulationBatchSpec:
     batch_id_prefix: str
     output_root: str
     seed_start: int
+    shard_count: int
+    samples_per_shard: int
     variation_policy: VariationPolicy
     scale_phase: str
     scale_plan: str
     resume_policy: str
     stage_boundary: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SimulationAccumulationShardSpec:
+    shard_id: str
+    batch_id: str
+    samples_per_task: int
+    requested_sample_count: int
+    seed_start: int
+    batch_root_uri: str
+    batch_result_uri: str
+    reuse_policy: str
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)
@@ -102,6 +131,23 @@ class SimulationDatasetIndex:
 
 
 @dataclass(frozen=True)
+class SimulationAccumulationShardReport:
+    shard_id: str
+    batch_id: str
+    status: ShardRunStatus
+    requested_sample_count: int
+    completed_sample_count: int
+    failed_sample_count: int
+    skipped_sample_count: int
+    batch_result_uri: str
+    failure_boundaries: tuple[str, ...]
+    field_coverage: SimulationFieldCoverageSummary
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
 class SimulationAccumulationReport:
     accumulation_id: str
     status: AccumulationStatus
@@ -113,6 +159,14 @@ class SimulationAccumulationReport:
     dominant_failure_boundaries: tuple[str, ...]
     dataset_index_uri: str
     batch_result_uris: tuple[str, ...]
+    shard_count: int
+    completed_shard_count: int
+    reused_shard_count: int
+    failed_shard_count: int
+    shard_reports: tuple[SimulationAccumulationShardReport, ...]
+    shard_result_uris: tuple[str, ...]
+    failure_boundary_counts: dict[str, int]
+    field_coverage_trend: dict[str, dict[str, float]]
     readiness_for_next_scale: str
     next_scale_recommendation: str
     known_limitations: tuple[str, ...]
@@ -160,11 +214,121 @@ def default_maniskill_accumulation_spec(
         batch_id_prefix=batch_id_prefix,
         output_root=output_root,
         seed_start=seed_start,
+        shard_count=1,
+        samples_per_shard=derived_target,
         variation_policy=variation_policy,
         scale_phase=scale_phase,
         scale_plan=scale_plan,
         resume_policy=resume_policy,
         stage_boundary=stage_boundary,
+    )
+
+
+def default_maniskill_sharded_accumulation_spec(
+    *,
+    accumulation_id: str = "maniskill-sapien-accumulation-phase-2",
+    samples_per_task: int = 50,
+    shard_count: int = 5,
+    seed_start: int = 0,
+    **kwargs: Any,
+) -> SimulationAccumulationBatchSpec:
+    if shard_count <= 0:
+        raise ValueError("shard_count must be positive")
+    base = default_maniskill_accumulation_spec(
+        accumulation_id=accumulation_id,
+        samples_per_task=samples_per_task,
+        seed_start=seed_start,
+        target_requested_sample_count=None,
+        scale_phase="phase_2_scale_sharded_accumulation",
+        **kwargs,
+    )
+    return dataclasses.replace(
+        base,
+        shard_count=shard_count,
+        samples_per_shard=len(base.task_specs) * samples_per_task,
+        target_requested_sample_count=(
+            len(base.task_specs) * samples_per_task * shard_count
+        ),
+    )
+
+
+def iter_accumulation_shard_specs(
+    spec: SimulationAccumulationBatchSpec,
+) -> tuple[SimulationAccumulationShardSpec, ...]:
+    shards: list[SimulationAccumulationShardSpec] = []
+    seed = spec.seed_start
+    for index in range(spec.shard_count):
+        shard_id = f"shard-{index:03d}"
+        batch_id = f"{spec.batch_id_prefix}-{spec.accumulation_id}-{shard_id}"
+        batch_root_uri = f"batches/{batch_id}"
+        shards.append(
+            SimulationAccumulationShardSpec(
+                shard_id=shard_id,
+                batch_id=batch_id,
+                samples_per_task=spec.samples_per_task,
+                requested_sample_count=spec.samples_per_shard,
+                seed_start=seed,
+                batch_root_uri=batch_root_uri,
+                batch_result_uri=f"{batch_root_uri}/batch_result.json",
+                reuse_policy=spec.resume_policy,
+            )
+        )
+        seed += spec.samples_per_shard
+    return tuple(shards)
+
+
+def validate_batch_result_matches_shard(
+    *,
+    batch_result: SimulationBatchResult,
+    shard_spec: SimulationAccumulationShardSpec,
+    route_id: str,
+    task_count: int,
+) -> None:
+    if batch_result.batch_id != shard_spec.batch_id:
+        raise ValueError("batch_result batch_id does not match shard")
+    if batch_result.route_id != route_id:
+        raise ValueError("batch_result route_id does not match shard")
+    if batch_result.requested_sample_count != shard_spec.requested_sample_count:
+        raise ValueError("batch_result requested_sample_count does not match shard")
+    if batch_result.task_count != task_count:
+        raise ValueError("batch_result task_count does not match shard")
+    if len(batch_result.sample_runs) != shard_spec.requested_sample_count:
+        raise ValueError("batch_result sample_runs do not match shard")
+    expected_seeds = set(
+        range(
+            shard_spec.seed_start,
+            shard_spec.seed_start + shard_spec.requested_sample_count,
+        )
+    )
+    actual_seeds = {run.seed for run in batch_result.sample_runs}
+    if actual_seeds != expected_seeds:
+        raise ValueError("batch_result seed range does not match shard")
+    for run in batch_result.sample_runs:
+        if run.batch_id != shard_spec.batch_id or run.route_id != route_id:
+            raise ValueError("sample run identity does not match shard")
+
+
+def build_simulation_accumulation_shard_report(
+    *,
+    shard_spec: SimulationAccumulationShardSpec,
+    batch_result: SimulationBatchResult,
+    status: ShardRunStatus,
+) -> SimulationAccumulationShardReport:
+    index_items = tuple(
+        _dataset_index_item(shard_spec.shard_id, sample_run)
+        for sample_run in batch_result.sample_runs
+    )
+    return SimulationAccumulationShardReport(
+        shard_id=shard_spec.shard_id,
+        batch_id=shard_spec.batch_id,
+        status=status,
+        requested_sample_count=batch_result.requested_sample_count,
+        completed_sample_count=batch_result.completed_sample_count,
+        failed_sample_count=batch_result.failed_sample_count,
+        skipped_sample_count=batch_result.skipped_sample_count,
+        batch_result_uri=shard_spec.batch_result_uri,
+        failure_boundaries=batch_result.failure_boundaries,
+        field_coverage=_field_coverage_summary(index_items),
     )
 
 
@@ -232,14 +396,9 @@ def build_simulation_accumulation_report(
     *,
     dataset_index: SimulationDatasetIndex,
     dataset_index_uri: str,
+    shard_reports: tuple[SimulationAccumulationShardReport, ...] = (),
 ) -> SimulationAccumulationReport:
-    status = determine_accumulation_status(
-        requested_sample_count=dataset_index.requested_sample_count,
-        completed_sample_count=dataset_index.completed_sample_count,
-        failed_sample_count=dataset_index.failed_sample_count,
-        skipped_sample_count=dataset_index.skipped_sample_count,
-        failure_boundaries=dataset_index.failure_boundaries,
-    )
+    status = _determine_dataset_index_status(dataset_index)
     return SimulationAccumulationReport(
         accumulation_id=dataset_index.accumulation_id,
         status=status,
@@ -258,6 +417,27 @@ def build_simulation_accumulation_report(
             dataset_index.batch_result_uris[batch_id]
             for batch_id in dataset_index.batch_ids
         ),
+        shard_count=len(shard_reports),
+        completed_shard_count=sum(
+            1
+            for report in shard_reports
+            if report.status in {"completed_new_run", "rerun_forced"}
+        ),
+        reused_shard_count=sum(
+            1 for report in shard_reports if report.status == "reused_existing_result"
+        ),
+        failed_shard_count=sum(
+            1
+            for report in shard_reports
+            if report.status == "failed_to_load_existing_result"
+        ),
+        shard_reports=tuple(shard_reports),
+        shard_result_uris=tuple(report.batch_result_uri for report in shard_reports),
+        failure_boundary_counts=_failure_boundary_counts(dataset_index.index_items),
+        field_coverage_trend={
+            report.shard_id: dict(report.field_coverage.completed_sample_coverage)
+            for report in shard_reports
+        },
         readiness_for_next_scale=_readiness_for_next_scale(status),
         next_scale_recommendation=(
             "continue_phase_1_then_review_before_"
@@ -296,6 +476,64 @@ def determine_accumulation_status(
     ):
         return "ready_to_scale_with_conditions"
     return "accumulating_completed_samples"
+
+
+def _determine_dataset_index_status(
+    dataset_index: SimulationDatasetIndex,
+) -> AccumulationStatus:
+    base = determine_accumulation_status(
+        requested_sample_count=dataset_index.requested_sample_count,
+        completed_sample_count=dataset_index.completed_sample_count,
+        failed_sample_count=dataset_index.failed_sample_count,
+        skipped_sample_count=dataset_index.skipped_sample_count,
+        failure_boundaries=dataset_index.failure_boundaries,
+    )
+    if base in {"blocked_by_environment", "blocked_by_pipeline_failure"}:
+        return base
+    if dataset_index.skipped_sample_count > 0:
+        return "accumulating_with_failures"
+    if (
+        dataset_index.completed_sample_count == dataset_index.requested_sample_count
+        and dataset_index.failed_sample_count == 0
+        and not dataset_index.failure_boundaries
+    ):
+        return "ready_to_scale_with_conditions"
+    if _is_locked_for_next_batch(dataset_index):
+        return "locked_for_next_batch_with_conditions"
+    if dataset_index.failed_sample_count > 0:
+        return "accumulating_with_failures"
+    return base
+
+
+def _is_locked_for_next_batch(dataset_index: SimulationDatasetIndex) -> bool:
+    if dataset_index.requested_sample_count < 500:
+        return False
+    if dataset_index.completed_sample_count <= 0:
+        return False
+    if dataset_index.failed_sample_count <= 0:
+        return False
+    coverage = dataset_index.field_coverage_summary.completed_sample_coverage
+    required_fields = (
+        "adapter_result_uri",
+        "experience_dataset_uri",
+        "evidence_bundle_uri",
+    )
+    if any(coverage[field] != 1.0 for field in required_fields):
+        return False
+    failed_items = tuple(
+        item for item in dataset_index.index_items if item.status == "failed"
+    )
+    if not failed_items:
+        return False
+    for item in failed_items:
+        if not item.failure_boundary:
+            return False
+        if any(
+            boundary not in ALLOWED_LOCK_FAILURE_BOUNDARIES
+            for boundary in item.failure_boundary
+        ):
+            return False
+    return True
 
 
 def _dataset_index_item(
@@ -409,9 +647,20 @@ def _coverage_field_present(item: SimulationDatasetIndexItem, field: str) -> boo
     return True
 
 
+def _failure_boundary_counts(
+    index_items: tuple[SimulationDatasetIndexItem, ...],
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in index_items:
+        for boundary in item.failure_boundary:
+            counts[boundary] = counts.get(boundary, 0) + 1
+    return counts
+
+
 def _readiness_for_next_scale(status: AccumulationStatus) -> str:
     readiness_by_status = {
         "ready_to_scale_with_conditions": "ready_with_conditions",
+        "locked_for_next_batch_with_conditions": "locked_with_conditions",
         "accumulating_with_failures": "continue_accumulating_with_failure_review",
         "blocked_by_environment": "blocked_until_environment_available",
         "blocked_by_pipeline_failure": "blocked_until_pipeline_failure_resolved",
