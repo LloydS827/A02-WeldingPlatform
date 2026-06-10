@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 `weld-maniskill` 环境完成 5 shards x 100 = 500 requested samples 的运行、复用和审查；状态为 `ready_to_scale_with_conditions`。
+项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层、Phase 2 sharded accumulation 入口，以及 1000 requested samples next-batch 真实环境运行审查。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 `weld-maniskill` 环境完成 500 requested samples 和 1000 requested samples 的运行、复用和审查；1000 next-batch 首次运行 1000 requested / 1000 completed / 0 failed / 0 skipped，同命令复跑 10 个 shard 均为 `reused_existing_result`，当前项目判断为 `ready_to_continue_accumulation_with_conditions`。
 
 ## 当前主线判断
 
