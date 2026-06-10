@@ -85,6 +85,30 @@ def _fake_completed_runner(outdir, batch_id, *, samples_per_task, seed_start):
     return payload
 
 
+def _assert_referenced_failure_batch(acc_dir, index, batch_id, requested_count):
+    batch_result_uri = index["batch_result_uris"][batch_id]
+    payload = json.loads((acc_dir / batch_result_uri).read_text(encoding="utf-8"))
+    assert payload["batch_id"] == batch_id
+    assert payload["requested_sample_count"] == requested_count
+    assert payload["failed_sample_count"] == requested_count
+    assert payload["failure_boundaries"] == ["data_contract_incomplete"]
+    assert len(payload["sample_runs"]) == requested_count
+    assert all(
+        sample["failure_boundary"] == ["data_contract_incomplete"]
+        for sample in payload["sample_runs"]
+    )
+    assert any(
+        "failed_to_load_existing_batch_result" in sample["evidence_notes"]
+        for sample in payload["sample_runs"]
+    )
+    assert any(
+        "existing_result_error_type" in note
+        for sample in payload["sample_runs"]
+        for note in sample["evidence_notes"]
+    )
+    return payload
+
+
 def test_accumulation_pipeline_writes_phase_one_completed_outputs(
     tmp_path,
     monkeypatch,
@@ -196,7 +220,7 @@ def test_accumulation_pipeline_cli_accepts_shards_and_force(
     assert printed["completed_sample_count"] == 4
     assert printed["shard_count"] == 2
     assert {report["status"] for report in printed["shard_reports"]} == {
-        "rerun_forced"
+        "completed_new_run"
     }
 
 
@@ -345,6 +369,15 @@ def test_accumulation_pipeline_reports_corrupt_existing_result_without_rerun(
         "data_contract_incomplete"
     ]
 
+    index = json.loads((acc_dir / "dataset_index.json").read_text(encoding="utf-8"))
+    failure_payload = _assert_referenced_failure_batch(
+        acc_dir,
+        index,
+        batch_id,
+        100,
+    )
+    assert failure_payload["batch_id"] == result["shard_reports"][0]["batch_id"]
+
 
 def test_accumulation_pipeline_reports_mismatched_existing_result_without_rerun(
     tmp_path,
@@ -413,3 +446,14 @@ def test_accumulation_pipeline_reports_mismatched_existing_result_without_rerun(
     assert reports_by_batch_id[shard_001_batch_id]["status"] == (
         "reused_existing_result"
     )
+
+    index = json.loads((acc_dir / "dataset_index.json").read_text(encoding="utf-8"))
+    failure_payload = _assert_referenced_failure_batch(
+        acc_dir,
+        index,
+        shard_000_batch_id,
+        2,
+    )
+    assert failure_payload["batch_id"] == reports_by_batch_id[shard_000_batch_id][
+        "batch_id"
+    ]

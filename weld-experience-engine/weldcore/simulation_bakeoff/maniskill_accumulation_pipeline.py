@@ -26,6 +26,10 @@ from weldcore.simulation_bakeoff.maniskill_batch_pipeline import (
 from weldcore.simulation_bakeoff.maniskill_contract import write_json_artifact
 
 
+class _ExistingResultLoadError(ValueError):
+    pass
+
+
 def run_maniskill_accumulation_pipeline(
     outdir: str | Path = "artifacts/simulation/maniskill-sapien-accumulations",
     accumulation_id: str = "maniskill-sapien-accumulation-phase-1",
@@ -60,7 +64,8 @@ def run_maniskill_accumulation_pipeline(
     shard_reports = []
     for shard in shard_specs:
         batch_result_path = acc_dir / shard.batch_result_uri
-        if batch_result_path.exists() and not force:
+        existing_result_present = batch_result_path.exists()
+        if existing_result_present and not force:
             try:
                 batch_result = _read_batch_result(batch_result_path)
                 validate_batch_result_matches_shard(
@@ -70,13 +75,15 @@ def run_maniskill_accumulation_pipeline(
                     task_count=len(spec.task_specs),
                 )
                 shard_status = "reused_existing_result"
-            except Exception:
+            except (_ExistingResultLoadError, ValueError) as exc:
                 batch_result = _failed_to_load_existing_result(
                     shard,
                     route_id=spec.route_id,
                     task_ids=tuple(task.task_id for task in spec.task_specs),
                     variation_policy=spec.variation_policy,
+                    existing_result_error=exc,
                 )
+                write_json_artifact(batch_result_path, batch_result)
                 shard_status = "failed_to_load_existing_result"
         else:
             batch_payload = run_maniskill_batch_pipeline(
@@ -92,7 +99,11 @@ def run_maniskill_accumulation_pipeline(
                 route_id=spec.route_id,
                 task_count=len(spec.task_specs),
             )
-            shard_status = "rerun_forced" if force else "completed_new_run"
+            shard_status = (
+                "rerun_forced"
+                if force and existing_result_present
+                else "completed_new_run"
+            )
 
         batch_results.append(batch_result)
         shard_reports.append(
@@ -141,8 +152,16 @@ def _phase_one_shard_spec(spec) -> SimulationAccumulationShardSpec:
 
 
 def _read_batch_result(path: Path) -> SimulationBatchResult:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    return _batch_result_from_payload(payload)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise _ExistingResultLoadError(str(exc)) from exc
+    if not isinstance(payload, dict):
+        raise _ExistingResultLoadError("batch_result payload must be a JSON object")
+    try:
+        return _batch_result_from_payload(payload)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _ExistingResultLoadError(str(exc)) from exc
 
 
 def _batch_result_from_payload(payload: dict[str, Any]) -> SimulationBatchResult:
@@ -187,9 +206,15 @@ def _failed_to_load_existing_result(
     route_id: str,
     task_ids: tuple[str, ...],
     variation_policy: str,
+    existing_result_error: BaseException,
 ) -> SimulationBatchResult:
     sample_runs = []
     seed = shard.seed_start
+    evidence_notes = (
+        "failed_to_load_existing_batch_result",
+        f"existing_result_error_type={type(existing_result_error).__name__}",
+        f"existing_result_error_message={existing_result_error}",
+    )
     for task_id in task_ids:
         for _ in range(shard.samples_per_task):
             sample_id = f"sample-{shard.batch_id}-{route_id}-{task_id}-{seed}"
@@ -209,7 +234,7 @@ def _failed_to_load_existing_result(
                     evidence_bundle_uri=None,
                     experience_dataset_uri=None,
                     failure_boundary=("data_contract_incomplete",),
-                    evidence_notes=("failed_to_load_existing_batch_result",),
+                    evidence_notes=evidence_notes,
                     failure_artifact_uri=failure_artifact_uri,
                 )
             )
