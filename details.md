@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 `weld-maniskill` 环境完成 5 shards x 100 = 500 requested samples 的运行、复用和审查；状态为 `ready_to_scale_with_conditions`。
+项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层、Phase 2 sharded accumulation 入口，以及 1000 requested samples next-batch 真实环境运行审查。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 `weld-maniskill` 环境完成 500 requested samples 和 1000 requested samples 的运行、复用和审查；1000 next-batch 首次运行 1000 requested / 1000 completed / 0 failed / 0 skipped，同命令复跑 10 个 shard 均为 `reused_existing_result`，当前项目判断为 `ready_to_continue_accumulation_with_conditions`。
 
 ## 当前主线判断
 
@@ -64,7 +64,12 @@ WeldSkillUnit
 - report 中 `next_scale_recommendation` 已从 Phase 1 后建议修正为 Phase 2 后的 1000 next-batch 建议。
 - 下一批若出现 failed samples，采用 failure boundary 策略：优先修环境、仿真运行、adapter/data contract、dataset/evidence export 等具体边界，再讨论切换仿真器或移动到真实机器人路线。
 - 当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
-- 下一轮建议在真实 `weld-maniskill` 环境执行 1000 requested samples next-batch，并同命令复跑验证 shard 复用。
+- 完成 1000 requested samples next-batch 真实环境运行审查。
+- 首次运行：1000 requested / 1000 completed / 0 failed / 0 skipped；10 个 shard 均为 `completed_new_run`。
+- 复用运行：同命令复跑 10 个 shard 均为 `reused_existing_result`。
+- `failure_boundary_counts` 为空。
+- completed sample 的 raw artifact、adapter result、experience dataset 和 evidence bundle 关键字段覆盖率稳定为 1.0；failure artifact 覆盖率为 0.0 是因为本轮没有 failed samples。
+- 当前项目判断为 `ready_to_continue_accumulation_with_conditions`，下一轮建议进入跨批次 accumulation ledger / 持续审查层。
 
 ### 2026-06-09
 
@@ -138,7 +143,7 @@ WeldSkillUnit
 ## 尚未完成
 
 - 最终仿真软件选型尚未完成。
-- 规模化持续积累仿真数据的默认入口已完成 500 requested samples 级审查，1000 requested samples next-batch plan 已完成，但尚未在真实 `weld-maniskill` 环境执行。
+- 规模化持续积累仿真数据的默认入口已完成 500 requested samples 和 1000 requested samples 级真实环境审查，但跨批次 accumulation ledger 尚未建立。
 - 候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。
 - 经验数据与技能资产之间的字段追踪还需要进一步收束。
 - 专家审查记录结构尚未作为主线对象实现。
@@ -147,15 +152,15 @@ WeldSkillUnit
 
 ## 下一步建议
 
-推荐下一阶段任务是：**在真实 `weld-maniskill` 环境执行 1000 requested samples next-batch**。
+推荐下一阶段任务是：**建立跨批次 accumulation ledger / 持续审查层**。
 
-目标是在 Phase 2 真实环境 500 requested samples 审查通过、`next_scale_recommendation` 已修正且 1000 next-batch plan 已完成之后，运行下一批默认入口扩大验证：
+目标是在 Phase 2 500 requested samples 与 1000 requested samples 审查均通过之后，把运行事实从单次报告推进为可连续追踪的批次台账：
 
-1. 在真实 `weld-maniskill` 环境执行 1000 requested samples next-batch，保持当前 2 个默认任务族。
-2. 使用 10 shards x 100 requested samples 的组织方式，并继续把 ManiSkill/SAPIEN 作为条件性默认 accumulation 入口。
-3. 同命令复跑一次，验证 10 个 shard 是否复用已有 `batch_result.json`。
-4. 审查 `failure_boundary_counts`、`field_coverage_trend`、raw artifact、adapter result、`SimulationEvidenceBundle` 和 experience dataset 覆盖情况。
-5. 下一批如果出现 failed samples，先修复具体 failure boundary，再讨论切换仿真器或移动到真实机器人路线。
+1. 记录 Phase 1、Phase 2 和 1000 next-batch 的运行元数据、命令、requested/completed/failed/skipped 分布和 shard 复用状态。
+2. 记录各批次 `failure_boundary_counts`、`field_coverage_trend`、raw artifact、adapter result、`SimulationEvidenceBundle` 和 experience dataset 覆盖情况。
+3. 继续保持当前 2 个默认任务族，先观察多批次稳定性，再讨论是否新增第三个默认任务族。
+4. 明确专家审查对象：优先绑定 `SimulationEvidenceBundle`、experience dataset 和 `RobotProcessPackageDraft`，而不是直接进入真实机器人执行。
+5. 后续批次如果出现 failed samples，先修复具体 failure boundary，再讨论切换仿真器或移动到真实机器人路线。
 
 这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把结果写成最终仿真器选型。
 
@@ -180,6 +185,8 @@ WeldSkillUnit
 - `docs/superpowers/plans/`：阶段实施计划。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline`：100 requested samples 口径的仿真数据积累入口。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 5 --samples-per-task 50`：5 shards x 100 requested samples，共 500 requested samples 的 Phase 2 shard 积累入口。
+- `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 10 --samples-per-task 50`：10 shards x 100 requested samples，共 1000 requested samples 的 next-batch 积累入口。
+- `docs/evidence/simulation-runs/2026-06-10-next-batch-1000-maniskill-sapien-review.md`：1000 requested samples 真实环境运行审查记录。
 - `docs/焊接工艺数据库主要参数表.xlsx`：工程师参数参考表格。
 - `weld-experience-engine/`：可运行的焊接技能资产引擎、测试和报告命令。
 
@@ -192,7 +199,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `326 passed`。
+当前分支最近一次完整验证结果为 `329 passed`。
 
 可选小批量入口命令：
 
@@ -223,6 +230,18 @@ uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
 ```
 
 该命令按 5 个 shard x 100 requested samples 组织 500 requested samples。默认复用已存在且通过一致性校验的 `batch_result.json`；需要忽略已有结果并强制重跑时追加 `--force`。输出中的 shard reports、`failure_boundary_counts`、`field_coverage_trend` 和 `locked_for_next_batch_with_conditions` 用于下一批入口判断，但不代表最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。
+
+可选 1000 requested samples next-batch 命令：
+
+```bash
+uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-accumulations \
+  --accumulation-id maniskill-sapien-accumulation-next-batch-1000 \
+  --shards 10 \
+  --samples-per-task 50
+```
+
+该命令按 10 个 shard x 100 requested samples 组织 1000 requested samples。本轮真实运行审查中，首次运行 1000/1000 completed，复用运行 10 个 shard 均为 `reused_existing_result`，`failure_boundary_counts` 为空。后续批次若出现 failed samples，应优先修复具体 failure boundary，不直接切换仿真器或进入真实机器人路线；该命令仍不表示最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。
 
 报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。
 
