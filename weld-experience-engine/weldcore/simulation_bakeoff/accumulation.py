@@ -283,6 +283,7 @@ def validate_batch_result_matches_shard(
     shard_spec: SimulationAccumulationShardSpec,
     route_id: str,
     task_count: int,
+    task_ids: tuple[str, ...] | None = None,
 ) -> None:
     if batch_result.batch_id != shard_spec.batch_id:
         raise ValueError("batch_result batch_id does not match shard")
@@ -294,11 +295,16 @@ def validate_batch_result_matches_shard(
         raise ValueError("batch_result task_count does not match shard")
     if len(batch_result.sample_runs) != shard_spec.requested_sample_count:
         raise ValueError("batch_result sample_runs do not match shard")
+    allowed_statuses = {"completed", "failed", "skipped"}
+    if any(run.status not in allowed_statuses for run in batch_result.sample_runs):
+        raise ValueError("sample status does not match shard")
     completed_count = sum(
         1 for run in batch_result.sample_runs if run.status == "completed"
     )
     failed_count = sum(1 for run in batch_result.sample_runs if run.status == "failed")
     skipped_count = sum(1 for run in batch_result.sample_runs if run.status == "skipped")
+    if completed_count + failed_count + skipped_count != len(batch_result.sample_runs):
+        raise ValueError("batch_result summary fields do not match sample_runs")
     failure_boundaries: list[str] = []
     seen_failure_boundaries: set[str] = set()
     for run in batch_result.sample_runs:
@@ -322,6 +328,17 @@ def validate_batch_result_matches_shard(
     actual_seeds = {run.seed for run in batch_result.sample_runs}
     if actual_seeds != expected_seeds:
         raise ValueError("batch_result seed range does not match shard")
+    if task_ids is not None:
+        expected_task_ids = set(task_ids)
+        actual_task_ids = {run.task_id for run in batch_result.sample_runs}
+        if actual_task_ids != expected_task_ids:
+            raise ValueError("batch_result task_ids do not match current tasks")
+        for task_id in task_ids:
+            task_sample_count = sum(
+                1 for run in batch_result.sample_runs if run.task_id == task_id
+            )
+            if task_sample_count != shard_spec.samples_per_task:
+                raise ValueError("batch_result task distribution does not match shard")
     sample_ids = [run.sample_id for run in batch_result.sample_runs]
     if len(set(sample_ids)) != len(sample_ids):
         raise ValueError("batch_result sample_ids must be unique")

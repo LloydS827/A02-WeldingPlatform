@@ -315,6 +315,92 @@ def test_validate_batch_result_matches_shard_rejects_stale_summary_fields():
         )
 
 
+def test_validate_batch_result_matches_shard_rejects_invalid_sample_status():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-b", 11
+                ),
+                "pending",
+                11,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="sample status does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+            task_ids=("task-a", "task-b"),
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_stale_task_ids():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "stale-task", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "stale-task", 11
+                ),
+                "completed",
+                11,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="task_ids do not match current tasks"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+            task_ids=("task-a", "task-b"),
+        )
+
+
 def test_validate_batch_result_matches_shard_rejects_mismatched_batch_id():
     shard = SimulationAccumulationShardSpec(
         shard_id="shard-000",

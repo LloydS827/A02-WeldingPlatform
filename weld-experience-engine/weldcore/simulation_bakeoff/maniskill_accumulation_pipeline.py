@@ -60,6 +60,7 @@ def run_maniskill_accumulation_pipeline(
         shard_specs = iter_accumulation_shard_specs(spec)
     write_json_artifact(acc_dir / "accumulation_spec.json", spec)
 
+    task_ids = tuple(task.task_id for task in spec.task_specs)
     batch_results: list[SimulationBatchResult] = []
     shard_reports = []
     for shard in shard_specs:
@@ -73,13 +74,14 @@ def run_maniskill_accumulation_pipeline(
                     shard_spec=shard,
                     route_id=spec.route_id,
                     task_count=len(spec.task_specs),
+                    task_ids=task_ids,
                 )
                 shard_status = "reused_existing_result"
             except (_ExistingResultLoadError, ValueError) as exc:
                 batch_result = _failed_to_load_existing_result(
                     shard,
                     route_id=spec.route_id,
-                    task_ids=tuple(task.task_id for task in spec.task_specs),
+                    task_ids=task_ids,
                     variation_policy=spec.variation_policy,
                     existing_result_error=exc,
                 )
@@ -103,6 +105,7 @@ def run_maniskill_accumulation_pipeline(
                 shard_spec=shard,
                 route_id=spec.route_id,
                 task_count=len(spec.task_specs),
+                task_ids=task_ids,
             )
             shard_status = (
                 "rerun_forced"
