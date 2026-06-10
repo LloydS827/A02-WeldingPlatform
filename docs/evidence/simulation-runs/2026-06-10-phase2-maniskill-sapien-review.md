@@ -4,7 +4,7 @@
 
 ## 结论
 
-Phase 2 在 `weld-maniskill` conda 环境完成 5 shards x 100 requested samples，共 500 requested samples 的真实 ManiSkill/SAPIEN headless backend probe。首次运行 500/500 completed，第二次同命令复跑 5 个 shard 均复用已有 `batch_result.json`。
+Phase 2 在 `weld-maniskill` conda 环境完成 5 shards x 2 个默认任务族 x 50 samples-per-task，共 500 requested samples 的真实 ManiSkill/SAPIEN headless backend probe。首次运行 500/500 completed，第二次同命令复跑 5 个 shard 均复用已有 `batch_result.json`。
 
 当前判断是 `ready_to_scale_with_conditions`：ManiSkill/SAPIEN 可以作为下一批 accumulation 默认入口继续使用，但这不是最终仿真器选型、真实焊接质量验证或真实机器人执行验证。
 
