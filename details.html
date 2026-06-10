@@ -44,7 +44,7 @@ li { margin: 0.35em 0; }
     </ul>
     <p>本文件应同步维护 <a href="details.html">HTML 阅读版</a>。更新根目录 <code>README.md</code>、本文件或类似面向读者的阶段/路线说明时，也要同步刷新对应 <code>.html</code> 阅读副本。</p>
     <h2>当前一句话状态</h2>
-    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也支持 5 shards x 100 = 500 requested samples 的复跑、复用、强制重跑和条件性入口锁定判断。</p>
+    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 <code>weld-maniskill</code> 环境完成 5 shards x 100 = 500 requested samples 的运行、复用和审查；状态为 <code>ready_to_scale_with_conditions</code>。</p>
     <h2>当前主线判断</h2>
     <p>现在不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成，但已经可以从“小批量入口证明”进入“仿真数据积累启动”。</p>
     <p>更合理的主线是：</p>
@@ -67,15 +67,21 @@ li { margin: 0.35em 0; }
       <li><code>run_maniskill_batch_pipeline</code> 支持 <code>samples_per_task</code> 和 <code>seed_start</code> 参数；默认仍保持 2 个任务 x 10 samples。</li>
       <li>新增 <code>run_maniskill_accumulation_pipeline</code> 和 CLI，默认请求 2 个任务 x 50 samples，共 100 requested samples。</li>
       <li>accumulation 输出包含 <code>accumulation_spec.json</code>、<code>dataset_index.json</code> 和 <code>accumulation_report.json</code>。</li>
-      <li>accumulation report 可区分 <code>accumulating_completed_samples</code>、<code>accumulating_with_failures</code>、<code>blocked_by_environment</code>、<code>blocked_by_pipeline_failure</code> 和 <code>ready_to_scale_with_conditions</code>。</li>
+      <li>accumulation report 可区分 <code>accumulating_completed_samples</code>、<code>accumulating_with_failures</code>、<code>blocked_by_environment</code>、<code>blocked_by_pipeline_failure</code> 和 <code>ready_to_scale_with_conditions</code>；其中 <code>ready_to_scale_with_conditions</code> 表示 500 requested samples 全 completed 且无 failure boundary 的理想通过状态。</li>
       <li>完成 sharded accumulation 设计和实现，新增 <code>SimulationAccumulationShardSpec</code>、shard report、shard plan 迭代和 shard 结果一致性校验。</li>
       <li>新增 Phase 2 CLI：<code>--shards 5 --samples-per-task 50</code> 可组织 5 个 shard x 100 requested samples，共 500 requested samples。</li>
       <li>shard 运行默认复用已存在且可解析、可校验的 <code>batch_result.json</code>，避免每次从零重跑。</li>
       <li>新增 <code>--force</code>，用于忽略已有 <code>batch_result.json</code> 并强制重跑 shard。</li>
       <li>accumulation report 新增 shard 级 completed / failed / skipped 汇总、<code>failure_boundary_counts</code> 和 <code>field_coverage_trend</code>，用于观察 failure boundary counts 与字段覆盖趋势。</li>
-      <li>新增 <code>locked_for_next_batch_with_conditions</code> 状态：当 500 requested samples 规模下 completed 数据契约稳定，且失败只落在允许的环境或仿真运行边界时，允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。</li>
+      <li><code>locked_for_next_batch_with_conditions</code> 保留给“存在少量允许 failure boundary，但 completed 数据契约稳定”的情况，用于允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。</li>
+      <li>Phase 2 已在真实 <code>weld-maniskill</code> 环境完成运行审查。</li>
+      <li>首次运行：500 requested / 500 completed / 0 failed / 0 skipped；5 个 shard 均为 <code>completed_new_run</code>。</li>
+      <li>复用运行：同命令复跑 5 个 shard 均为 <code>reused_existing_result</code>。</li>
+      <li><code>failure_boundary_counts</code> 为空。</li>
+      <li>completed sample 的 raw artifact、adapter result、experience dataset 和 evidence bundle 关键字段覆盖率稳定为 1.0；failure artifact 覆盖率为 0.0 是因为本轮没有 failed samples。</li>
+      <li>本轮没有 failed samples，所以状态保持 <code>ready_to_scale_with_conditions</code>，不需要触达 <code>locked_for_next_batch_with_conditions</code>。</li>
       <li>当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。</li>
-      <li>下一轮建议在真实 ManiSkill/SAPIEN 环境运行 Phase 2 500 requested samples，并审查复用记录、failure boundary counts、field coverage trend 和 <code>locked_for_next_batch_with_conditions</code> 是否成立。</li>
+      <li>下一轮建议准备 1000 requested samples next-batch plan，继续当前 2 个默认任务族，并在扩大前先修正 report 中仍偏 Phase 1 的 <code>next_scale_recommendation</code> 文案。</li>
     </ul>
     <h3>2026-06-09</h3>
     <ul>
@@ -83,7 +89,7 @@ li { margin: 0.35em 0; }
       <li>样本口径采用“运行样本优先”：每条样本代表一次可追踪运行尝试，携带 <code>seed</code>、<code>variation_policy</code>、证据路径和失败边界。</li>
       <li>新增 <code>SimulationBatchSpec</code>、<code>SimulationSamplePlan</code>、<code>SimulationSampleRun</code> 和 <code>SimulationBatchResult</code>，默认表达 2 个任务 x 10 条 ManiSkill/SAPIEN primary 样本。</li>
       <li>新增 <code>run_maniskill_batch_pipeline</code> 和 CLI，可输出 <code>batch_spec.json</code>、<code>batch_result.json</code> 以及每条样本的 raw artifact、adapter result、evidence bundle、experience dataset 或 failure artifact。</li>
-      <li><code>comparison_route_ids=("simlite_reference",)</code> 当前只作为对照元数据，不触发 simlite 逐样本运行，也不计入 requested / completed / failed / skipped。</li>
+      <li><code>comparison_route_ids=(&quot;simlite_reference&quot;,)</code> 当前只作为对照元数据，不触发 simlite 逐样本运行，也不计入 requested / completed / failed / skipped。</li>
       <li>对 task generation、demo generation、runner exception、artifact write、adapter conversion、dataset export 和 evidence export 建立样本级失败边界，单条样本失败不会中断整个 batch。</li>
       <li>completed 样本的 raw artifact、adapter result、experience dataset 和 evidence bundle 已按 <code>sample_id</code> 做内部身份收束，避免后续数据积累时出现同一 task 下多条样本 ID 混淆。</li>
       <li>第二轮只做小批量入口和 batch summary，不做最终仿真器定型或入口锁定报告。</li>
@@ -148,23 +154,22 @@ li { margin: 0.35em 0; }
     <h2>尚未完成</h2>
     <ul>
       <li>最终仿真软件选型尚未完成。</li>
-      <li>规模化持续积累仿真数据的默认入口尚未在真实 ManiSkill/SAPIEN 环境下完成 500 requested samples 级审查。</li>
-      <li>候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需反证。</li>
+      <li>规模化持续积累仿真数据的默认入口已完成 500 requested samples 级审查，但 1000 requested samples 下一批计划尚未执行。</li>
+      <li>候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。</li>
       <li>经验数据与技能资产之间的字段追踪还需要进一步收束。</li>
       <li>专家审查记录结构尚未作为主线对象实现。</li>
       <li>真实焊机、机器人、焊材、焊后检测和质量结果尚未接成闭环。</li>
       <li>当前资料、输入规范、仿真假设和工程师参考表格不能替代正式 WPS/PQR。</li>
     </ul>
     <h2>下一步建议</h2>
-    <p>推荐下一阶段任务是：<strong>运行 Phase 2 真实环境 shard，并审查条件性入口锁定</strong>。</p>
-    <p>目标是在当前 Phase 2 sharded accumulation 入口之上，完成真实 ManiSkill/SAPIEN 环境下的 500 requested samples 级别运行与审查：</p>
+    <p>推荐下一阶段任务是：<strong>准备 1000 requested samples next-batch plan</strong>。</p>
+    <p>目标是在 Phase 2 真实环境 500 requested samples 审查通过之后，准备下一批默认入口扩大计划：</p>
     <ol>
-      <li>运行 5 个 shard x 100 requested samples，并记录新运行、复用和 <code>--force</code> 重跑行为。</li>
-      <li>汇总 shard 级 completed / failed / skipped 分布和 failure boundary counts。</li>
-      <li>继续追踪 raw artifact、adapter result、<code>SimulationEvidenceBundle</code>、experience dataset 和 failure artifact 的覆盖率。</li>
-      <li>审查 field coverage trend，区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。</li>
-      <li>判断 ManiSkill/SAPIEN 是否允许进入 <code>locked_for_next_batch_with_conditions</code>。</li>
-      <li>若不能条件性锁定，明确是继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。</li>
+      <li>准备 1000 requested samples next-batch plan。</li>
+      <li>保持当前 2 个默认任务族，避免在扩大样本数的同时扩大任务复杂度。</li>
+      <li>条件性继续使用 ManiSkill/SAPIEN 作为默认 accumulation 入口。</li>
+      <li>扩大前先修正 report 中仍偏 Phase 1 的 <code>next_scale_recommendation</code> 文案。</li>
+      <li>下一批如果出现 failed samples，先修复 failure boundaries，再讨论切换仿真器或移动到真实机器人路线。</li>
     </ol>
     <p>这一轮仍不应直接进入真实机器人执行或真实焊接质量判断。</p>
     <h2>暂缓事项</h2>
@@ -195,7 +200,7 @@ li { margin: 0.35em 0; }
     <p>进入 <code>weld-experience-engine</code> 后运行：</p>
     <pre><code>uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
-    <p>当前分支最近一次完整验证结果为 <code>296 passed</code>。</p>
+    <p>当前分支最近一次完整验证结果为 <code>326 passed</code>。</p>
     <p>可选小批量入口命令：</p>
     <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
   --outdir artifacts/simulation/maniskill-sapien-batches</code></pre>

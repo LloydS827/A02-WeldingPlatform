@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也支持 5 shards x 100 = 500 requested samples 的复跑、复用、强制重跑和条件性入口锁定判断。
+项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 `weld-maniskill` 环境完成 5 shards x 100 = 500 requested samples 的运行、复用和审查；状态为 `ready_to_scale_with_conditions`。
 
 ## 当前主线判断
 
@@ -46,15 +46,21 @@ WeldSkillUnit
 - `run_maniskill_batch_pipeline` 支持 `samples_per_task` 和 `seed_start` 参数；默认仍保持 2 个任务 x 10 samples。
 - 新增 `run_maniskill_accumulation_pipeline` 和 CLI，默认请求 2 个任务 x 50 samples，共 100 requested samples。
 - accumulation 输出包含 `accumulation_spec.json`、`dataset_index.json` 和 `accumulation_report.json`。
-- accumulation report 可区分 `accumulating_completed_samples`、`accumulating_with_failures`、`blocked_by_environment`、`blocked_by_pipeline_failure` 和 `ready_to_scale_with_conditions`。
+- accumulation report 可区分 `accumulating_completed_samples`、`accumulating_with_failures`、`blocked_by_environment`、`blocked_by_pipeline_failure` 和 `ready_to_scale_with_conditions`；其中 `ready_to_scale_with_conditions` 表示 500 requested samples 全 completed 且无 failure boundary 的理想通过状态。
 - 完成 sharded accumulation 设计和实现，新增 `SimulationAccumulationShardSpec`、shard report、shard plan 迭代和 shard 结果一致性校验。
 - 新增 Phase 2 CLI：`--shards 5 --samples-per-task 50` 可组织 5 个 shard x 100 requested samples，共 500 requested samples。
 - shard 运行默认复用已存在且可解析、可校验的 `batch_result.json`，避免每次从零重跑。
 - 新增 `--force`，用于忽略已有 `batch_result.json` 并强制重跑 shard。
 - accumulation report 新增 shard 级 completed / failed / skipped 汇总、`failure_boundary_counts` 和 `field_coverage_trend`，用于观察 failure boundary counts 与字段覆盖趋势。
-- 新增 `locked_for_next_batch_with_conditions` 状态：当 500 requested samples 规模下 completed 数据契约稳定，且失败只落在允许的环境或仿真运行边界时，允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。
+- `locked_for_next_batch_with_conditions` 保留给“存在少量允许 failure boundary，但 completed 数据契约稳定”的情况，用于允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。
+- Phase 2 已在真实 `weld-maniskill` 环境完成运行审查。
+- 首次运行：500 requested / 500 completed / 0 failed / 0 skipped；5 个 shard 均为 `completed_new_run`。
+- 复用运行：同命令复跑 5 个 shard 均为 `reused_existing_result`。
+- `failure_boundary_counts` 为空。
+- completed sample 的 raw artifact、adapter result、experience dataset 和 evidence bundle 关键字段覆盖率稳定为 1.0；failure artifact 覆盖率为 0.0 是因为本轮没有 failed samples。
+- 本轮没有 failed samples，所以状态保持 `ready_to_scale_with_conditions`，不需要触达 `locked_for_next_batch_with_conditions`。
 - 当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
-- 下一轮建议在真实 ManiSkill/SAPIEN 环境运行 Phase 2 500 requested samples，并审查复用记录、failure boundary counts、field coverage trend 和 `locked_for_next_batch_with_conditions` 是否成立。
+- 下一轮建议准备 1000 requested samples next-batch plan，继续当前 2 个默认任务族，并在扩大前先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
 
 ### 2026-06-09
 
@@ -128,8 +134,8 @@ WeldSkillUnit
 ## 尚未完成
 
 - 最终仿真软件选型尚未完成。
-- 规模化持续积累仿真数据的默认入口尚未在真实 ManiSkill/SAPIEN 环境下完成 500 requested samples 级审查。
-- 候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需反证。
+- 规模化持续积累仿真数据的默认入口已完成 500 requested samples 级审查，但 1000 requested samples 下一批计划尚未执行。
+- 候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。
 - 经验数据与技能资产之间的字段追踪还需要进一步收束。
 - 专家审查记录结构尚未作为主线对象实现。
 - 真实焊机、机器人、焊材、焊后检测和质量结果尚未接成闭环。
@@ -137,16 +143,15 @@ WeldSkillUnit
 
 ## 下一步建议
 
-推荐下一阶段任务是：**运行 Phase 2 真实环境 shard，并审查条件性入口锁定**。
+推荐下一阶段任务是：**准备 1000 requested samples next-batch plan**。
 
-目标是在当前 Phase 2 sharded accumulation 入口之上，完成真实 ManiSkill/SAPIEN 环境下的 500 requested samples 级别运行与审查：
+目标是在 Phase 2 真实环境 500 requested samples 审查通过之后，准备下一批默认入口扩大计划：
 
-1. 运行 5 个 shard x 100 requested samples，并记录新运行、复用和 `--force` 重跑行为。
-2. 汇总 shard 级 completed / failed / skipped 分布和 failure boundary counts。
-3. 继续追踪 raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 和 failure artifact 的覆盖率。
-4. 审查 field coverage trend，区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。
-5. 判断 ManiSkill/SAPIEN 是否允许进入 `locked_for_next_batch_with_conditions`。
-6. 若不能条件性锁定，明确是继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。
+1. 准备 1000 requested samples next-batch plan。
+2. 保持当前 2 个默认任务族，避免在扩大样本数的同时扩大任务复杂度。
+3. 条件性继续使用 ManiSkill/SAPIEN 作为默认 accumulation 入口。
+4. 扩大前先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
+5. 下一批如果出现 failed samples，先修复 failure boundaries，再讨论切换仿真器或移动到真实机器人路线。
 
 这一轮仍不应直接进入真实机器人执行或真实焊接质量判断。
 
@@ -183,7 +188,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `296 passed`。
+当前分支最近一次完整验证结果为 `326 passed`。
 
 可选小批量入口命令：
 

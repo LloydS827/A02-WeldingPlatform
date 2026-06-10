@@ -19,3 +19,5 @@ simulation_ingest_report_out/
 weld-experience-engine/simulation_ingest_report_out/
 simulation_bakeoff_report_out/
 weld-experience-engine/simulation_bakeoff_report_out/
+weld-experience-engine/artifacts/simulation/
+weld-experience-engine/weldcore.egg-info/
