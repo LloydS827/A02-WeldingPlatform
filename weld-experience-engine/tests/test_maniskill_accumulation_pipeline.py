@@ -266,6 +266,34 @@ def test_accumulation_pipeline_runs_phase_two_shards(tmp_path, monkeypatch):
         assert (acc_dir / "batches" / batch_id).exists()
 
 
+def test_accumulation_pipeline_can_plan_next_batch_one_thousand_samples(
+    tmp_path,
+    monkeypatch,
+):
+    _mock_completed_backend(monkeypatch)
+
+    result = run_maniskill_accumulation_pipeline(
+        outdir=tmp_path,
+        accumulation_id="acc-next-batch-1000",
+        shards=10,
+        samples_per_task=50,
+    )
+
+    acc_dir = tmp_path / "acc-next-batch-1000"
+    assert result["requested_sample_count"] == 1000
+    assert result["completed_sample_count"] == 1000
+    assert result["status"] == "ready_to_scale_with_conditions"
+    assert result["shard_count"] == 10
+    assert len(result["shard_reports"]) == 10
+    assert result["next_scale_recommendation"].startswith(
+        "prepare_next_batch_1000_requested_samples"
+    )
+
+    index = json.loads((acc_dir / "dataset_index.json").read_text(encoding="utf-8"))
+    assert len(index["index_items"]) == 1000
+    assert len(index["batch_ids"]) == 10
+
+
 def test_accumulation_pipeline_reuses_existing_shards(tmp_path, monkeypatch):
     from weldcore.simulation_bakeoff import maniskill_accumulation_pipeline
 
