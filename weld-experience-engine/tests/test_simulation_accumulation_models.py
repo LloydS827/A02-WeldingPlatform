@@ -1285,12 +1285,44 @@ def test_accumulation_report_uses_index_status_and_next_scale_fields():
     assert report.completion_ratio == 1.0
     assert report.dataset_index_uri == "dataset_index.json"
     assert report.batch_result_uris == ("batches/batch-a/batch_result.json",)
+    assert "phase_2_500_requested_samples" in report.next_scale_recommendation
+    assert "1000_requested_samples" not in report.next_scale_recommendation
+    assert "not_real_welding_quality" in report.known_limitations
+
+
+def test_phase_two_ready_report_recommends_one_thousand_sample_next_batch():
+    sample_runs = tuple(
+        dataclasses.replace(
+            _sample_run(f"sample-{sample_id:03}", "completed"),
+            seed=sample_id,
+        )
+        for sample_id in range(500)
+    )
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=2,
+        requested_sample_count=500,
+        sample_runs=sample_runs,
+    )
+    index = build_simulation_dataset_index(
+        accumulation_id="acc-phase-2",
+        batch_results=(batch_result,),
+        batch_root_uris={"batch-a": "batches/batch-a"},
+        batch_result_uris={"batch-a": "batches/batch-a/batch_result.json"},
+    )
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.status == "ready_to_scale_with_conditions"
     assert "1000_requested_samples" in report.next_scale_recommendation
     assert "2_default_task_families" in report.next_scale_recommendation
     assert "maniskill_sapien" in report.next_scale_recommendation
     assert "failure_boundaries" in report.next_scale_recommendation
     assert "phase_1" not in report.next_scale_recommendation
-    assert "not_real_welding_quality" in report.known_limitations
 
 
 def test_accumulation_report_uses_batch_id_order_for_result_uris():
