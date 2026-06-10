@@ -485,8 +485,10 @@ def build_simulation_accumulation_report(
         },
         readiness_for_next_scale=_readiness_for_next_scale(status),
         next_scale_recommendation=(
-            "continue_phase_1_then_review_before_"
-            "phase_2_500_requested_samples"
+            "prepare_next_batch_1000_requested_samples_keep_"
+            "2_default_task_families_continue_maniskill_sapien_"
+            "accumulation_entry_fix_failure_boundaries_before_"
+            "switching_routes"
         ),
         known_limitations=(
             "simulation_accumulation_not_real_welding_quality",
