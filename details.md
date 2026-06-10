@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口，以及仿真数据积累启动层。当前已经可以生成 100 requested samples 口径的 accumulation report；下一轮应推进 batch shard、500 requested samples 和条件性入口锁定判断。
+项目已经完成从 `WeldSkillUnit`、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层，以及 Phase 2 sharded accumulation 入口。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也支持 5 shards x 100 = 500 requested samples 的复跑、复用、强制重跑和条件性入口锁定判断。
 
 ## 当前主线判断
 
@@ -47,8 +47,14 @@ WeldSkillUnit
 - 新增 `run_maniskill_accumulation_pipeline` 和 CLI，默认请求 2 个任务 x 50 samples，共 100 requested samples。
 - accumulation 输出包含 `accumulation_spec.json`、`dataset_index.json` 和 `accumulation_report.json`。
 - accumulation report 可区分 `accumulating_completed_samples`、`accumulating_with_failures`、`blocked_by_environment`、`blocked_by_pipeline_failure` 和 `ready_to_scale_with_conditions`。
+- 完成 sharded accumulation 设计和实现，新增 `SimulationAccumulationShardSpec`、shard report、shard plan 迭代和 shard 结果一致性校验。
+- 新增 Phase 2 CLI：`--shards 5 --samples-per-task 50` 可组织 5 个 shard x 100 requested samples，共 500 requested samples。
+- shard 运行默认复用已存在且可解析、可校验的 `batch_result.json`，避免每次从零重跑。
+- 新增 `--force`，用于忽略已有 `batch_result.json` 并强制重跑 shard。
+- accumulation report 新增 shard 级 completed / failed / skipped 汇总、`failure_boundary_counts` 和 `field_coverage_trend`，用于观察 failure boundary counts 与字段覆盖趋势。
+- 新增 `locked_for_next_batch_with_conditions` 状态：当 500 requested samples 规模下 completed 数据契约稳定，且失败只落在允许的环境或仿真运行边界时，允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。
 - 当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
-- 下一轮建议进入 batch shard、500 requested samples 和 `locked_for_next_batch_with_conditions` 判断。
+- 下一轮建议在真实 ManiSkill/SAPIEN 环境运行 Phase 2 500 requested samples，并审查复用记录、failure boundary counts、field coverage trend 和 `locked_for_next_batch_with_conditions` 是否成立。
 
 ### 2026-06-09
 
@@ -114,14 +120,15 @@ WeldSkillUnit
 - 统一仿真 adapter facade / registry。
 - ManiSkill/SAPIEN 小批量默认仿真入口和 batch summary 契约。
 - 仿真数据积累启动层、dataset index 和 accumulation report 契约。
+- Phase 2 sharded accumulation、已有 batch result 复用、`--force` 强制重跑、failure boundary counts、field coverage trend 和 `locked_for_next_batch_with_conditions` 判断。
 - 报告命令和历史证据归档。
 
-这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证。
+这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证、最终仿真器选型或真实机器人执行验证。
 
 ## 尚未完成
 
 - 最终仿真软件选型尚未完成。
-- 规模化持续积累仿真数据的默认入口尚未条件性锁定。
+- 规模化持续积累仿真数据的默认入口尚未在真实 ManiSkill/SAPIEN 环境下完成 500 requested samples 级审查。
 - 候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需反证。
 - 经验数据与技能资产之间的字段追踪还需要进一步收束。
 - 专家审查记录结构尚未作为主线对象实现。
@@ -130,14 +137,14 @@ WeldSkillUnit
 
 ## 下一步建议
 
-推荐下一阶段任务是：**规模化仿真运行与条件性入口锁定**。
+推荐下一阶段任务是：**运行 Phase 2 真实环境 shard，并审查条件性入口锁定**。
 
-目标是在当前 accumulation 启动层之上，进入 500 requested samples 级别的分片运行设计和条件性入口判断：
+目标是在当前 Phase 2 sharded accumulation 入口之上，完成真实 ManiSkill/SAPIEN 环境下的 500 requested samples 级别运行与审查：
 
-1. 将一个 accumulation run 拆成多个 batch shard，例如 5 个 shard x 100 requested samples。
-2. 汇总 shard 级 completed / failed / skipped 分布和 failure boundary 趋势。
+1. 运行 5 个 shard x 100 requested samples，并记录新运行、复用和 `--force` 重跑行为。
+2. 汇总 shard 级 completed / failed / skipped 分布和 failure boundary counts。
 3. 继续追踪 raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 和 failure artifact 的覆盖率。
-4. 区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。
+4. 审查 field coverage trend，区分可积累字段、mock 字段、假设字段、环境缺失字段和人工补充字段。
 5. 判断 ManiSkill/SAPIEN 是否允许进入 `locked_for_next_batch_with_conditions`。
 6. 若不能条件性锁定，明确是继续补 ManiSkill/SAPIEN 环境、回退 simlite 基线，还是继续做候选路线反证。
 
@@ -163,6 +170,7 @@ WeldSkillUnit
 - `docs/superpowers/specs/`：阶段设计文档。
 - `docs/superpowers/plans/`：阶段实施计划。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline`：100 requested samples 口径的仿真数据积累入口。
+- `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 5 --samples-per-task 50`：5 shards x 100 requested samples，共 500 requested samples 的 Phase 2 shard 积累入口。
 - `docs/焊接工艺数据库主要参数表.xlsx`：工程师参数参考表格。
 - `weld-experience-engine/`：可运行的焊接技能资产引擎、测试和报告命令。
 
@@ -186,7 +194,7 @@ uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
 
 该命令在缺少真实 ManiSkill/SAPIEN 环境时会输出 `environment_missing` failure boundary；这属于当前反证边界，不表示仿真入口失败，也不表示最终仿真器已经选型。
 
-可选仿真数据积累入口命令：
+可选 Phase 1 仿真数据积累入口命令：
 
 ```bash
 uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
@@ -194,6 +202,18 @@ uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
 ```
 
 该命令默认请求 2 个默认任务 x 50 samples，共 100 requested samples，并输出 `accumulation_spec.json`、`dataset_index.json` 和 `accumulation_report.json`。缺少真实 ManiSkill/SAPIEN 环境时，状态会进入 `blocked_by_environment`；这属于环境边界和反证记录。
+
+可选 Phase 2 shard 仿真数据积累入口命令：
+
+```bash
+uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-accumulations \
+  --accumulation-id maniskill-sapien-accumulation-phase-2 \
+  --shards 5 \
+  --samples-per-task 50
+```
+
+该命令按 5 个 shard x 100 requested samples 组织 500 requested samples。默认复用已存在且通过一致性校验的 `batch_result.json`；需要忽略已有结果并强制重跑时追加 `--force`。输出中的 shard reports、`failure_boundary_counts`、`field_coverage_trend` 和 `locked_for_next_batch_with_conditions` 用于下一批入口判断，但不代表最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。
 
 报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。
 
