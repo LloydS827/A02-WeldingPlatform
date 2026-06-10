@@ -89,11 +89,11 @@ ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation 启动层和
 
 下一阶段要形成的判断包括：
 
-- Phase 1 accumulation 在当前环境下的 completed / failed / skipped 分布和失败边界。
-- 1000 requested samples 下一批计划如何保持当前 2 个默认任务族，并继续使用 ManiSkill/SAPIEN 作为有条件默认 accumulation 入口。
-- 扩大前是否需要先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
-- 后续 `dataset_index.json` 中 raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 和 failure artifact 的覆盖情况。
-- 哪些字段可以作为后续技能数据积累的稳定字段，哪些仍是假设、mock、adapter 占位或人工补充。
+- 1000 requested samples next-batch plan 如何组织 shards、复用策略和审查入口。
+- 当前 2 个默认任务族是否继续作为下一批 accumulation 的默认任务范围。
+- ManiSkill/SAPIEN 是否继续作为有条件默认 accumulation 入口，以及条件边界如何写入计划。
+- 扩大前先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
+- 下一批 `dataset_index.json` 中 raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 和 failure artifact 的覆盖情况。
 - 下一批如果出现 failed samples，应先修复 failure boundary，再讨论切换仿真器或进入真实机器人路线。
 
 ## 如何验证

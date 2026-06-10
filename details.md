@@ -46,19 +46,19 @@ WeldSkillUnit
 - `run_maniskill_batch_pipeline` 支持 `samples_per_task` 和 `seed_start` 参数；默认仍保持 2 个任务 x 10 samples。
 - 新增 `run_maniskill_accumulation_pipeline` 和 CLI，默认请求 2 个任务 x 50 samples，共 100 requested samples。
 - accumulation 输出包含 `accumulation_spec.json`、`dataset_index.json` 和 `accumulation_report.json`。
-- accumulation report 可区分 `accumulating_completed_samples`、`accumulating_with_failures`、`blocked_by_environment`、`blocked_by_pipeline_failure` 和 `ready_to_scale_with_conditions`。
+- accumulation report 可区分 `accumulating_completed_samples`、`accumulating_with_failures`、`blocked_by_environment`、`blocked_by_pipeline_failure` 和 `ready_to_scale_with_conditions`；其中 `ready_to_scale_with_conditions` 表示 500 requested samples 全 completed 且无 failure boundary 的理想通过状态。
 - 完成 sharded accumulation 设计和实现，新增 `SimulationAccumulationShardSpec`、shard report、shard plan 迭代和 shard 结果一致性校验。
 - 新增 Phase 2 CLI：`--shards 5 --samples-per-task 50` 可组织 5 个 shard x 100 requested samples，共 500 requested samples。
 - shard 运行默认复用已存在且可解析、可校验的 `batch_result.json`，避免每次从零重跑。
 - 新增 `--force`，用于忽略已有 `batch_result.json` 并强制重跑 shard。
 - accumulation report 新增 shard 级 completed / failed / skipped 汇总、`failure_boundary_counts` 和 `field_coverage_trend`，用于观察 failure boundary counts 与字段覆盖趋势。
-- 新增 `locked_for_next_batch_with_conditions` 状态：当 500 requested samples 规模下 completed 数据契约稳定，且失败只落在允许的环境或仿真运行边界时，允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。
+- `locked_for_next_batch_with_conditions` 保留给“存在少量允许 failure boundary，但 completed 数据契约稳定”的情况，用于允许 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口继续使用。
 - Phase 2 已在真实 `weld-maniskill` 环境完成运行审查。
 - 首次运行：500 requested / 500 completed / 0 failed / 0 skipped；5 个 shard 均为 `completed_new_run`。
 - 复用运行：同命令复跑 5 个 shard 均为 `reused_existing_result`。
 - `failure_boundary_counts` 为空。
 - completed sample 的 raw artifact、adapter result、experience dataset 和 evidence bundle 关键字段覆盖率稳定为 1.0；failure artifact 覆盖率为 0.0 是因为本轮没有 failed samples。
-- 当前状态保持为 `ready_to_scale_with_conditions`；没有触达 `locked_for_next_batch_with_conditions`，因为本轮没有 failed samples 需要进入条件性锁定边界判断。
+- 本轮没有 failed samples，所以状态保持 `ready_to_scale_with_conditions`，不需要触达 `locked_for_next_batch_with_conditions`。
 - 当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
 - 下一轮建议准备 1000 requested samples next-batch plan，继续当前 2 个默认任务族，并在扩大前先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
 
