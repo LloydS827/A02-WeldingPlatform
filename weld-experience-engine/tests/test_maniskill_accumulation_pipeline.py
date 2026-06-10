@@ -270,7 +270,13 @@ def test_accumulation_pipeline_can_plan_next_batch_one_thousand_samples(
     tmp_path,
     monkeypatch,
 ):
-    _mock_completed_backend(monkeypatch)
+    from weldcore.simulation_bakeoff import maniskill_accumulation_pipeline
+
+    monkeypatch.setattr(
+        maniskill_accumulation_pipeline,
+        "run_maniskill_batch_pipeline",
+        _fake_completed_runner,
+    )
 
     result = run_maniskill_accumulation_pipeline(
         outdir=tmp_path,
