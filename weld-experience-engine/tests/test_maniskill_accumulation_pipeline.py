@@ -152,6 +152,54 @@ def test_accumulation_pipeline_cli_prints_report(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "acc-cli" / "accumulation_report.json").exists()
 
 
+def test_accumulation_pipeline_cli_accepts_shards_and_force(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    from weldcore.simulation_bakeoff import maniskill_accumulation_pipeline
+
+    calls = {"count": 0}
+
+    def counting_runner(outdir, batch_id, *, samples_per_task, seed_start):
+        calls["count"] += 1
+        return _fake_completed_runner(
+            outdir,
+            batch_id,
+            samples_per_task=samples_per_task,
+            seed_start=seed_start,
+        )
+
+    monkeypatch.setattr(
+        maniskill_accumulation_pipeline,
+        "run_maniskill_batch_pipeline",
+        counting_runner,
+    )
+
+    maniskill_accumulation_pipeline.main(
+        [
+            "--outdir",
+            str(tmp_path),
+            "--accumulation-id",
+            "acc-cli-shards",
+            "--shards",
+            "2",
+            "--samples-per-task",
+            "1",
+            "--force",
+        ]
+    )
+
+    printed = json.loads(capsys.readouterr().out)
+    assert calls["count"] == 2
+    assert printed["requested_sample_count"] == 4
+    assert printed["completed_sample_count"] == 4
+    assert printed["shard_count"] == 2
+    assert {report["status"] for report in printed["shard_reports"]} == {
+        "rerun_forced"
+    }
+
+
 def test_accumulation_pipeline_runs_phase_two_shards(tmp_path, monkeypatch):
     _mock_completed_backend(monkeypatch)
 
@@ -296,3 +344,72 @@ def test_accumulation_pipeline_reports_corrupt_existing_result_without_rerun(
     assert result["shard_reports"][0]["failure_boundaries"] == [
         "data_contract_incomplete"
     ]
+
+
+def test_accumulation_pipeline_reports_mismatched_existing_result_without_rerun(
+    tmp_path,
+    monkeypatch,
+):
+    from weldcore.simulation_bakeoff import maniskill_accumulation_pipeline
+
+    acc_dir = tmp_path / "acc-mismatch"
+    batches_dir = acc_dir / "batches"
+    shard_000_batch_id = "maniskill-sapien-accumulation-acc-mismatch-shard-000"
+    shard_001_batch_id = "maniskill-sapien-accumulation-acc-mismatch-shard-001"
+    wrong_payload = _completed_batch_payload(
+        batches_dir,
+        "wrong-batch-id",
+        samples_per_task=1,
+        seed_start=0,
+    )
+    valid_payload = _completed_batch_payload(
+        batches_dir,
+        shard_001_batch_id,
+        samples_per_task=1,
+        seed_start=2,
+    )
+    for batch_id, payload in (
+        (shard_000_batch_id, wrong_payload),
+        (shard_001_batch_id, valid_payload),
+    ):
+        batch_dir = batches_dir / batch_id
+        batch_dir.mkdir(parents=True, exist_ok=True)
+        (batch_dir / "batch_result.json").write_text(
+            json.dumps(payload),
+            encoding="utf-8",
+        )
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("runner should not be called for mismatched result")
+
+    monkeypatch.setattr(
+        maniskill_accumulation_pipeline,
+        "run_maniskill_batch_pipeline",
+        fail_if_called,
+    )
+    result = run_maniskill_accumulation_pipeline(
+        outdir=tmp_path,
+        accumulation_id="acc-mismatch",
+        shards=2,
+        samples_per_task=1,
+    )
+
+    reports_by_batch_id = {
+        report["batch_id"]: report for report in result["shard_reports"]
+    }
+    assert result["status"] not in {
+        "ready_to_scale_with_conditions",
+        "locked_for_next_batch_with_conditions",
+    }
+    assert result["failed_shard_count"] == 1
+    assert result["reused_shard_count"] == 1
+    assert result["failure_boundary_counts"] == {"data_contract_incomplete": 2}
+    assert reports_by_batch_id[shard_000_batch_id]["status"] == (
+        "failed_to_load_existing_result"
+    )
+    assert reports_by_batch_id[shard_000_batch_id]["failure_boundaries"] == [
+        "data_contract_incomplete"
+    ]
+    assert reports_by_batch_id[shard_001_batch_id]["status"] == (
+        "reused_existing_result"
+    )
