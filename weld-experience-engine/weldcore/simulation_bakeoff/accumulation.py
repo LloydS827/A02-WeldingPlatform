@@ -406,6 +406,7 @@ def build_simulation_accumulation_report(
     dataset_index_uri: str,
     shard_reports: tuple[SimulationAccumulationShardReport, ...] = (),
 ) -> SimulationAccumulationReport:
+    _validate_shard_reports_match_dataset_index(dataset_index, shard_reports)
     status = _determine_dataset_index_status(dataset_index)
     return SimulationAccumulationReport(
         accumulation_id=dataset_index.accumulation_id,
@@ -526,7 +527,7 @@ def _is_locked_for_next_batch(dataset_index: SimulationDatasetIndex) -> bool:
         "experience_dataset_uri",
         "evidence_bundle_uri",
     )
-    if any(coverage[field] != 1.0 for field in required_fields):
+    if any(coverage.get(field, 0.0) != 1.0 for field in required_fields):
         return False
     failed_items = tuple(
         item for item in dataset_index.index_items if item.status == "failed"
@@ -542,6 +543,20 @@ def _is_locked_for_next_batch(dataset_index: SimulationDatasetIndex) -> bool:
         ):
             return False
     return True
+
+
+def _validate_shard_reports_match_dataset_index(
+    dataset_index: SimulationDatasetIndex,
+    shard_reports: tuple[SimulationAccumulationShardReport, ...],
+) -> None:
+    if not shard_reports:
+        return
+    report_batch_ids = tuple(report.batch_id for report in shard_reports)
+    if (
+        len(report_batch_ids) != len(set(report_batch_ids))
+        or set(report_batch_ids) != set(dataset_index.batch_ids)
+    ):
+        raise ValueError("shard_reports must match dataset batch_ids")
 
 
 def _dataset_index_item(

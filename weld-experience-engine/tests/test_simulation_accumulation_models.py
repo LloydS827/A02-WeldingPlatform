@@ -625,6 +625,49 @@ def test_accumulation_report_exposes_shard_summary_fields():
     }
 
 
+def test_accumulation_report_rejects_mismatched_shard_report_batch_ids():
+    spec = default_maniskill_sharded_accumulation_spec(
+        accumulation_id="acc-phase-2",
+        samples_per_task=1,
+        shard_count=2,
+    )
+    shards = iter_accumulation_shard_specs(spec)
+    batch_results = tuple(
+        _shard_batch_result(
+            shard,
+            (
+                _shard_sample_run(
+                    shard.batch_id,
+                    f"{shard.shard_id}-completed",
+                    "completed",
+                    shard.seed_start,
+                ),
+                _shard_sample_run(
+                    shard.batch_id,
+                    f"{shard.shard_id}-failed",
+                    "failed",
+                    shard.seed_start + 1,
+                    failure_boundary=("simulation_run_failed",),
+                ),
+            ),
+        )
+        for shard in shards
+    )
+    index = _index_from_batch_results(batch_results)
+    mismatched_shard_report = build_simulation_accumulation_shard_report(
+        shard_spec=dataclasses.replace(shards[0], batch_id="unexpected-batch"),
+        batch_result=dataclasses.replace(batch_results[0], batch_id="unexpected-batch"),
+        status="completed_new_run",
+    )
+
+    with pytest.raises(ValueError, match="shard_reports must match dataset batch_ids"):
+        build_simulation_accumulation_report(
+            dataset_index=index,
+            dataset_index_uri="dataset_index.json",
+            shard_reports=(mismatched_shard_report,),
+        )
+
+
 def test_phase_two_perfect_run_is_ready_to_scale_with_conditions():
     spec = default_maniskill_sharded_accumulation_spec()
     shard = iter_accumulation_shard_specs(spec)[0]
@@ -834,6 +877,49 @@ def test_phase_two_contract_failures_keep_accumulating_failures(failure_boundary
         ),
     )
     index = _index_from_batch_results((batch_result,))
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.status == "accumulating_with_failures"
+
+
+def test_phase_two_missing_completed_coverage_key_does_not_lock():
+    spec = default_maniskill_sharded_accumulation_spec()
+    shard = iter_accumulation_shard_specs(spec)[0]
+    shard = dataclasses.replace(shard, requested_sample_count=500)
+    batch_result = _shard_batch_result(
+        shard,
+        tuple(
+            _shard_sample_run(
+                shard.batch_id,
+                f"sample-{seed}",
+                "completed",
+                seed,
+            )
+            for seed in range(499)
+        )
+        + (
+            _shard_sample_run(
+                shard.batch_id,
+                "sample-499",
+                "failed",
+                499,
+                failure_boundary=("simulation_run_failed",),
+            ),
+        ),
+    )
+    index = _index_from_batch_results((batch_result,))
+    sparse_coverage = dataclasses.replace(
+        index.field_coverage_summary,
+        completed_sample_coverage={
+            "adapter_result_uri": 1.0,
+            "evidence_bundle_uri": 1.0,
+        },
+    )
+    index = dataclasses.replace(index, field_coverage_summary=sparse_coverage)
 
     report = build_simulation_accumulation_report(
         dataset_index=index,
