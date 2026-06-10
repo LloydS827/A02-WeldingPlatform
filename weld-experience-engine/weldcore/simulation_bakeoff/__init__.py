@@ -37,6 +37,7 @@ from .maniskill_contract import (
     write_json_artifact,
 )
 from .maniskill_demo import generate_rule_based_demo
+from .maniskill_accumulation_pipeline import run_maniskill_accumulation_pipeline
 from .maniskill_batch_pipeline import run_maniskill_batch_pipeline
 from .maniskill_pipeline import run_maniskill_spike_pipeline
 from .maniskill_runner import run_maniskill_lightweight
@@ -111,6 +112,7 @@ __all__ = [
     "read_json_artifact",
     "run_adapter_route",
     "run_comparison_routes",
+    "run_maniskill_accumulation_pipeline",
     "run_maniskill_batch_pipeline",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",
