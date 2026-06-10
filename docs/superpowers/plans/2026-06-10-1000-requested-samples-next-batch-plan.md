@@ -4,7 +4,7 @@
 
 **Goal:** 修正 Phase 2 后的 accumulation report 下一批建议，并把 1000 requested samples next-batch 计划同步到测试和项目入口文档。
 
-**Architecture:** 保持现有 ManiSkill/SAPIEN accumulation pipeline 结构，不新增仿真器、不新增默认任务族。最小代码改动集中在 `SimulationAccumulationReport.next_scale_recommendation` 固定文案与轻量 shard 口径测试；文档同步说明 10 shards x 100 requested samples 的下一批计划。
+**Architecture:** 保持现有 ManiSkill/SAPIEN accumulation pipeline 结构，不新增仿真器、不新增默认任务族。最小代码改动集中在 `SimulationAccumulationReport.next_scale_recommendation` 的规模感知文案与轻量 shard 口径测试；文档同步说明 10 shards x 100 requested samples 的下一批计划。
 
 **Tech Stack:** Python dataclasses、pytest、Markdown、现有简单 HTML 阅读版、git/GitHub CLI。
 
@@ -60,11 +60,34 @@ Do not modify:
 - Modify: `weld-experience-engine/tests/test_simulation_accumulation_models.py`
 - Modify: `weld-experience-engine/weldcore/simulation_bakeoff/accumulation.py`
 
-- [ ] **Step 1: Write failing recommendation test**
+- [ ] **Step 1: Write failing Phase 2 recommendation test**
 
-In `weld-experience-engine/tests/test_simulation_accumulation_models.py`, update `test_accumulation_report_uses_index_status_and_next_scale_fields` so it asserts the new recommendation contains all required tokens:
+In `weld-experience-engine/tests/test_simulation_accumulation_models.py`, keep `test_accumulation_report_uses_index_status_and_next_scale_fields` focused on a small Phase 1-scale report and add a new Phase 2-scale recommendation test:
 
 ```python
+def test_phase_two_ready_report_recommends_one_thousand_sample_next_batch():
+    spec = default_maniskill_sharded_accumulation_spec()
+    shard = iter_accumulation_shard_specs(spec)[0]
+    shard = dataclasses.replace(shard, requested_sample_count=500)
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                shard.batch_id,
+                f"sample-{seed}",
+                "completed",
+                seed,
+            )
+            for seed in range(500)
+        ),
+    )
+    index = _index_from_batch_results((batch_result,))
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
     assert "1000_requested_samples" in report.next_scale_recommendation
     assert "2_default_task_families" in report.next_scale_recommendation
     assert "maniskill_sapien" in report.next_scale_recommendation
@@ -72,10 +95,11 @@ In `weld-experience-engine/tests/test_simulation_accumulation_models.py`, update
     assert "phase_1" not in report.next_scale_recommendation
 ```
 
-Remove the old assertion:
+Keep the small-report test conservative:
 
 ```python
-    assert "phase_2" in report.next_scale_recommendation
+    assert "phase_2_500_requested_samples" in report.next_scale_recommendation
+    assert "1000_requested_samples" not in report.next_scale_recommendation
 ```
 
 - [ ] **Step 2: Run focused test and verify RED**
@@ -83,7 +107,7 @@ Remove the old assertion:
 Run from `weld-experience-engine/`:
 
 ```bash
-uv run pytest tests/test_simulation_accumulation_models.py::test_accumulation_report_uses_index_status_and_next_scale_fields -q
+uv run pytest tests/test_simulation_accumulation_models.py::test_phase_two_ready_report_recommends_one_thousand_sample_next_batch -q
 ```
 
 Expected: FAIL because the current recommendation is `continue_phase_1_then_review_before_phase_2_500_requested_samples`.
@@ -132,36 +156,46 @@ uv run pytest tests/test_simulation_accumulation_models.py::test_next_batch_shar
 
 Expected: PASS if existing sharded spec already supports arbitrary `shard_count`; if it fails, implement the minimum fix in `accumulation.py` without changing Phase 2 defaults.
 
-- [ ] **Step 5: Implement minimal recommendation fix**
+- [ ] **Step 5: Implement minimal scale-aware recommendation fix**
 
-In `weld-experience-engine/weldcore/simulation_bakeoff/accumulation.py`, replace:
-
-```python
-next_scale_recommendation=(
-    "continue_phase_1_then_review_before_"
-    "phase_2_500_requested_samples"
-),
-```
-
-with:
+In `weld-experience-engine/weldcore/simulation_bakeoff/accumulation.py`, add a small helper near `_readiness_for_next_scale()`:
 
 ```python
-next_scale_recommendation=(
-    "prepare_next_batch_1000_requested_samples_keep_"
-    "2_default_task_families_continue_maniskill_sapien_"
-    "accumulation_entry_fix_failure_boundaries_before_"
-    "switching_routes"
-),
+def _next_scale_recommendation(
+    dataset_index: SimulationDatasetIndex,
+    status: AccumulationStatus,
+) -> str:
+    if (
+        dataset_index.requested_sample_count >= 500
+        and status
+        in {"ready_to_scale_with_conditions", "locked_for_next_batch_with_conditions"}
+    ):
+        return (
+            "prepare_next_batch_1000_requested_samples_keep_"
+            "2_default_task_families_continue_maniskill_sapien_"
+            "accumulation_entry_fix_failure_boundaries_before_"
+            "switching_routes"
+        )
+    return (
+        "continue_phase_1_then_review_before_"
+        "phase_2_500_requested_samples"
+    )
 ```
 
-Do not introduce a new recommendation builder unless tests require different behavior. The spec intentionally keeps this simple.
+Then set:
+
+```python
+next_scale_recommendation=_next_scale_recommendation(dataset_index, status),
+```
+
+Do not add a broader recommendation engine or config layer.
 
 - [ ] **Step 6: Verify focused model tests pass**
 
 Run from `weld-experience-engine/`:
 
 ```bash
-uv run pytest tests/test_simulation_accumulation_models.py::test_accumulation_report_uses_index_status_and_next_scale_fields tests/test_simulation_accumulation_models.py::test_next_batch_sharded_accumulation_spec_can_request_one_thousand_samples -q
+uv run pytest tests/test_simulation_accumulation_models.py::test_accumulation_report_uses_index_status_and_next_scale_fields tests/test_simulation_accumulation_models.py::test_phase_two_ready_report_recommends_one_thousand_sample_next_batch tests/test_simulation_accumulation_models.py::test_next_batch_sharded_accumulation_spec_can_request_one_thousand_samples -q
 ```
 
 Expected: both tests PASS.

@@ -107,7 +107,15 @@ continue_phase_1_then_review_before_phase_2_500_requested_samples
 
 ### 6.1 Report Recommendation
 
-`build_simulation_accumulation_report()` 应输出面向 Phase 2 后下一批的 recommendation，例如：
+`build_simulation_accumulation_report()` 应按当前 accumulation 规模输出 recommendation，避免 Phase 1 报告直接跳到 1000。
+
+Phase 1 / 100 requested samples 的 recommendation 继续表达先完成 Phase 2 500 requested samples 审查：
+
+```text
+continue_phase_1_then_review_before_phase_2_500_requested_samples
+```
+
+Phase 2 / 500+ requested samples 且状态为 `ready_to_scale_with_conditions` 或 `locked_for_next_batch_with_conditions` 时，recommendation 应输出面向 Phase 2 后下一批的建议，例如：
 
 ```text
 prepare_next_batch_1000_requested_samples_keep_2_default_task_families_continue_maniskill_sapien_accumulation_entry_fix_failure_boundaries_before_switching_routes
@@ -120,7 +128,7 @@ prepare_next_batch_1000_requested_samples_keep_2_default_task_families_continue_
 - 继续使用当前 ManiSkill/SAPIEN accumulation 入口。
 - 出现 failure boundary 时先修具体边界，再讨论切换仿真器或真机路线。
 
-为了保持简单，本阶段不引入按状态动态生成 recommendation 的新决策树。原因是现有 report 已经是单一 recommendation 字段，当前最直接的问题是固定文案过期。若后续需要根据 Phase 1、Phase 2、1000 批次状态输出多级建议，可以在 1000 真实运行后再设计。
+为了保持简单，本阶段只引入一个最小 recommendation 分支：`requested_sample_count >= 500` 且状态已进入可继续扩大或条件锁定时，输出 1000 next-batch 文案；否则保留 Phase 1 到 Phase 2 的保守文案。若后续需要根据 1000 批次真实结果输出长期 accumulation 建议，可以在 1000 真实运行后再设计。
 
 ### 6.2 1000 Requested Samples 组织方式
 
@@ -193,18 +201,20 @@ uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
    - `2_default_task_families`
    - `maniskill_sapien`
    - `failure_boundaries`
-2. 新增 10 shards x 100 requested samples 的 spec/pipeline 轻量测试，确认：
+   该断言应使用 500+ requested samples 的 Phase 2 index/report，不应用 1 条 sample 的最小 report。
+2. 增加 Phase 1 / 100 requested samples report 测试，断言其仍不包含 `1000_requested_samples`，并继续建议先完成 Phase 2 500 requested samples 审查。
+3. 新增 10 shards x 100 requested samples 的 spec/pipeline 轻量测试，确认：
    - `requested_sample_count == 1000`
    - `shard_count == 10`
    - 每个 shard 仍为 100 requested samples
-3. 运行聚焦测试：
+4. 运行聚焦测试：
 
 ```bash
 cd weld-experience-engine
 uv run pytest tests/test_simulation_accumulation_models.py tests/test_maniskill_accumulation_pipeline.py -q
 ```
 
-4. 最后运行完整默认验证：
+5. 最后运行完整默认验证：
 
 ```bash
 cd weld-experience-engine
