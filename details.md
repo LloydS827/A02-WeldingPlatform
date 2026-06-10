@@ -188,7 +188,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `296 passed`。
+当前分支最近一次完整验证结果为 `326 passed`。
 
 可选小批量入口命令：
 
