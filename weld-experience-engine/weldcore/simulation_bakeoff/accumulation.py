@@ -303,9 +303,17 @@ def validate_batch_result_matches_shard(
     actual_seeds = {run.seed for run in batch_result.sample_runs}
     if actual_seeds != expected_seeds:
         raise ValueError("batch_result seed range does not match shard")
+    sample_ids = [run.sample_id for run in batch_result.sample_runs]
+    if len(set(sample_ids)) != len(sample_ids):
+        raise ValueError("batch_result sample_ids must be unique")
     for run in batch_result.sample_runs:
         if run.batch_id != shard_spec.batch_id or run.route_id != route_id:
             raise ValueError("sample run identity does not match shard")
+        expected_sample_id = (
+            f"sample-{shard_spec.batch_id}-{route_id}-{run.task_id}-{run.seed}"
+        )
+        if run.sample_id != expected_sample_id:
+            raise ValueError("sample run sample_id does not match shard")
 
 
 def build_simulation_accumulation_shard_report(

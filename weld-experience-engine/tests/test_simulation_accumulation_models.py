@@ -196,6 +196,10 @@ def _shard_sample_run(
     )
 
 
+def _expected_shard_sample_id(batch_id, route_id, task_id, seed):
+    return f"sample-{batch_id}-{route_id}-{task_id}-{seed}"
+
+
 def _shard_batch_result(shard_spec, sample_runs, *, route_id="maniskill_sapien"):
     return summarize_sample_runs(
         batch_id=shard_spec.batch_id,
@@ -235,8 +239,22 @@ def test_validate_batch_result_matches_shard_accepts_matching_result():
     batch_result = _shard_batch_result(
         shard,
         (
-            _shard_sample_run("batch-a", "sample-10", "completed", 10),
-            _shard_sample_run("batch-a", "sample-11", "completed", 11),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 11
+                ),
+                "completed",
+                11,
+            ),
         ),
     )
 
@@ -278,6 +296,157 @@ def test_validate_batch_result_matches_shard_rejects_mismatched_batch_id():
         )
 
 
+def test_validate_batch_result_matches_shard_rejects_mismatched_route_id():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=1,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+        ),
+        route_id="simlite_reference",
+    )
+
+    with pytest.raises(ValueError, match="route_id does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_requested_count_mismatch():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=2,
+        requested_sample_count=1,
+        sample_runs=(
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 11
+                ),
+                "completed",
+                11,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="requested_sample_count does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_task_count_mismatch():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=1,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="task_count does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=3,
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_sample_runs_length_mismatch():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=2,
+        requested_sample_count=2,
+        sample_runs=(
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="sample_runs do not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
 def test_validate_batch_result_matches_shard_rejects_mismatched_seed_set():
     shard = SimulationAccumulationShardSpec(
         shard_id="shard-000",
@@ -298,6 +467,72 @@ def test_validate_batch_result_matches_shard_rejects_mismatched_seed_set():
     )
 
     with pytest.raises(ValueError, match="seed range does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_mismatched_sample_id():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run("batch-a", "arbitrary-sample-id", "completed", 11),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="sample_id does not match shard"):
+        validate_batch_result_matches_shard(
+            batch_result=batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
+def test_validate_batch_result_matches_shard_rejects_duplicate_sample_ids():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    duplicate_id = _expected_shard_sample_id(
+        "batch-a", "maniskill_sapien", "task-a", 10
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run("batch-a", duplicate_id, "completed", 10),
+            _shard_sample_run("batch-a", duplicate_id, "completed", 11),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="sample_ids must be unique"):
         validate_batch_result_matches_shard(
             batch_result=batch_result,
             shard_spec=shard,
@@ -509,6 +744,92 @@ def test_phase_two_adapter_conversion_failure_keeps_accumulating_failures():
                 "failed",
                 499,
                 failure_boundary=("adapter_conversion_failed",),
+            ),
+        ),
+    )
+    index = _index_from_batch_results((batch_result,))
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.status == "accumulating_with_failures"
+
+
+def test_phase_two_skipped_sample_keeps_accumulating_failures():
+    spec = default_maniskill_sharded_accumulation_spec()
+    shard = iter_accumulation_shard_specs(spec)[0]
+    shard = dataclasses.replace(shard, requested_sample_count=500)
+    batch_result = _shard_batch_result(
+        shard,
+        tuple(
+            _shard_sample_run(
+                shard.batch_id,
+                f"sample-{seed}",
+                "completed",
+                seed,
+            )
+            for seed in range(479)
+        )
+        + tuple(
+            _shard_sample_run(
+                shard.batch_id,
+                f"sample-{seed}",
+                "failed",
+                seed,
+                failure_boundary=("simulation_run_failed",),
+            )
+            for seed in range(479, 499)
+        )
+        + (
+            _shard_sample_run(
+                shard.batch_id,
+                "sample-499",
+                "skipped",
+                499,
+            ),
+        ),
+    )
+    index = _index_from_batch_results((batch_result,))
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.status == "accumulating_with_failures"
+
+
+@pytest.mark.parametrize(
+    "failure_boundary",
+    [
+        "data_contract_incomplete",
+        "experience_dataset_export_failed",
+    ],
+)
+def test_phase_two_contract_failures_keep_accumulating_failures(failure_boundary):
+    spec = default_maniskill_sharded_accumulation_spec()
+    shard = iter_accumulation_shard_specs(spec)[0]
+    shard = dataclasses.replace(shard, requested_sample_count=500)
+    batch_result = _shard_batch_result(
+        shard,
+        tuple(
+            _shard_sample_run(
+                shard.batch_id,
+                f"sample-{seed}",
+                "completed",
+                seed,
+            )
+            for seed in range(499)
+        )
+        + (
+            _shard_sample_run(
+                shard.batch_id,
+                "sample-499",
+                "failed",
+                499,
+                failure_boundary=(failure_boundary,),
             ),
         ),
     )
