@@ -266,6 +266,55 @@ def test_validate_batch_result_matches_shard_accepts_matching_result():
     )
 
 
+def test_validate_batch_result_matches_shard_rejects_stale_summary_fields():
+    shard = SimulationAccumulationShardSpec(
+        shard_id="shard-000",
+        batch_id="batch-a",
+        samples_per_task=1,
+        requested_sample_count=2,
+        seed_start=10,
+        batch_root_uri="batches/batch-a",
+        batch_result_uri="batches/batch-a/batch_result.json",
+        reuse_policy="reuse_existing_batch_result_unless_force",
+    )
+    batch_result = _shard_batch_result(
+        shard,
+        (
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 10
+                ),
+                "completed",
+                10,
+            ),
+            _shard_sample_run(
+                "batch-a",
+                _expected_shard_sample_id(
+                    "batch-a", "maniskill_sapien", "task-a", 11
+                ),
+                "failed",
+                11,
+                failure_boundary=("data_contract_incomplete",),
+            ),
+        ),
+    )
+    stale_batch_result = dataclasses.replace(
+        batch_result,
+        completed_sample_count=2,
+        failed_sample_count=0,
+        failure_boundaries=(),
+    )
+
+    with pytest.raises(ValueError, match="summary fields do not match sample_runs"):
+        validate_batch_result_matches_shard(
+            batch_result=stale_batch_result,
+            shard_spec=shard,
+            route_id="maniskill_sapien",
+            task_count=2,
+        )
+
+
 def test_validate_batch_result_matches_shard_rejects_mismatched_batch_id():
     shard = SimulationAccumulationShardSpec(
         shard_id="shard-000",

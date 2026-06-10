@@ -84,6 +84,11 @@ def run_maniskill_accumulation_pipeline(
                     existing_result_error=exc,
                 )
                 write_json_artifact(batch_result_path, batch_result)
+                _write_failed_load_failure_artifacts(
+                    acc_dir=acc_dir,
+                    shard=shard,
+                    batch_result=batch_result,
+                )
                 shard_status = "failed_to_load_existing_result"
         else:
             batch_payload = run_maniskill_batch_pipeline(
@@ -246,6 +251,31 @@ def _failed_to_load_existing_result(
         requested_sample_count=shard.requested_sample_count,
         sample_runs=sample_runs,
     )
+
+
+def _write_failed_load_failure_artifacts(
+    *,
+    acc_dir: Path,
+    shard: SimulationAccumulationShardSpec,
+    batch_result: SimulationBatchResult,
+) -> None:
+    batch_dir = acc_dir / shard.batch_root_uri
+    for sample_run in batch_result.sample_runs:
+        if sample_run.failure_artifact_uri is None:
+            continue
+        write_json_artifact(
+            batch_dir / sample_run.failure_artifact_uri,
+            {
+                "batch_id": sample_run.batch_id,
+                "sample_id": sample_run.sample_id,
+                "task_id": sample_run.task_id,
+                "route_id": sample_run.route_id,
+                "seed": sample_run.seed,
+                "status": sample_run.status,
+                "failure_boundary": sample_run.failure_boundary,
+                "evidence_notes": sample_run.evidence_notes,
+            },
+        )
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -109,6 +109,24 @@ def _assert_referenced_failure_batch(acc_dir, index, batch_id, requested_count):
     return payload
 
 
+def _assert_index_failure_artifacts_exist(acc_dir, index):
+    for item in index["index_items"]:
+        failure_artifact_uri = item["failure_artifact_uri"]
+        if failure_artifact_uri is None:
+            continue
+        artifact_path = (
+            acc_dir / index["batch_root_uris"][item["batch_id"]] / failure_artifact_uri
+        )
+        assert artifact_path.exists()
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        assert artifact["failure_boundary"] == ["data_contract_incomplete"]
+        assert "failed_to_load_existing_batch_result" in artifact["evidence_notes"]
+        assert any(
+            "existing_result_error_type" in note
+            for note in artifact["evidence_notes"]
+        )
+
+
 def test_accumulation_pipeline_writes_phase_one_completed_outputs(
     tmp_path,
     monkeypatch,
@@ -377,6 +395,7 @@ def test_accumulation_pipeline_reports_corrupt_existing_result_without_rerun(
         100,
     )
     assert failure_payload["batch_id"] == result["shard_reports"][0]["batch_id"]
+    _assert_index_failure_artifacts_exist(acc_dir, index)
 
 
 def test_accumulation_pipeline_reports_mismatched_existing_result_without_rerun(
@@ -457,3 +476,4 @@ def test_accumulation_pipeline_reports_mismatched_existing_result_without_rerun(
     assert failure_payload["batch_id"] == reports_by_batch_id[shard_000_batch_id][
         "batch_id"
     ]
+    _assert_index_failure_artifacts_exist(acc_dir, index)

@@ -294,6 +294,25 @@ def validate_batch_result_matches_shard(
         raise ValueError("batch_result task_count does not match shard")
     if len(batch_result.sample_runs) != shard_spec.requested_sample_count:
         raise ValueError("batch_result sample_runs do not match shard")
+    completed_count = sum(
+        1 for run in batch_result.sample_runs if run.status == "completed"
+    )
+    failed_count = sum(1 for run in batch_result.sample_runs if run.status == "failed")
+    skipped_count = sum(1 for run in batch_result.sample_runs if run.status == "skipped")
+    failure_boundaries: list[str] = []
+    seen_failure_boundaries: set[str] = set()
+    for run in batch_result.sample_runs:
+        for boundary in run.failure_boundary:
+            if boundary not in seen_failure_boundaries:
+                failure_boundaries.append(boundary)
+                seen_failure_boundaries.add(boundary)
+    if (
+        batch_result.completed_sample_count != completed_count
+        or batch_result.failed_sample_count != failed_count
+        or batch_result.skipped_sample_count != skipped_count
+        or batch_result.failure_boundaries != tuple(failure_boundaries)
+    ):
+        raise ValueError("batch_result summary fields do not match sample_runs")
     expected_seeds = set(
         range(
             shard_spec.seed_start,
