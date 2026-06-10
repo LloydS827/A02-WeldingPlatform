@@ -73,6 +73,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -92,6 +93,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -110,6 +112,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -131,6 +134,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     failure_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                 )
             )
             continue
@@ -148,6 +152,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     extra_evidence_notes=_unavailable_evidence_notes(
                         failure_artifact_uri,
                     ),
@@ -172,6 +177,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     extra_evidence_notes=_unavailable_evidence_notes(
                         failure_artifact_uri,
                     ),
@@ -199,6 +205,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     adapter_result_uri=_sample_uri(
                         plan.sample_id,
                         "adapter_result.json",
@@ -227,6 +234,7 @@ def run_maniskill_batch_pipeline(
                     plan,
                     run_failure_boundary,
                     raw_artifact_uri,
+                    failure_artifact_uri=failure_artifact_uri,
                     adapter_result_uri=_sample_uri(
                         plan.sample_id,
                         "adapter_result.json",
@@ -417,6 +425,7 @@ def _failed_sample_run(
     adapter_result_uri: str | None = None,
     evidence_bundle_uri: str | None = None,
     experience_dataset_uri: str | None = None,
+    failure_artifact_uri: str | None = None,
     extra_evidence_notes: tuple[str, ...] = (),
 ) -> SimulationSampleRun:
     return SimulationSampleRun(
@@ -438,6 +447,7 @@ def _failed_sample_run(
             *_unavailable_evidence_notes(raw_artifact_uri),
             *extra_evidence_notes,
         ),
+        failure_artifact_uri=failure_artifact_uri,
     )
 
 

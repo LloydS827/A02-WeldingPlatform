@@ -109,7 +109,7 @@ def test_determine_accumulation_status_rejects_zero_requested_samples():
         )
 
 
-def _sample_run(sample_id, status, *, failure_boundary=()):
+def _sample_run(sample_id, status, *, failure_boundary=(), failure_artifact_uri=None):
     return SimulationSampleRun(
         batch_id="batch-a",
         sample_id=sample_id,
@@ -137,6 +137,7 @@ def _sample_run(sample_id, status, *, failure_boundary=()):
         ),
         failure_boundary=failure_boundary,
         evidence_notes=("simulation_only_not_real_welding_quality",),
+        failure_artifact_uri=failure_artifact_uri,
     )
 
 
@@ -188,6 +189,12 @@ def test_dataset_index_preserves_completed_and_failed_samples():
         ]
         == 0.5
     )
+    assert index.field_coverage_summary.requested_sample_coverage[
+        "raw_artifact_uri"
+    ] == 1.0
+    assert index.field_coverage_summary.requested_sample_coverage[
+        "failure_artifact_uri"
+    ] == 0.5
     assert (
         index.field_coverage_summary.completed_sample_coverage[
             "experience_dataset_uri"
@@ -245,6 +252,60 @@ def test_dataset_index_keeps_existing_failure_artifact_uri():
     assert index.index_items[0].failure_artifact_uri == (
         "samples/sample-failed/failure_artifact_write_failed.json"
     )
+    assert index.field_coverage_summary.requested_sample_coverage[
+        "raw_artifact_uri"
+    ] == 0.0
+
+
+def test_dataset_index_prefers_recorded_failure_artifact_uri():
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=1,
+        requested_sample_count=1,
+        sample_runs=(
+            _sample_run(
+                "sample-failed",
+                "failed",
+                failure_boundary=("simulation_run_failed",),
+                failure_artifact_uri=(
+                    "samples/sample-failed/failure_artifact_write_failed.json"
+                ),
+            ),
+        ),
+    )
+
+    index = build_simulation_dataset_index(
+        accumulation_id="acc-a",
+        batch_results=(batch_result,),
+        batch_root_uris={"batch-a": "batches/batch-a"},
+        batch_result_uris={"batch-a": "batches/batch-a/batch_result.json"},
+    )
+
+    assert index.index_items[0].raw_artifact_uri == (
+        "samples/sample-failed/raw_artifact.json"
+    )
+    assert index.index_items[0].failure_artifact_uri == (
+        "samples/sample-failed/failure_artifact_write_failed.json"
+    )
+
+
+def test_dataset_index_validates_batch_uri_maps():
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=1,
+        requested_sample_count=1,
+        sample_runs=(_sample_run("sample-ok", "completed"),),
+    )
+
+    with pytest.raises(ValueError, match="batch_root_uris"):
+        build_simulation_dataset_index(
+            accumulation_id="acc-a",
+            batch_results=(batch_result,),
+            batch_root_uris={},
+            batch_result_uris={"batch-a": "batches/batch-a/batch_result.json"},
+        )
 
 
 def test_accumulation_report_uses_index_status_and_next_scale_fields():
@@ -274,3 +335,47 @@ def test_accumulation_report_uses_index_status_and_next_scale_fields():
     assert report.batch_result_uris == ("batches/batch-a/batch_result.json",)
     assert "phase_2" in report.next_scale_recommendation
     assert "not_real_welding_quality" in report.known_limitations
+
+
+def test_accumulation_report_uses_batch_id_order_for_result_uris():
+    batch_a = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=1,
+        requested_sample_count=1,
+        sample_runs=(_sample_run("sample-a", "completed"),),
+    )
+    batch_b = summarize_sample_runs(
+        batch_id="batch-b",
+        route_id="maniskill_sapien",
+        task_count=1,
+        requested_sample_count=1,
+        sample_runs=(
+            dataclasses.replace(
+                _sample_run("sample-b", "completed"),
+                batch_id="batch-b",
+            ),
+        ),
+    )
+    index = build_simulation_dataset_index(
+        accumulation_id="acc-a",
+        batch_results=(batch_a, batch_b),
+        batch_root_uris={
+            "batch-a": "batches/batch-a",
+            "batch-b": "batches/batch-b",
+        },
+        batch_result_uris={
+            "batch-b": "batches/batch-b/batch_result.json",
+            "batch-a": "batches/batch-a/batch_result.json",
+        },
+    )
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.batch_result_uris == (
+        "batches/batch-a/batch_result.json",
+        "batches/batch-b/batch_result.json",
+    )

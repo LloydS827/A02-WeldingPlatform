@@ -178,6 +178,9 @@ def build_simulation_dataset_index(
 ) -> SimulationDatasetIndex:
     if not batch_results:
         raise ValueError("batch_results must not be empty")
+    batch_ids = tuple(result.batch_id for result in batch_results)
+    _validate_uri_map_keys("batch_root_uris", batch_root_uris, batch_ids)
+    _validate_uri_map_keys("batch_result_uris", batch_result_uris, batch_ids)
 
     index_items: list[SimulationDatasetIndexItem] = []
     dataset_uris: list[str] = []
@@ -203,7 +206,7 @@ def build_simulation_dataset_index(
     return SimulationDatasetIndex(
         accumulation_id=accumulation_id,
         route_id=batch_results[0].route_id,
-        batch_ids=tuple(result.batch_id for result in batch_results),
+        batch_ids=batch_ids,
         requested_sample_count=sum(
             result.requested_sample_count for result in batch_results
         ),
@@ -251,7 +254,10 @@ def build_simulation_accumulation_report(
         ),
         dominant_failure_boundaries=dataset_index.failure_boundaries,
         dataset_index_uri=dataset_index_uri,
-        batch_result_uris=tuple(dataset_index.batch_result_uris.values()),
+        batch_result_uris=tuple(
+            dataset_index.batch_result_uris[batch_id]
+            for batch_id in dataset_index.batch_ids
+        ),
         readiness_for_next_scale=_readiness_for_next_scale(status),
         next_scale_recommendation=(
             "continue_phase_1_then_review_before_"
@@ -301,6 +307,7 @@ def _dataset_index_item(
         sample_run.adapter_result_uri,
         sample_run.experience_dataset_uri,
         sample_run.evidence_bundle_uri,
+        sample_run.failure_artifact_uri,
     )
     for artifact_uri in artifact_uris:
         _validate_relative_batch_root_uri(artifact_uri)
@@ -324,19 +331,40 @@ def _dataset_index_item(
 
 
 def _validate_relative_batch_root_uri(artifact_uri: str | None) -> None:
-    if artifact_uri is not None and artifact_uri.startswith("/"):
+    if artifact_uri is None:
+        return
+    if (
+        artifact_uri.startswith("/")
+        or artifact_uri.startswith("../")
+        or "/../" in artifact_uri
+        or "\\" in artifact_uri
+        or "://" in artifact_uri
+    ):
         raise ValueError("item artifact URIs must be relative batch root paths")
 
 
 def _failure_artifact_uri(sample_run: SimulationSampleRun) -> str | None:
     if sample_run.status == "completed":
         return None
+    if sample_run.failure_artifact_uri is not None:
+        return sample_run.failure_artifact_uri
     if "failure_artifact" in sample_run.raw_artifact_uri:
         return sample_run.raw_artifact_uri
     sample_dir = posixpath.dirname(sample_run.raw_artifact_uri)
     if not sample_dir:
         return "failure_artifact.json"
     return posixpath.join(sample_dir, "failure_artifact.json")
+
+
+def _validate_uri_map_keys(
+    map_name: str,
+    uri_map: dict[str, str],
+    batch_ids: tuple[str, ...],
+) -> None:
+    expected = set(batch_ids)
+    actual = set(uri_map)
+    if actual != expected:
+        raise ValueError(f"{map_name} must cover exactly the indexed batch_ids")
 
 
 def _field_coverage_summary(
@@ -364,12 +392,21 @@ def _coverage_for_items(
         return {field: 0.0 for field in coverage_fields}
     return {
         field: round(
-            sum(1 for item in index_items if getattr(item, field) is not None)
+            sum(1 for item in index_items if _coverage_field_present(item, field))
             / denominator,
             6,
         )
         for field in coverage_fields
     }
+
+
+def _coverage_field_present(item: SimulationDatasetIndexItem, field: str) -> bool:
+    value = getattr(item, field)
+    if value is None:
+        return False
+    if field == "raw_artifact_uri":
+        return posixpath.basename(value) == "raw_artifact.json"
+    return True
 
 
 def _readiness_for_next_scale(status: AccumulationStatus) -> str:

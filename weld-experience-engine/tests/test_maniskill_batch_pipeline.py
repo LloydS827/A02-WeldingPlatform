@@ -141,6 +141,7 @@ def test_batch_pipeline_records_environment_missing_as_twenty_failed_samples(
         assert sample_run["experience_dataset_uri"] is None
         assert sample_run["failure_boundary"] == ["environment_missing"]
         assert sample_run["raw_artifact_uri"].endswith("raw_artifact.json")
+        assert sample_run["failure_artifact_uri"].endswith("failure_artifact.json")
         assert (sample_dir / "raw_artifact.json").exists()
         assert (sample_dir / "failure_artifact.json").exists()
 
@@ -167,6 +168,7 @@ def test_batch_pipeline_uses_failure_artifact_uri_when_task_generation_fails(
         sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
         assert sample_run["status"] == "failed"
         assert sample_run["raw_artifact_uri"].endswith("failure_artifact.json")
+        assert sample_run["failure_artifact_uri"].endswith("failure_artifact.json")
         assert (sample_dir / "failure_artifact.json").exists()
         assert not (sample_dir / "raw_artifact.json").exists()
 
@@ -278,6 +280,9 @@ def test_batch_pipeline_uses_fallback_when_failure_artifact_write_fails(
         assert sample_run["raw_artifact_uri"].endswith(
             "failure_artifact_write_failed.json"
         )
+        assert sample_run["failure_artifact_uri"].endswith(
+            "failure_artifact_write_failed.json"
+        )
         assert sample_run["failure_boundary"] == [
             "simulation_run_failed",
             "data_contract_incomplete",
@@ -334,6 +339,9 @@ def test_batch_pipeline_uses_unavailable_uri_when_failure_artifact_writes_fail(
         sample_dir = tmp_path / "batch-test" / "samples" / sample_run["sample_id"]
         assert sample_run["status"] == "failed"
         assert sample_run["raw_artifact_uri"].endswith(
+            "failure_artifact_unavailable.json"
+        )
+        assert sample_run["failure_artifact_uri"].endswith(
             "failure_artifact_unavailable.json"
         )
         assert sample_run["failure_boundary"] == [
