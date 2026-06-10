@@ -51,6 +51,35 @@ def test_default_phase_two_sharded_accumulation_spec_requests_five_hundred_sampl
     assert spec.resume_policy == "reuse_existing_batch_result_unless_force"
 
 
+def test_next_batch_sharded_accumulation_spec_can_request_one_thousand_samples():
+    spec = default_maniskill_sharded_accumulation_spec(
+        accumulation_id="acc-next-batch-1000",
+        output_root="artifacts/simulation/maniskill-sapien-accumulations",
+        shard_count=10,
+        samples_per_task=50,
+    )
+
+    shards = tuple(iter_accumulation_shard_specs(spec))
+
+    assert spec.shard_count == 10
+    assert spec.samples_per_task == 50
+    assert len(spec.task_specs) == 2
+    assert spec.target_requested_sample_count == 1000
+    assert [shard.requested_sample_count for shard in shards] == [100] * 10
+    assert [shard.seed_start for shard in shards] == [
+        0,
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+    ]
+
+
 def test_accumulation_shard_specs_have_contiguous_seed_ranges():
     spec = default_maniskill_sharded_accumulation_spec(
         accumulation_id="acc-phase-2",
@@ -1256,8 +1285,44 @@ def test_accumulation_report_uses_index_status_and_next_scale_fields():
     assert report.completion_ratio == 1.0
     assert report.dataset_index_uri == "dataset_index.json"
     assert report.batch_result_uris == ("batches/batch-a/batch_result.json",)
-    assert "phase_2" in report.next_scale_recommendation
+    assert "phase_2_500_requested_samples" in report.next_scale_recommendation
+    assert "1000_requested_samples" not in report.next_scale_recommendation
     assert "not_real_welding_quality" in report.known_limitations
+
+
+def test_phase_two_ready_report_recommends_one_thousand_sample_next_batch():
+    sample_runs = tuple(
+        dataclasses.replace(
+            _sample_run(f"sample-{sample_id:03}", "completed"),
+            seed=sample_id,
+        )
+        for sample_id in range(500)
+    )
+    batch_result = summarize_sample_runs(
+        batch_id="batch-a",
+        route_id="maniskill_sapien",
+        task_count=2,
+        requested_sample_count=500,
+        sample_runs=sample_runs,
+    )
+    index = build_simulation_dataset_index(
+        accumulation_id="acc-phase-2",
+        batch_results=(batch_result,),
+        batch_root_uris={"batch-a": "batches/batch-a"},
+        batch_result_uris={"batch-a": "batches/batch-a/batch_result.json"},
+    )
+
+    report = build_simulation_accumulation_report(
+        dataset_index=index,
+        dataset_index_uri="dataset_index.json",
+    )
+
+    assert report.status == "ready_to_scale_with_conditions"
+    assert "1000_requested_samples" in report.next_scale_recommendation
+    assert "2_default_task_families" in report.next_scale_recommendation
+    assert "maniskill_sapien" in report.next_scale_recommendation
+    assert "failure_boundaries" in report.next_scale_recommendation
+    assert "phase_1" not in report.next_scale_recommendation
 
 
 def test_accumulation_report_uses_batch_id_order_for_result_uris():

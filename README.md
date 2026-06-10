@@ -17,7 +17,7 @@
 
 当前项目已经从早期 POC / MVP / gate / 报告集合，收束为以 `WeldSkillPackage` 和 `WeldSkillUnit` 为核心的焊接技能资产底座。
 
-现阶段主线是：**把仿真路线到技能数据结构这段做扎实，并通过 ManiSkill/SAPIEN 仿真入口积累可索引、可追踪、可审查的数据**。当前已经保留 Phase 1 的 100 requested samples 启动入口，并新增 Phase 2 sharded scale 入口；Phase 2 已在真实 `weld-maniskill` 环境完成 5 个 shard x 100 requested samples 的运行审查，首次运行 500 requested / 500 completed / 0 failed / 0 skipped，复用运行 5 个 shard 均复用已有 `batch_result.json`。
+现阶段主线是：**把仿真路线到技能数据结构这段做扎实，并通过 ManiSkill/SAPIEN 仿真入口积累可索引、可追踪、可审查的数据**。当前已经保留 Phase 1 的 100 requested samples 启动入口，并新增 Phase 2 sharded scale 入口；Phase 2 已在真实 `weld-maniskill` 环境完成 5 个 shard x 100 requested samples 的运行审查，首次运行 500 requested / 500 completed / 0 failed / 0 skipped，复用运行 5 个 shard 均复用已有 `batch_result.json`。本阶段已完成 report 中 `next_scale_recommendation` 的 Phase 2 后文案修正和 1000 requested samples next-batch plan；下一步可在真实 `weld-maniskill` 环境执行 1000 requested samples next-batch。
 
 这意味着当前重点不是直接进入真实机器人执行或真实焊接质量结论，而是先回答：
 
@@ -72,6 +72,8 @@ WeldSkillUnit
 - Phase 2 sharded accumulation 入口：`SimulationAccumulationShardSpec`、shard report、已有 `batch_result.json` 默认复用、`--force` 强制重跑，以及 5 shards x 100 requested samples = 500 requested samples 的 CLI 口径。
 - accumulation report 可汇总 shard 级 completed / failed / skipped、failure boundary counts、field coverage trend，并在满足保守条件时输出 `locked_for_next_batch_with_conditions`。
 - Phase 2 已在 `weld-maniskill` conda 环境完成真实 ManiSkill/SAPIEN 运行审查：首次运行 500 requested / 500 completed / 0 failed / 0 skipped，5 个 shard 均为 `completed_new_run`；同命令复跑 5 个 shard 均为 `reused_existing_result`；`failure_boundary_counts` 为空；completed sample 的 raw artifact、adapter result、experience dataset 和 evidence bundle 字段覆盖率均为 1.0。
+- 1000 requested samples next-batch plan 已完成：保持当前 2 个默认任务族，按 10 shards x 100 requested samples 组织，继续把 ManiSkill/SAPIEN 作为条件性默认 accumulation 入口。
+- `next_scale_recommendation` 已从 Phase 1 后建议修正为 Phase 2 后建议；下一批若出现 failed samples，先修具体 failure boundary，再讨论切换仿真器或进入真实机器人路线。
 - Gazebo/MoveIt 候选路线的统一失败边界记录。
 - 从 `SimulationEvidenceBundle` 到 `RobotProcessPackageDraft` 的机器人候选草案转换。
 - `RobotContextSpec`、`RobotFeasibilityProbe`、`RobotFeasibilityResult` 和轻量机器人上下文预检接口。
@@ -83,18 +85,17 @@ WeldSkillUnit
 
 ## 下一阶段方向
 
-本轮已完成 **Phase 2 sharded accumulation 真实环境运行审查**。
+本轮已完成 **recommendation 文案修正和 1000 requested samples next-batch plan**。
 
-ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation 启动层和 Phase 2 shard 编排已经具备软件入口、batch result、dataset index、accumulation report、复用和强制重跑契约。Phase 2 在真实 `weld-maniskill` 环境下完成 500 requested samples 审查后，当前状态是 `ready_to_scale_with_conditions`：可以条件性继续使用 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口，但这仍不是最终仿真器选型、真实焊接质量验证或真实机器人执行验证。
+ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation 启动层和 Phase 2 shard 编排已经具备软件入口、batch result、dataset index、accumulation report、复用和强制重跑契约。Phase 2 在真实 `weld-maniskill` 环境下完成 500 requested samples 审查后，当前状态是 `ready_to_scale_with_conditions`：可以条件性继续使用 ManiSkill/SAPIEN 作为下一批 accumulation 默认入口。当前 next-batch plan 已明确保持 2 个默认任务族，按 10 shards x 100 requested samples 组织 1000 requested samples；这仍不是最终仿真器选型、真实焊接质量验证或真实机器人执行验证。
 
 下一阶段要形成的判断包括：
 
-- 1000 requested samples next-batch plan 如何组织 shards、复用策略和审查入口。
-- 当前 2 个默认任务族是否继续作为下一批 accumulation 的默认任务范围。
-- ManiSkill/SAPIEN 是否继续作为有条件默认 accumulation 入口，以及条件边界如何写入计划。
-- 扩大前先修正 report 中仍偏 Phase 1 的 `next_scale_recommendation` 文案。
+- 在真实 `weld-maniskill` 环境执行 1000 requested samples next-batch。
+- 同命令复跑后，10 个 shard 是否均能复用已有 `batch_result.json`。
 - 下一批 `dataset_index.json` 中 raw artifact、adapter result、`SimulationEvidenceBundle`、experience dataset 和 failure artifact 的覆盖情况。
-- 下一批如果出现 failed samples，应先修复 failure boundary，再讨论切换仿真器或进入真实机器人路线。
+- 下一批 `failure_boundary_counts` 和 `field_coverage_trend` 是否仍支持 ManiSkill/SAPIEN 作为条件性默认入口。
+- 下一批如果出现 failed samples，应先修复具体 failure boundary，再讨论切换仿真器或进入真实机器人路线。
 
 ## 如何验证
 
@@ -147,6 +148,18 @@ uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
 ```
 
 该命令按 5 个 shard x 100 requested samples 组织 500 requested samples。默认会复用已存在且通过一致性校验的 `batch_result.json`；需要忽略已有 shard 结果并强制重跑时，在同一命令后追加 `--force`。Phase 2 shard 报告用于审查复用状态、failure boundary counts、field coverage trend 和 `locked_for_next_batch_with_conditions`，不表示最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。
+
+可选 1000 requested samples next-batch 命令，从 `weld-experience-engine/` 执行：
+
+```bash
+uv run python -m weldcore.simulation_bakeoff.maniskill_accumulation_pipeline \
+  --outdir artifacts/simulation/maniskill-sapien-accumulations \
+  --accumulation-id maniskill-sapien-accumulation-next-batch-1000 \
+  --shards 10 \
+  --samples-per-task 50
+```
+
+该命令保持当前 2 个默认任务族，按 10 shards x 100 requested samples 组织 1000 requested samples。默认会复用已存在且通过一致性校验的 shard `batch_result.json`；需要强制重跑时，在同一命令后追加 `--force`。下一批若出现 failed samples，应优先修复具体 failure boundary，不直接切换仿真器或进入真实机器人路线；该命令仍不表示最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。
 
 历史支撑命令仍然保留：
 
