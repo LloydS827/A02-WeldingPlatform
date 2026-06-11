@@ -131,3 +131,54 @@ def test_urdf_blocks_fewer_than_six_revolute_joints(tmp_path):
 
     assert asset.validation_status == "blocked_by_asset_issue"
     assert "fewer_than_six_revolute_joints" in asset.validation_issues
+
+
+def test_urdf_blocks_missing_links(tmp_path):
+    urdf = _write_urdf(
+        tmp_path,
+        '<robot name="no_links">'
+        '<joint name="j1" type="revolute"><parent link="a"/><child link="b"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        "</robot>",
+    )
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "missing_links" in asset.validation_issues
+
+
+def test_urdf_blocks_missing_visual_or_collision_meshes(tmp_path):
+    urdf = tmp_path / "robot.urdf"
+    links = "".join(f'<link name="l{i}"/>' for i in range(7))
+    joints = "".join(
+        f'<joint name="j{i}" type="revolute"><parent link="l{i}"/><child link="l{i + 1}"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        for i in range(6)
+    )
+    urdf.write_text(f'<robot name="meshless">{links}{joints}</robot>', encoding="utf-8")
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "missing_visual_meshes" in asset.validation_issues
+    assert "missing_collision_meshes" in asset.validation_issues
+
+
+def test_urdf_blocks_joint_parent_or_child_not_in_links(tmp_path):
+    urdf = _write_urdf(
+        tmp_path,
+        '<robot name="bad_refs">'
+        '<link name="a"/><link name="b"/>'
+        '<joint name="j1" type="revolute"><parent link="missing_parent"/><child link="b"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        '<joint name="j2" type="revolute"><parent link="a"/><child link="missing_child"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        "</robot>",
+    )
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "joint_parent_missing:j1:missing_parent" in asset.validation_issues
+    assert "joint_child_missing:j2:missing_child" in asset.validation_issues

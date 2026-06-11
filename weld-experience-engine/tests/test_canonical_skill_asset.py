@@ -158,6 +158,14 @@ def test_transfer_assessment_blocks_missing_skill_motion():
         {key: value for key, value in base_skill.motion.items() if key != "trajectory_point_count"},
         {**base_skill.motion, "trajectory_point_count": -1},
         {**base_skill.motion, "trajectory_point_count": len(base_skill.motion["tcp_trajectory"]) + 1},
+        {key: value for key, value in base_skill.motion.items() if key != "tool_orientation"},
+        {**base_skill.motion, "tool_orientation": []},
+        {key: value for key, value in base_skill.motion.items() if key != "orientation_point_count"},
+        {**base_skill.motion, "orientation_point_count": -1},
+        {
+            **base_skill.motion,
+            "orientation_point_count": len(base_skill.motion["tool_orientation"]) + 1,
+        },
     ):
         skill = replace(base_skill, motion=motion)
         assessment = build_skill_transfer_assessment(skill, robot)
@@ -169,6 +177,10 @@ def test_transfer_assessment_blocks_missing_skill_motion():
                 "missing_tcp_trajectory",
                 "invalid_trajectory_point_count",
                 "trajectory_point_count_mismatch",
+                "missing_tool_orientation",
+                "invalid_orientation_point_count",
+                "orientation_point_count_mismatch",
+                "trajectory_orientation_count_mismatch",
             }
             for gap in assessment.blocking_gaps
         )

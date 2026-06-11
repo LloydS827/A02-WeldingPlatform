@@ -81,6 +81,18 @@ def _skill_motion_gap(skill_asset: ManipulationSkillAsset) -> str | None:
         return "invalid_trajectory_point_count"
     if point_count != len(tcp_trajectory):
         return "trajectory_point_count_mismatch"
+
+    tool_orientation = motion.get("tool_orientation")
+    if not tool_orientation:
+        return "missing_tool_orientation"
+
+    orientation_point_count = motion.get("orientation_point_count")
+    if not isinstance(orientation_point_count, int) or orientation_point_count <= 0:
+        return "invalid_orientation_point_count"
+    if orientation_point_count != len(tool_orientation):
+        return "orientation_point_count_mismatch"
+    if orientation_point_count != point_count:
+        return "trajectory_orientation_count_mismatch"
     return None
 
 

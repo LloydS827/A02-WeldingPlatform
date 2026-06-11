@@ -36,6 +36,10 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
         validation_issues.append(f"invalid_urdf_root:{root.tag}")
 
     link_names = tuple(link.attrib.get("name", "") for link in root.findall("link"))
+    link_name_set = {name for name in link_names if name}
+    if not link_name_set:
+        validation_issues.append("missing_links")
+
     joints = root.findall("joint")
     joint_names = tuple(joint.attrib.get("name", "") for joint in joints)
     revolute_joints = [joint for joint in joints if joint.attrib.get("type") == "revolute"]
@@ -44,6 +48,10 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
     collision_meshes = _mesh_filenames(root, "collision")
     mesh_references = visual_meshes + collision_meshes
     mesh_files = tuple(dict.fromkeys(mesh_references))
+    if not visual_meshes:
+        validation_issues.append("missing_visual_meshes")
+    if not collision_meshes:
+        validation_issues.append("missing_collision_meshes")
 
     for mesh_file in mesh_files:
         if not (urdf_path.parent / mesh_file).exists():
@@ -52,6 +60,7 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
     joint_limits = []
     for joint in revolute_joints:
         joint_name = joint.attrib.get("name", "")
+        _validate_joint_link_refs(joint, joint_name, link_name_set, validation_issues)
         limit = joint.find("limit")
         if limit is None or "lower" not in limit.attrib or "upper" not in limit.attrib:
             validation_issues.append(f"missing_joint_limit:{joint_name}")
@@ -101,6 +110,22 @@ def _mesh_filenames(root: ElementTree.Element, element_name: str) -> tuple[str, 
             if filename:
                 filenames.append(filename)
     return tuple(filenames)
+
+
+def _validate_joint_link_refs(
+    joint: ElementTree.Element,
+    joint_name: str,
+    link_name_set: set[str],
+    validation_issues: list[str],
+) -> None:
+    parent = joint.find("parent")
+    child = joint.find("child")
+    parent_link = parent.attrib.get("link") if parent is not None else None
+    child_link = child.attrib.get("link") if child is not None else None
+    if parent_link not in link_name_set:
+        validation_issues.append(f"joint_parent_missing:{joint_name}:{parent_link or ''}")
+    if child_link not in link_name_set:
+        validation_issues.append(f"joint_child_missing:{joint_name}:{child_link or ''}")
 
 
 def _required_float(
