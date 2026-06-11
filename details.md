@@ -24,7 +24,8 @@
 ```text
 SimulationEvidenceBundle
 -> ManipulationSkillAsset
--> RobotBodyAsset(URDF)
+
+ManipulationSkillAsset + RobotBodyAsset(URDF)
 -> SkillTransferAssessment
 -> RobotContextSpec / SceneContextAsset
 -> RobotFeasibilityResult
