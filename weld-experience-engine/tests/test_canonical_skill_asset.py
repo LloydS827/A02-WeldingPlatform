@@ -155,12 +155,23 @@ def test_transfer_assessment_blocks_missing_skill_motion():
         {},
         {**base_skill.motion, "tcp_trajectory": []},
         {**base_skill.motion, "trajectory_point_count": 0},
+        {key: value for key, value in base_skill.motion.items() if key != "trajectory_point_count"},
+        {**base_skill.motion, "trajectory_point_count": -1},
+        {**base_skill.motion, "trajectory_point_count": len(base_skill.motion["tcp_trajectory"]) + 1},
     ):
         skill = replace(base_skill, motion=motion)
         assessment = build_skill_transfer_assessment(skill, robot)
 
         assert assessment.status == "blocked_by_missing_skill_motion"
-        assert "missing_tcp_trajectory" in assessment.blocking_gaps
+        assert any(
+            gap
+            in {
+                "missing_tcp_trajectory",
+                "invalid_trajectory_point_count",
+                "trajectory_point_count_mismatch",
+            }
+            for gap in assessment.blocking_gaps
+        )
 
 
 def test_transfer_assessment_blocks_robot_body_asset_issue():
@@ -175,4 +186,18 @@ def test_transfer_assessment_blocks_robot_body_asset_issue():
 
     assert assessment.status == "blocked_by_robot_body_asset_issue"
     assert "robot_body_asset_issue" in assessment.blocking_gaps
+    assert "robot_body_asset_issue:missing_mesh:meshes/missing.stl" in assessment.blocking_gaps
     assert "missing_mesh:meshes/missing.stl" in assessment.warning_gaps
+
+
+def test_transfer_assessment_deduplicates_warning_gaps():
+    skill = _default_skill_asset()
+    robot = replace(
+        build_robot_body_asset_from_urdf(URDF),
+        validation_status="blocked_by_asset_issue",
+        validation_issues=("requires_tcp_calibration", "requires_tcp_calibration"),
+    )
+
+    assessment = build_skill_transfer_assessment(skill, robot)
+
+    assert assessment.warning_gaps.count("requires_tcp_calibration") == 1

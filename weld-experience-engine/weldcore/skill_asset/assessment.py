@@ -29,18 +29,22 @@ def build_skill_transfer_assessment(
     blocking_gaps = []
     warning_gaps = list(DEFAULT_WARNING_GAPS)
 
-    if _has_skill_motion(skill_asset):
+    motion_gap = _skill_motion_gap(skill_asset)
+    if motion_gap is None:
         passed_checks.append("skill_motion_present")
     else:
-        blocking_gaps.append("missing_tcp_trajectory")
+        blocking_gaps.append(motion_gap)
 
     if robot_body_asset.validation_status == "usable_as_robot_body_context":
         passed_checks.append("robot_body_asset_usable")
     else:
         blocking_gaps.append("robot_body_asset_issue")
+        blocking_gaps.extend(
+            f"robot_body_asset_issue:{issue}" for issue in robot_body_asset.validation_issues
+        )
         warning_gaps.extend(robot_body_asset.validation_issues)
 
-    if "missing_tcp_trajectory" in blocking_gaps:
+    if motion_gap is not None:
         status = "blocked_by_missing_skill_motion"
     elif "robot_body_asset_issue" in blocking_gaps:
         status = "blocked_by_robot_body_asset_issue"
@@ -54,7 +58,7 @@ def build_skill_transfer_assessment(
         status=status,
         passed_checks=tuple(passed_checks),
         blocking_gaps=tuple(blocking_gaps),
-        warning_gaps=tuple(warning_gaps),
+        warning_gaps=_dedupe_text(*warning_gaps),
         evidence_boundary=_dedupe_text(
             *BASE_EVIDENCE_BOUNDARY,
             *skill_asset.quality_boundary,
@@ -66,12 +70,18 @@ def build_skill_transfer_assessment(
     )
 
 
-def _has_skill_motion(skill_asset: ManipulationSkillAsset) -> bool:
+def _skill_motion_gap(skill_asset: ManipulationSkillAsset) -> str | None:
     motion = skill_asset.motion or {}
     tcp_trajectory = motion.get("tcp_trajectory")
     if not tcp_trajectory:
-        return False
-    return motion.get("trajectory_point_count") != 0
+        return "missing_tcp_trajectory"
+
+    point_count = motion.get("trajectory_point_count")
+    if not isinstance(point_count, int) or point_count <= 0:
+        return "invalid_trajectory_point_count"
+    if point_count != len(tcp_trajectory):
+        return "trajectory_point_count_mismatch"
+    return None
 
 
 def _dedupe_text(*values: str) -> tuple[str, ...]:
