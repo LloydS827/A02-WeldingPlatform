@@ -134,7 +134,12 @@ SkillAssetSourceType = Literal[
     "expert_annotation",
 ]
 SkillAssetReviewStatus = Literal["not_reviewed", "expert_review_candidate", "reviewed"]
-SkillTransferStatus = Literal["requires_contextual_precheck", "blocked"]
+SkillTransferContractStatus = Literal["requires_contextual_precheck", "blocked"]
+SkillTransferAssessmentStatus = Literal[
+    "ready_for_contextual_precheck",
+    "blocked_by_missing_skill_motion",
+    "blocked_by_robot_body_asset_issue",
+]
 ```
 
 Export the new classes from `skill_asset/__init__.py` while keeping:
@@ -157,6 +162,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add weld-experience-engine/weldcore/skill_asset/model.py \
   weld-experience-engine/weldcore/skill_asset/__init__.py \
   weld-experience-engine/tests/test_canonical_skill_asset.py
@@ -257,6 +263,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add weld-experience-engine/weldcore/skill_asset/builders.py \
   weld-experience-engine/weldcore/skill_asset/__init__.py \
   weld-experience-engine/tests/test_canonical_skill_asset.py
@@ -428,6 +435,8 @@ Expected: PASS.
 Run:
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
+test -d docs/real-urdf
 rm -f docs/real-urdf/.DS_Store
 test -z "$(find docs/real-urdf -name .DS_Store -print -quit)"
 ```
@@ -437,6 +446,7 @@ Expected: command exits 0; no `.DS_Store` remains in `docs/real-urdf`.
 - [ ] **Step 7: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add docs/real-urdf/robot.urdf docs/real-urdf/meshes \
   weld-experience-engine/weldcore/skill_asset/model.py \
   weld-experience-engine/weldcore/skill_asset/urdf.py \
@@ -574,6 +584,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add weld-experience-engine/weldcore/skill_asset/assessment.py \
   weld-experience-engine/weldcore/skill_asset/__init__.py \
   weld-experience-engine/tests/test_canonical_skill_asset.py
@@ -643,7 +654,7 @@ Expected: FAIL with missing module.
 
 ```text
 --outdir artifacts/skill-assets/canonical
---urdf-path docs/real-urdf/robot.urdf
+--urdf-path ../docs/real-urdf/robot.urdf
 ```
 
 - [ ] **Step 4: Run CLI tests and smoke command**
@@ -661,6 +672,7 @@ Expected: tests PASS; CLI prints JSON with `ready_for_contextual_precheck`.
 - [ ] **Step 5: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add weld-experience-engine/weldcore/skill_asset/asset_report.py \
   weld-experience-engine/tests/test_skill_asset_report.py
 git commit -m "feat: add canonical skill asset report"
@@ -716,11 +728,135 @@ Update `weld-experience-engine/README.md`:
 
 - [ ] **Step 2: Refresh HTML reading copies**
 
-Use the repo's simple local Markdown-to-HTML refresh approach from previous branch or a small script matching existing style. Refresh:
+Run this exact repository-root command to refresh `README.html` and `details.html` with the existing HTML shell/style:
 
-```text
-README.html
-details.html
+```bash
+cd "$(git rev-parse --show-toplevel)"
+python - <<'PY'
+from __future__ import annotations
+
+import html
+import re
+from pathlib import Path
+
+STYLE_RE = re.compile(r"<style>(.*?)</style>", re.S)
+STYLE = STYLE_RE.search(Path("README.html").read_text()).group(1)
+
+
+def inline(text: str) -> str:
+    escaped = html.escape(text)
+    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    escaped = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', escaped)
+    return escaped
+
+
+def markdown_body(markdown: str) -> str:
+    lines = markdown.splitlines()
+    out: list[str] = []
+    paragraph: list[str] = []
+    list_open = False
+    ordered_open = False
+    code_open = False
+    code_lines: list[str] = []
+
+    def flush_paragraph() -> None:
+        nonlocal paragraph
+        if paragraph:
+            out.append(f"    <p>{inline(' '.join(paragraph))}</p>")
+            paragraph = []
+
+    def close_lists() -> None:
+        nonlocal list_open, ordered_open
+        if list_open:
+            out.append("    </ul>")
+            list_open = False
+        if ordered_open:
+            out.append("    </ol>")
+            ordered_open = False
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            flush_paragraph()
+            close_lists()
+            if code_open:
+                out.append(f"    <pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
+                code_lines = []
+                code_open = False
+            else:
+                code_open = True
+            continue
+        if code_open:
+            code_lines.append(line)
+            continue
+        if not stripped:
+            flush_paragraph()
+            close_lists()
+            continue
+        if stripped.startswith("# "):
+            flush_paragraph()
+            close_lists()
+            out.append(f"    <h1>{inline(stripped[2:])}</h1>")
+        elif stripped.startswith("## "):
+            flush_paragraph()
+            close_lists()
+            out.append(f"    <h2>{inline(stripped[3:])}</h2>")
+        elif stripped.startswith("### "):
+            flush_paragraph()
+            close_lists()
+            out.append(f"    <h3>{inline(stripped[4:])}</h3>")
+        elif stripped.startswith("- "):
+            flush_paragraph()
+            if ordered_open:
+                out.append("    </ol>")
+                ordered_open = False
+            if not list_open:
+                out.append("    <ul>")
+                list_open = True
+            out.append(f"      <li>{inline(stripped[2:])}</li>")
+        elif re.match(r"^\d+\\. ", stripped):
+            flush_paragraph()
+            if list_open:
+                out.append("    </ul>")
+                list_open = False
+            if not ordered_open:
+                out.append("    <ol>")
+                ordered_open = True
+            out.append(f"      <li>{inline(re.sub(r'^\\d+\\. ', '', stripped))}</li>")
+        else:
+            paragraph.append(stripped)
+    flush_paragraph()
+    close_lists()
+    return "\n".join(out)
+
+
+def render(source: str, target: str, title: str) -> None:
+    body = markdown_body(Path(source).read_text())
+    Path(target).write_text(
+        f"""<!doctype html>
+<html lang=\"zh-CN\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>{html.escape(title)}</title>
+  <style>{STYLE}</style>
+</head>
+<body>
+  <main>
+    <div class=\"meta\">HTML 阅读版；维护源：<a href=\"{source}\">{source}</a></div>
+{body}
+  </main>
+</body>
+</html>
+""",
+        encoding="utf-8",
+    )
+
+
+render("README.md", "README.html", "Physical AI 焊接技能资产底座")
+render("details.md", "details.html", "焊接技能大师平台项目进展记录")
+PY
 ```
 
 - [ ] **Step 3: Verify docs mention required terms**
@@ -736,6 +872,7 @@ Expected: all required terms appear in appropriate docs.
 - [ ] **Step 4: Commit**
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 git add README.md README.html details.md details.html weld-experience-engine/README.md
 git commit -m "docs: reframe project around canonical skill assets"
 ```
