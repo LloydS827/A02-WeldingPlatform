@@ -182,3 +182,26 @@ def test_urdf_blocks_joint_parent_or_child_not_in_links(tmp_path):
     assert asset.validation_status == "blocked_by_asset_issue"
     assert "joint_parent_missing:j1:missing_parent" in asset.validation_issues
     assert "joint_child_missing:j2:missing_child" in asset.validation_issues
+
+
+def test_urdf_blocks_non_revolute_joint_parent_or_child_not_in_links(tmp_path):
+    mesh = '<visual><geometry><mesh filename="meshes/part.stl"/></geometry></visual>'
+    collision = '<collision><geometry><mesh filename="meshes/part.stl"/></geometry></collision>'
+    links = "".join(f'<link name="l{i}">{mesh}{collision}</link>' for i in range(7))
+    revolute = "".join(
+        f'<joint name="j{i}" type="revolute"><parent link="l{i}"/><child link="l{i + 1}"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        for i in range(6)
+    )
+    urdf = _write_urdf(
+        tmp_path,
+        f'<robot name="bad_fixed">{links}{revolute}'
+        '<joint name="fixed_bad" type="fixed"><parent link="l0"/>'
+        '<child link="missing_fixed_child"/></joint>'
+        "</robot>",
+    )
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "joint_child_missing:fixed_bad:missing_fixed_child" in asset.validation_issues

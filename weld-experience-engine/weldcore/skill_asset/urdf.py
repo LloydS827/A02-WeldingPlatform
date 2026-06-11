@@ -57,10 +57,14 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
         if not (urdf_path.parent / mesh_file).exists():
             validation_issues.append(f"missing_mesh:{mesh_file}")
 
+    for joint in joints:
+        _validate_joint_link_refs(
+            joint, joint.attrib.get("name", ""), link_name_set, validation_issues
+        )
+
     joint_limits = []
     for joint in revolute_joints:
         joint_name = joint.attrib.get("name", "")
-        _validate_joint_link_refs(joint, joint_name, link_name_set, validation_issues)
         limit = joint.find("limit")
         if limit is None or "lower" not in limit.attrib or "upper" not in limit.attrib:
             validation_issues.append(f"missing_joint_limit:{joint_name}")
