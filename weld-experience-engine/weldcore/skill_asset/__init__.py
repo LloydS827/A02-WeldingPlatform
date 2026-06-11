@@ -1,3 +1,4 @@
+from .builders import build_manipulation_skill_asset_from_simulation_bundle
 from .model import (
     ManipulationSkillAsset,
     RobotBodyAsset,
@@ -24,5 +25,6 @@ __all__ = [
     "SkillTransferContract",
     "SkillTransferContractStatus",
     "WeldSkillPackage",
+    "build_manipulation_skill_asset_from_simulation_bundle",
     "package_from_sample",
 ]

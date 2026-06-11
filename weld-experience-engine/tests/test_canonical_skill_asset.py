@@ -2,6 +2,12 @@ from weldcore.skill_asset import (
     ManipulationSkillAsset,
     SkillAssetEvidence,
     SkillTransferContract,
+    build_manipulation_skill_asset_from_simulation_bundle,
+)
+from weldcore.simulation_bakeoff import (
+    build_simulation_evidence_bundle,
+    default_simulation_task_specs,
+    run_simlite_reference,
 )
 
 
@@ -56,3 +62,32 @@ def test_manipulation_skill_asset_serializes_core_contract():
     assert data["evidence"]["source_type"] == "simulation"
     assert "expert_review" in data["transfer_contract"]["required_checks"]
     assert data["transfer_contract"]["transfer_status"] == "requires_contextual_precheck"
+
+
+def test_simulation_evidence_bundle_builds_manipulation_skill_asset():
+    task_spec = default_simulation_task_specs()[0]
+    bundle = build_simulation_evidence_bundle(task_spec, run_simlite_reference(task_spec))
+
+    asset = build_manipulation_skill_asset_from_simulation_bundle(bundle)
+    data = asset.to_dict()
+
+    assert asset.domain == "welding"
+    assert asset.source_type == "simulation"
+    assert asset.source_refs["bundle_id"] == bundle.bundle_id
+    assert asset.motion["trajectory_point_count"] == len(bundle.adapter_result.tcp_trajectory)
+    assert asset.motion["orientation_point_count"] == len(bundle.adapter_result.tool_orientation)
+    assert asset.context_requirements["tcp_frame"] == task_spec.tcp_frame
+    assert asset.transfer_contract.transfer_status == "requires_contextual_precheck"
+    assert asset.transfer_contract.required_checks == (
+        "reachability",
+        "collision",
+        "joint_limits",
+        "tcp_calibration",
+        "workpiece_frame",
+        "path_continuity",
+        "orientation_feasibility",
+        "expert_review",
+    )
+    assert "simulation_only" in asset.evidence.evidence_boundary
+    assert "not_ready_for_robot_execution" in asset.quality_boundary
+    assert data["evidence"]["review_status"] == "not_reviewed"
