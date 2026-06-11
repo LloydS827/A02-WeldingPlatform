@@ -35,7 +35,7 @@ li { margin: 0.35em 0; }
   <main>
     <div class="meta">HTML 阅读版；维护源：<a href="details.md">details.md</a></div>
     <h1>焊接技能大师平台项目进展记录</h1>
-    <p>更新时间：2026-06-10</p>
+    <p>更新时间：2026-06-11</p>
     <p>这份文件用于记录 A02「焊接技能大师平台」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 <a href="README.md">README.md</a>。</p>
     <h2>文件定位</h2>
     <ul>
@@ -44,20 +44,35 @@ li { margin: 0.35em 0; }
     </ul>
     <p>本文件应同步维护 <a href="details.html">HTML 阅读版</a>。更新根目录 <code>README.md</code>、本文件或类似面向读者的阶段/路线说明时，也要同步刷新对应 <code>.html</code> 阅读副本。</p>
     <h2>当前一句话状态</h2>
-    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层、Phase 2 sharded accumulation 入口，以及 1000 requested samples next-batch 真实环境运行审查。当前既保留 100 requested samples 口径的 Phase 1 accumulation report，也已在真实 <code>weld-maniskill</code> 环境完成 500 requested samples 和 1000 requested samples 的运行、复用和审查；1000 next-batch 首次运行 1000 requested / 1000 completed / 0 failed / 0 skipped，同命令复跑 10 个 shard 均为 <code>reused_existing_result</code>，当前项目判断为 <code>ready_to_continue_accumulation_with_conditions</code>。</p>
+    <p>项目已经完成从 <code>WeldSkillUnit</code>、轻量仿真证据、经验数据到机器人候选草案前置接口的结构链路，并完成统一仿真 adapter 第一轮 facade / registry、ManiSkill/SAPIEN 小批量默认仿真入口、仿真数据积累启动层、Phase 2 sharded accumulation 入口、1000 requested samples next-batch 真实环境运行审查，以及批量焊接任务建模与验证闭环启动层。当前既保留 100/500/1000 requested samples 的运行审查口径，也已能从当前 2 个默认任务族生成 8 个 modeled <code>SimulationTaskSpec</code>，输出 <code>modeling_validation_report</code> 并进入下一轮小批量仿真验证准备状态。</p>
     <h2>当前主线判断</h2>
-    <p>现在不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成，但已经可以从“小批量入口证明”进入“仿真数据积累启动”。</p>
+    <p>现在不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成，也不应继续只按 requested samples 数量线性扩张。更合理的节奏是先把“批量任务从哪里来、如何验证、如何进入专家候选对象”做清楚，再继续扩大仿真数据积累。</p>
     <p>更合理的主线是：</p>
     <pre><code>WeldSkillUnit
 -&gt; SimulationTaskSpec
+-&gt; BatchModelingSpec / modeled SimulationTaskSpec
+-&gt; modeling_validation_report
 -&gt; candidate simulator adapter
 -&gt; SimulatorAdapterResult
 -&gt; SimulationEvidenceBundle
 -&gt; SkillDataset / experience dataset
 -&gt; RobotProcessPackageDraft</code></pre>
-    <p>这一段必须先稳定下来。只有当仿真任务契约、输出证据、失败边界和数据转换都可复跑、可比较、可审查之后，项目才适合进入持续数据积累。</p>
+    <p>这一段必须先稳定下来。只有当仿真任务契约、批量建模、输出证据、失败边界和数据转换都可复跑、可比较、可审查之后，项目才适合继续进入更大规模的持续数据积累。</p>
     <p>这里的“反证工作”很重要：候选仿真软件不是因为名字先进就自动成为主线，而要通过同一组任务、同一套输出契约和同一份证据报告证明它能接入项目数据结构；不能接入的地方也要明确记录失败原因。</p>
     <h2>近期更新</h2>
+    <h3>2026-06-11</h3>
+    <ul>
+      <li>完成批量焊接任务建模与仿真验证闭环设计和实施计划，并通过 review。</li>
+      <li>新增 <code>BatchModelingSpec</code>、<code>TaskModelingVariation</code>、<code>ModeledSimulationTask</code>、<code>ModelingValidationReport</code> 和 <code>ModelingCoverageSummary</code>。</li>
+      <li>新增 <code>build_modeled_simulation_tasks</code>，默认从 2 个 source tasks x 4 variants 生成 8 个 modeled <code>SimulationTaskSpec</code>。</li>
+      <li>新增 <code>build_modeling_validation_report</code>，验证 source 覆盖、modeled task id 一致性、path geometry 变化、输出字段、评价指标、out-of-scope 边界和禁用真实焊接质量术语。</li>
+      <li>建模报告包含 <code>expert_review_candidate_task_ids</code> 和 <code>expert_review_candidate_ratio</code>；完整默认路径下状态为 <code>ready_for_simulation_batch</code>，候选比例为 1.0。</li>
+      <li>建模报告会阻止不完整批次：如果只传入部分 modeled tasks，会进入 <code>blocked_by_modeling_issue</code>，避免缺 7/8 任务时仍显示 ready。</li>
+      <li>新增 <code>modeled_task_specs</code> 和 <code>simulation_task_specs_from_modeling_payload</code>，保证 <code>modeled_task_specs.json</code> 可恢复成 <code>SimulationTaskSpec</code> 并进入 <code>default_maniskill_batch_spec</code>。</li>
+      <li>新增 <code>weldcore.simulation_bakeoff.modeling_pipeline</code> CLI，输出 <code>modeling_spec.json</code>、<code>modeled_task_specs.json</code> 和 <code>modeling_validation_report.json</code>。</li>
+      <li>当前默认兼容口径为 8 个 modeled tasks x 2 samples = 16 requested samples，用于下一阶段小批量 ManiSkill/SAPIEN 验证。</li>
+      <li>当前仍不做最终仿真器选型、真实焊接质量验证、正式 WPS/PQR 或真实机器人执行结论。</li>
+    </ul>
     <h3>2026-06-10</h3>
     <ul>
       <li>完成仿真数据积累启动层设计与实施计划，并通过 review。</li>
@@ -157,27 +172,30 @@ li { margin: 0.35em 0; }
       <li>ManiSkill/SAPIEN 小批量默认仿真入口和 batch summary 契约。</li>
       <li>仿真数据积累启动层、dataset index 和 accumulation report 契约。</li>
       <li>Phase 2 sharded accumulation、已有 batch result 复用、<code>--force</code> 强制重跑、failure boundary counts、field coverage trend 和 <code>locked_for_next_batch_with_conditions</code> 判断。</li>
+      <li>批量焊接任务建模与验证闭环，默认 2 个 source tasks x 4 variants = 8 个 modeled task specs。</li>
       <li>报告命令和历史证据归档。</li>
     </ul>
     <p>这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证、最终仿真器选型或真实机器人执行验证。</p>
     <h2>尚未完成</h2>
     <ul>
       <li>最终仿真软件选型尚未完成。</li>
-      <li>规模化持续积累仿真数据的默认入口已完成 500 requested samples 和 1000 requested samples 级真实环境审查，但跨批次 accumulation ledger 尚未建立。</li>
-      <li>候选仿真软件的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。</li>
+      <li>规模化持续积累仿真数据的默认入口已完成 500 requested samples 和 1000 requested samples 级真实环境审查，但 modeled task specs 的小批量 ManiSkill/SAPIEN 验证尚未完成。</li>
+      <li>跨批次 accumulation ledger 尚未建立。</li>
+      <li>候选仿真软件面对 modeled task specs 的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。</li>
       <li>经验数据与技能资产之间的字段追踪还需要进一步收束。</li>
       <li>专家审查记录结构尚未作为主线对象实现。</li>
       <li>真实焊机、机器人、焊材、焊后检测和质量结果尚未接成闭环。</li>
       <li>当前资料、输入规范、仿真假设和工程师参考表格不能替代正式 WPS/PQR。</li>
     </ul>
     <h2>下一步建议</h2>
-    <p>推荐下一阶段任务是：<strong>建立跨批次 accumulation ledger / 持续审查层</strong>。</p>
-    <p>目标是在 Phase 2 500 requested samples 与 1000 requested samples 审查均通过之后，把运行事实从单次报告推进为可连续追踪的批次台账：</p>
+    <p>推荐下一阶段任务是：<strong>使用 modeled task specs 做小批量 ManiSkill/SAPIEN 仿真验证</strong>。</p>
+    <p>目标是在 2 个默认任务族已能生成 8 个 modeled task specs 之后，把建模层真正接到仿真运行层：</p>
     <ol>
-      <li>记录 Phase 1、Phase 2 和 1000 next-batch 的运行元数据、命令、requested/completed/failed/skipped 分布和 shard 复用状态。</li>
-      <li>记录各批次 <code>failure_boundary_counts</code>、<code>field_coverage_trend</code>、raw artifact、adapter result、<code>SimulationEvidenceBundle</code> 和 experience dataset 覆盖情况。</li>
-      <li>继续保持当前 2 个默认任务族，先观察多批次稳定性，再讨论是否新增第三个默认任务族。</li>
-      <li>明确专家审查对象：优先绑定 <code>SimulationEvidenceBundle</code>、experience dataset 和 <code>RobotProcessPackageDraft</code>，而不是直接进入真实机器人执行。</li>
+      <li>使用 <code>modeled_task_specs.json</code> 恢复出的 8 个 <code>SimulationTaskSpec</code> 组织小批量 batch，建议先按 2-5 samples/task 运行 16-40 requested samples。</li>
+      <li>记录 modeled batch 的 requested/completed/failed/skipped、failure boundary counts、raw artifact、adapter result、experience dataset 和 <code>SimulationEvidenceBundle</code> 覆盖情况。</li>
+      <li>把 <code>expert_review_candidate_task_ids</code> 绑定到后续 <code>SimulationEvidenceBundle</code>、experience dataset 和 <code>RobotProcessPackageDraft</code>，明确专家到底审查哪些对象。</li>
+      <li>将跨批次 accumulation ledger 作为支撑层，记录 Phase 1、Phase 2、1000 next-batch 和 modeled batch 的运行事实。</li>
+      <li>继续保持当前 2 个默认任务族，先观察 modeled task 稳定性，再讨论是否新增第三个默认任务族。</li>
       <li>后续批次如果出现 failed samples，先修复具体 failure boundary，再讨论切换仿真器或移动到真实机器人路线。</li>
     </ol>
     <p>这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把结果写成最终仿真器选型。</p>
@@ -185,7 +203,7 @@ li { margin: 0.35em 0; }
     <ul>
       <li>暂缓新增更多任务族或第三个 <code>WeldSkillUnit</code> 作为默认积累对象，避免在 scale shard 未稳定前同时扩大任务复杂度。</li>
       <li>暂缓完整 Gazebo/MoveIt 或 ROS 侧集成，除非它作为候选 adapter 的最小反证实验出现。</li>
-      <li>暂缓专家审核系统化录入，因为当前还需要先稳定“审核什么对象”。</li>
+      <li>暂缓专家审核系统化录入，因为当前还需要先用 modeled batch 稳定“审核什么对象”。</li>
       <li>暂缓真实机器人执行结论，当前只做候选草案和审查前置条件。</li>
     </ul>
     <h2>当前可交付物清单</h2>
@@ -203,6 +221,7 @@ li { margin: 0.35em 0; }
       <li><code>weldcore.simulation_bakeoff.maniskill_accumulation_pipeline</code>：100 requested samples 口径的仿真数据积累入口。</li>
       <li><code>weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 5 --samples-per-task 50</code>：5 shards x 100 requested samples，共 500 requested samples 的 Phase 2 shard 积累入口。</li>
       <li><code>weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 10 --samples-per-task 50</code>：10 shards x 100 requested samples，共 1000 requested samples 的 next-batch 积累入口。</li>
+      <li><code>weldcore.simulation_bakeoff.modeling_pipeline</code>：批量焊接任务建模入口，默认生成 8 个 modeled task specs 和 validation report。</li>
       <li><code>docs/evidence/simulation-runs/2026-06-10-next-batch-1000-maniskill-sapien-review.md</code>：1000 requested samples 真实环境运行审查记录。</li>
       <li><code>docs/焊接工艺数据库主要参数表.xlsx</code>：工程师参数参考表格。</li>
       <li><code>weld-experience-engine/</code>：可运行的焊接技能资产引擎、测试和报告命令。</li>
@@ -211,7 +230,7 @@ li { margin: 0.35em 0; }
     <p>进入 <code>weld-experience-engine</code> 后运行：</p>
     <pre><code>uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
-    <p>当前分支最近一次完整验证结果为 <code>329 passed</code>。</p>
+    <p>当前分支最近一次完整验证结果为 <code>341 passed</code>。</p>
     <p>可选小批量入口命令：</p>
     <pre><code>uv run python -m weldcore.simulation_bakeoff.maniskill_batch_pipeline \
   --outdir artifacts/simulation/maniskill-sapien-batches</code></pre>
@@ -234,6 +253,13 @@ uv run pytest -q</code></pre>
   --shards 10 \
   --samples-per-task 50</code></pre>
     <p>该命令按 10 个 shard x 100 requested samples 组织 1000 requested samples。本轮真实运行审查中，首次运行 1000/1000 completed，复用运行 10 个 shard 均为 <code>reused_existing_result</code>，<code>failure_boundary_counts</code> 为空。后续批次若出现 failed samples，应优先修复具体 failure boundary，不直接切换仿真器或进入真实机器人路线；该命令仍不表示最终仿真器选型、真实焊接质量验证或真实机器人执行验证已经完成。</p>
+    <p>可选批量任务建模入口命令：</p>
+    <pre><code>uv run python -m weldcore.simulation_bakeoff.modeling_pipeline \
+  --outdir artifacts/simulation/modeling-validation \
+  --modeling-batch-id default-batch-modeling-v1 \
+  --variants-per-task 4 \
+  --batch-samples-per-task 2</code></pre>
+    <p>该命令默认从当前 2 个默认任务族生成 8 个 modeled <code>SimulationTaskSpec</code>，输出 <code>modeling_spec.json</code>、<code>modeled_task_specs.json</code> 和 <code>modeling_validation_report.json</code>。<code>modeled_task_specs.json</code> 可恢复为 <code>SimulationTaskSpec</code> 并进入 <code>default_maniskill_batch_spec</code>，用于下一阶段小批量 ManiSkill/SAPIEN 验证。</p>
     <p>报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。</p>
     <h2>风险提醒</h2>
     <ul>

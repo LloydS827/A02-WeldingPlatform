@@ -49,6 +49,21 @@ from .maniskill_batch_pipeline import run_maniskill_batch_pipeline
 from .maniskill_pipeline import run_maniskill_spike_pipeline
 from .maniskill_runner import run_maniskill_lightweight
 from .maniskill_tasks import default_maniskill_task_configs, maniskill_task_config_from_spec
+from .modeling import (
+    BatchModelingSpec,
+    ModeledSimulationTask,
+    ModelingCoverageSummary,
+    ModelingValidationIssue,
+    ModelingValidationReport,
+    ModelingValidationStatus,
+    TaskModelingVariation,
+    build_modeled_simulation_tasks,
+    build_modeling_validation_report,
+    default_batch_modeling_spec,
+    modeled_task_specs,
+    modeling_batch_spec_compatibility,
+    simulation_task_specs_from_modeling_payload,
+)
 from .model import (
     BakeoffScorecard,
     SimulationEvidenceBundle,
@@ -68,16 +83,29 @@ from .routes import (
 )
 from .task_specs import DEFAULT_SIMULATION_TASK_SPECS, default_simulation_task_specs
 
+
+def run_batch_modeling_pipeline(*args, **kwargs):
+    from .modeling_pipeline import run_batch_modeling_pipeline as _run
+
+    return _run(*args, **kwargs)
+
+
 __all__ = [
     "DEFAULT_SIMULATION_TASK_SPECS",
     "DEFAULT_ACCUMULATION_SCALE_PLAN",
     "DEFAULT_ACCUMULATION_STAGE_BOUNDARY",
     "AccumulationStatus",
     "BakeoffScorecard",
+    "BatchModelingSpec",
     "ExperienceDataset",
     "FailureBoundary",
     "ManiSkillTaskConfig",
     "MinimalBakeoffResult",
+    "ModeledSimulationTask",
+    "ModelingCoverageSummary",
+    "ModelingValidationIssue",
+    "ModelingValidationReport",
+    "ModelingValidationStatus",
     "RawManiSkillArtifact",
     "RuleBasedDemo",
     "SampleRunStatus",
@@ -101,11 +129,14 @@ __all__ = [
     "SimulationSampleRun",
     "SimulationTaskSpec",
     "SimulatorAdapterResult",
+    "TaskModelingVariation",
     "VariationPolicy",
     "adapt_maniskill_artifact",
     "attempt_gazebo_moveit",
     "attempt_maniskill_sapien",
     "build_maniskill_experience_dataset",
+    "build_modeled_simulation_tasks",
+    "build_modeling_validation_report",
     "build_simulation_accumulation_shard_report",
     "build_simulation_accumulation_report",
     "build_simulation_dataset_index",
@@ -114,6 +145,7 @@ __all__ = [
     "default_maniskill_sharded_accumulation_spec",
     "default_maniskill_batch_spec",
     "default_maniskill_task_configs",
+    "default_batch_modeling_spec",
     "default_simulation_adapter_routes",
     "default_simulation_task_specs",
     "determine_accumulation_status",
@@ -121,16 +153,20 @@ __all__ = [
     "get_default_batch_route",
     "iter_accumulation_shard_specs",
     "iter_batch_sample_plans",
+    "modeled_task_specs",
+    "modeling_batch_spec_compatibility",
     "maniskill_task_config_from_spec",
     "read_json_artifact",
     "run_adapter_route",
     "run_comparison_routes",
+    "run_batch_modeling_pipeline",
     "run_maniskill_accumulation_pipeline",
     "run_maniskill_batch_pipeline",
     "run_maniskill_spike_pipeline",
     "run_maniskill_lightweight",
     "run_simlite_reference",
     "run_minimal_simulation_bakeoff",
+    "simulation_task_specs_from_modeling_payload",
     "summarize_sample_runs",
     "validate_batch_result_matches_shard",
     "write_json_artifact",
