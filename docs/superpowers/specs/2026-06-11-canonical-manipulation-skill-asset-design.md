@@ -125,7 +125,8 @@ RobotBodyAsset
 它不表达焊接技能本身，也不证明真实执行成功。它用于迁移评估：
 
 ```text
-ManipulationSkillAsset + RobotBodyAsset + SceneContext -> SkillTransferAssessment
+ManipulationSkillAsset + RobotBodyAsset -> SkillTransferAssessment
+SkillTransferAssessment + RobotContextSpec + SceneContextAsset(later) -> deeper feasibility
 ```
 
 ### 4.4 Transfer Assessment 是产品化关键中间物
@@ -136,17 +137,27 @@ ManipulationSkillAsset + RobotBodyAsset + SceneContext -> SkillTransferAssessmen
 这个技能资产换到另一台机器人/另一个工件/另一个场景时，哪些条件已满足，哪些必须重新验证？
 ```
 
-因此本阶段应引入 `SkillTransferAssessment`，但只做保守结构判断，不做真实运动规划。
+因此本阶段应引入 `SkillTransferAssessment`，但只做保守结构判断，不做真实运动规划。第一版只判断“技能资产和机器人身体资产是否足以进入下一层上下文绑定”；TCP 标定、工件坐标系和场景碰撞几何属于后续 `RobotContextSpec` / `SceneContextAsset` 绑定阶段。
 
 ## 5. 核心对象设计
 
-建议新增模块：
+建议扩展现有命名空间：
 
 ```text
 weldcore.skill_asset
 ```
 
-该模块承接 canonical asset，不放在 `simulation_bakeoff` 或 `robot_process` 下，避免核心资产被仿真或机器人执行后处理绑定。
+当前 `weldcore.skill_asset` 已存在，并导出 `WeldSkillPackage` / `package_from_sample`。本阶段不得破坏现有公开入口，而是在该命名空间下新增 focused files，例如：
+
+```text
+weldcore/skill_asset/model.py
+weldcore/skill_asset/builders.py
+weldcore/skill_asset/urdf.py
+weldcore/skill_asset/assessment.py
+weldcore/skill_asset/asset_report.py
+```
+
+该命名空间承接 canonical asset，不放在 `simulation_bakeoff` 或 `robot_process` 下，避免核心资产被仿真或机器人执行后处理绑定。
 
 ### 5.1 ManipulationSkillAsset
 
@@ -279,10 +290,23 @@ validation_issues
 - `robot_model` 第一版可用 URDF root name：`generated_robot`
 - `robot_family` 可推断为 `six_axis_collaborative_welding_arm_candidate`
 - `asset_source = "uploaded_urdf"`
-- `validation_status = "usable_as_robot_body_context"` 当 XML 可解析、mesh 引用存在、至少 6 个 revolute joints
-- 若缺 mesh、无 joint limit、无 revolute joints，应进入 `blocked_by_asset_issue`
+- `validation_status = "usable_as_robot_body_context"` 当 XML 可解析、所有 mesh 引用存在、至少 6 个 revolute joints，且每个 revolute joint 都有 limit
+- 若缺 mesh、缺 revolute joint limit、无 revolute joints，或 XML 不可解析，应进入 `blocked_by_asset_issue`
+- 本轮真实 URDF 应报告 `33` 个 unique mesh files 和 `66` 个 mesh references，因为 visual / collision 各引用一次
 
-### 5.5 SkillTransferAssessment
+### 5.5 RobotBodyAsset / RobotContextSpec / SceneContextAsset 边界
+
+三类上下文不得混用：
+
+| 对象 | 本阶段角色 | 负责字段 |
+| --- | --- | --- |
+| `RobotBodyAsset` | 本阶段实现 | URDF、mesh、link/joint 拓扑、joint limit、collision/visual mesh 可用性、机器人身体证据边界 |
+| `RobotContextSpec` | 现有对象，本阶段可引用但不作为默认输入 | robot identity、base frame、tcp frame、tcp calibration、workpiece frame、joint limit source、现场上下文来源 |
+| `SceneContextAsset` | future-only，本阶段不实现 | 工件几何、焊缝坐标系、夹具、障碍物、场景碰撞几何 |
+
+本阶段 `SkillTransferAssessment` 默认只接收 `ManipulationSkillAsset + RobotBodyAsset`。它可以在 `warning_gaps` 中列出 `requires_robot_context_spec`、`requires_tcp_calibration`、`requires_workpiece_frame` 和 `requires_scene_context_asset`，但这些不是第一版 assessment 的 blocking condition。
+
+### 5.6 SkillTransferAssessment
 
 最小字段：
 
@@ -304,15 +328,33 @@ next_step_recommendation
 ready_for_contextual_precheck
 blocked_by_missing_skill_motion
 blocked_by_robot_body_asset_issue
-blocked_by_missing_scene_context
 ```
 
 默认判断规则：
 
 - skill asset 没有 TCP trajectory：`blocked_by_missing_skill_motion`
 - robot body asset validation 失败：`blocked_by_robot_body_asset_issue`
-- 缺少 workpiece frame / TCP calibration / scene context：`blocked_by_missing_scene_context`
-- skill motion 和 robot body asset 都存在，但缺真实场景：`ready_for_contextual_precheck`
+- skill motion 存在且 robot body asset 可用：`ready_for_contextual_precheck`
+
+当状态为 `ready_for_contextual_precheck` 时，第一版必须输出：
+
+```text
+passed_checks:
+- skill_motion_present
+- robot_body_asset_usable
+
+blocking_gaps:
+- []
+
+warning_gaps:
+- requires_robot_context_spec
+- requires_tcp_calibration
+- requires_workpiece_frame
+- requires_scene_context_asset
+
+next_step_recommendation:
+Bind RobotContextSpec and SceneContextAsset before any IK, collision, or real robot validation claim.
+```
 
 注意：`ready_for_contextual_precheck` 不等于 `ready_for_robot_execution`。
 
@@ -372,7 +414,8 @@ ManipulationSkillAsset
 ```text
 技能资产已经存在
 机器人身体资产已经存在
-但还缺 TCP 标定、工件坐标系和场景碰撞几何
+可以进入下一层上下文绑定
+但在任何 IK、碰撞或真机验证前，还必须补 TCP 标定、工件坐标系和场景碰撞几何
 ```
 
 这正好回答当前困惑：系统现有能力到底是什么、还差什么才能更产品化。
@@ -397,7 +440,7 @@ skill_transfer_assessment.json
 
 ## 8. 文档与产品路线更新
 
-README / details 应更新为：
+README / details / `weld-experience-engine/README.md` 应更新为：
 
 ```text
 当前主线：canonical manipulation skill asset 本体优先。
@@ -413,8 +456,8 @@ ManipulationSkillAsset
 
 ManipulationSkillAsset
 + RobotBodyAsset(URDF)
-+ SceneContext later
 -> SkillTransferAssessment
++ RobotContextSpec / SceneContextAsset later
 -> expert review candidate
 -> real robot validation later
 ```
@@ -434,9 +477,9 @@ ManipulationSkillAsset
 2. 至少一个默认仿真 evidence bundle 能转换为 `ManipulationSkillAsset`。
 3. `docs/real-urdf/robot.urdf` 能转换为 `RobotBodyAsset`。
 4. `RobotBodyAsset` 报告 7 links、6 revolute joints、33 unique mesh files，且 mesh 引用完整。
-5. `SkillTransferAssessment` 能表达“skill asset + robot body 已具备，但缺 scene/TCP/workpiece context，因此 ready_for_contextual_precheck 或 blocked_by_missing_scene_context”。
+5. `SkillTransferAssessment` 能表达“skill asset + robot body 已具备，因此 `ready_for_contextual_precheck`；但仍需 RobotContextSpec、TCP 标定、workpiece frame 和 SceneContextAsset 后才能做 IK、碰撞或真机验证声明”。
 6. `uv run pytest -q` 通过。
-7. README / details / HTML 阅读版同步反映新路线。
+7. README / details / `weld-experience-engine/README.md` / HTML 阅读版同步反映新路线和 `asset_report` CLI。
 
 ## 10. 风险与边界
 
