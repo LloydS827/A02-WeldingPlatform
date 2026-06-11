@@ -1,8 +1,13 @@
+from dataclasses import replace
+from pathlib import Path
+
 from weldcore.skill_asset import (
     ManipulationSkillAsset,
     SkillAssetEvidence,
     SkillTransferContract,
+    build_robot_body_asset_from_urdf,
     build_manipulation_skill_asset_from_simulation_bundle,
+    build_skill_transfer_assessment,
 )
 from weldcore.simulation_bakeoff import (
     attempt_gazebo_moveit,
@@ -10,6 +15,10 @@ from weldcore.simulation_bakeoff import (
     default_simulation_task_specs,
     run_simlite_reference,
 )
+
+
+ROOT = Path(__file__).resolve().parents[2]
+URDF = ROOT / "docs" / "real-urdf" / "robot.urdf"
 
 
 def test_manipulation_skill_asset_serializes_core_contract():
@@ -103,3 +112,67 @@ def test_failed_simulation_bundle_deduplicates_evidence_boundary():
 
     for boundary in adapter_result.failure_boundary:
         assert asset.evidence.evidence_boundary.count(boundary) == 1
+
+
+def _default_skill_asset():
+    task_spec = default_simulation_task_specs()[0]
+    bundle = build_simulation_evidence_bundle(task_spec, run_simlite_reference(task_spec))
+    return build_manipulation_skill_asset_from_simulation_bundle(bundle)
+
+
+def test_skill_and_robot_body_are_ready_for_contextual_precheck():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+
+    assessment = build_skill_transfer_assessment(skill, robot)
+
+    assert assessment.status == "ready_for_contextual_precheck"
+    assert assessment.blocking_gaps == ()
+    assert assessment.passed_checks == ("skill_motion_present", "robot_body_asset_usable")
+    assert assessment.warning_gaps == (
+        "requires_robot_context_spec",
+        "requires_tcp_calibration",
+        "requires_workpiece_frame",
+        "requires_scene_context_asset",
+    )
+    assert "requires_tcp_calibration" in assessment.warning_gaps
+    assert "requires_scene_context_asset" in assessment.warning_gaps
+    assert assessment.next_step_recommendation == (
+        "Bind RobotContextSpec and SceneContextAsset before any IK, collision, "
+        "or real robot validation claim."
+    )
+    assert "not_ready_for_robot_execution" in assessment.evidence_boundary
+    assert "not_ik_validated" in assessment.evidence_boundary
+    assert "not_collision_validated" in assessment.evidence_boundary
+    assert "not_real_robot_validated" in assessment.evidence_boundary
+
+
+def test_transfer_assessment_blocks_missing_skill_motion():
+    robot = build_robot_body_asset_from_urdf(URDF)
+    base_skill = _default_skill_asset()
+
+    for motion in (
+        {},
+        {**base_skill.motion, "tcp_trajectory": []},
+        {**base_skill.motion, "trajectory_point_count": 0},
+    ):
+        skill = replace(base_skill, motion=motion)
+        assessment = build_skill_transfer_assessment(skill, robot)
+
+        assert assessment.status == "blocked_by_missing_skill_motion"
+        assert "missing_tcp_trajectory" in assessment.blocking_gaps
+
+
+def test_transfer_assessment_blocks_robot_body_asset_issue():
+    skill = _default_skill_asset()
+    robot = replace(
+        build_robot_body_asset_from_urdf(URDF),
+        validation_status="blocked_by_asset_issue",
+        validation_issues=("missing_mesh:meshes/missing.stl",),
+    )
+
+    assessment = build_skill_transfer_assessment(skill, robot)
+
+    assert assessment.status == "blocked_by_robot_body_asset_issue"
+    assert "robot_body_asset_issue" in assessment.blocking_gaps
+    assert "missing_mesh:meshes/missing.stl" in assessment.warning_gaps

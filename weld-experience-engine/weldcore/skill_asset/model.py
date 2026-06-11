@@ -136,6 +136,9 @@ class SkillTransferAssessment:
     status: SkillTransferAssessmentStatus
     passed_checks: tuple[str, ...]
     blocking_gaps: tuple[str, ...]
+    warning_gaps: tuple[str, ...]
+    evidence_boundary: tuple[str, ...]
+    next_step_recommendation: str
     evidence_notes: tuple[str, ...]
     version: str = "v0.1"
 

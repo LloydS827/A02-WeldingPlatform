@@ -1,3 +1,4 @@
+from .assessment import build_skill_transfer_assessment
 from .builders import build_manipulation_skill_asset_from_simulation_bundle
 from .model import (
     ManipulationSkillAsset,
@@ -30,5 +31,6 @@ __all__ = [
     "WeldSkillPackage",
     "build_manipulation_skill_asset_from_simulation_bundle",
     "build_robot_body_asset_from_urdf",
+    "build_skill_transfer_assessment",
     "package_from_sample",
 ]
