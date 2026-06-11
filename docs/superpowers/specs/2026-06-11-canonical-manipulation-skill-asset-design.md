@@ -344,7 +344,7 @@ passed_checks:
 - robot_body_asset_usable
 
 blocking_gaps:
-- []
+[]
 
 warning_gaps:
 - requires_robot_context_spec
