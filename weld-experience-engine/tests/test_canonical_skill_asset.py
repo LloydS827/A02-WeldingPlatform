@@ -5,6 +5,7 @@ from weldcore.skill_asset import (
     build_manipulation_skill_asset_from_simulation_bundle,
 )
 from weldcore.simulation_bakeoff import (
+    attempt_gazebo_moveit,
     build_simulation_evidence_bundle,
     default_simulation_task_specs,
     run_simlite_reference,
@@ -91,3 +92,14 @@ def test_simulation_evidence_bundle_builds_manipulation_skill_asset():
     assert "simulation_only" in asset.evidence.evidence_boundary
     assert "not_ready_for_robot_execution" in asset.quality_boundary
     assert data["evidence"]["review_status"] == "not_reviewed"
+
+
+def test_failed_simulation_bundle_deduplicates_evidence_boundary():
+    task_spec = default_simulation_task_specs()[0]
+    adapter_result = attempt_gazebo_moveit(task_spec)
+    bundle = build_simulation_evidence_bundle(task_spec, adapter_result)
+
+    asset = build_manipulation_skill_asset_from_simulation_bundle(bundle)
+
+    for boundary in adapter_result.failure_boundary:
+        assert asset.evidence.evidence_boundary.count(boundary) == 1

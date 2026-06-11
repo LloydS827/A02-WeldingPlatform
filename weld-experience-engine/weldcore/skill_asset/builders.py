@@ -31,7 +31,7 @@ def build_manipulation_skill_asset_from_simulation_bundle(
         status=adapter_result.status,
         metrics=dict(adapter_result.metrics),
         artifact_refs=dict(adapter_result.artifacts),
-        evidence_boundary=(
+        evidence_boundary=_dedupe_text(
             "simulation_only",
             *bundle.run_record.boundary_notes,
             *adapter_result.failure_boundary,
@@ -90,3 +90,13 @@ def build_manipulation_skill_asset_from_simulation_bundle(
         ),
         version="v0.1",
     )
+
+
+def _dedupe_text(*values: str) -> tuple[str, ...]:
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            deduped.append(value)
+    return tuple(deduped)
