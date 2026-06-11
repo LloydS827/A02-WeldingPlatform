@@ -1,10 +1,12 @@
 .DS_Store
+.superpowers/
 __pycache__/
 *.pyc
 .venv/
 venv/
 *.rrd
 artifacts/simulation/
+artifacts/skill-assets/
 report_out/
 weld-experience-engine/report_out/
 mvp_report_out/
@@ -20,4 +22,5 @@ weld-experience-engine/simulation_ingest_report_out/
 simulation_bakeoff_report_out/
 weld-experience-engine/simulation_bakeoff_report_out/
 weld-experience-engine/artifacts/simulation/
+weld-experience-engine/artifacts/skill-assets/
 weld-experience-engine/weldcore.egg-info/

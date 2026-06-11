@@ -5,10 +5,11 @@
 当前核心模型是：
 
 ```text
-SkillDataset -> WeldSkillPackage -> evaluation / evidence
+SimulationEvidenceBundle -> ManipulationSkillAsset
+ManipulationSkillAsset + RobotBodyAsset(URDF) -> SkillTransferAssessment
 ```
 
-其中 `WeldSkillPackage` 是核心资产对象；POC、MVP、report 命令、simlite 和外部 adapter 都围绕它提供输入、验证或证据。
+其中 `ManipulationSkillAsset` 是当前 canonical 技能资产实例；`RobotBodyAsset` 是机器人身体上下文；`SkillTransferAssessment` 是第一层迁移预检对象。既有 `SkillDataset -> WeldSkillPackage -> evaluation / evidence` 仍保留为历史兼容和证据支撑层，POC、MVP、report 命令、simlite 和外部 adapter 都可以继续提供输入、验证或证据。
 
 ## 运行
 
@@ -26,10 +27,12 @@ uv run pytest -q
 技能资产证据命令：
 
 ```bash
+uv run python -m weldcore.skill_asset.asset_report \
+  --outdir artifacts/skill-assets/canonical
 uv run python -m weldcore.report.mvp_report
 ```
 
-`mvp_report` 用于证明早期 `WeldSkillPackage` 闭环仍有效。
+`asset_report` 用于输出 `ManipulationSkillAsset`、`RobotBodyAsset` 和 `SkillTransferAssessment` 三份 JSON；`mvp_report` 用于证明早期 `WeldSkillPackage` 闭环仍有效。
 
 证据边界/仿真接入证据命令：
 
@@ -56,6 +59,7 @@ uv run python -m weldcore.report.scenario_report
 - `recompose/`：结构化工艺参数重组为连续轨迹；缺少 scipy 时回退到正向合成轨迹。
 - `metrics/`：往返 RMS、参数恢复误差、抗扰动失效边界。
 - `sim/`：simlite/mock bundle，作为 L0 稳定仿真和测试工具。
+- `skill_asset/`：`ManipulationSkillAsset` 本体、从 `SimulationEvidenceBundle` 构建 skill asset、从真实 URDF 构建 `RobotBodyAsset`、生成 `SkillTransferAssessment` 和 `asset_report`。
 - `transfer/`：`WeldSkillPackage` 生成、条件迁移和迁移评测。
 - `knowledge/`：公开资料来源、船舶焊接任务族、候选仿真场景和 gate 支撑材料。
 - `ingest/`：`SimulationOutputBundle` 导入边界，用于把仿真输出转为可审计数据。
@@ -66,13 +70,15 @@ uv run python -m weldcore.report.scenario_report
 
 simlite 是 L0 稳定仿真和测试工具，用于保持默认项目可验证。它不是最终类机器人路线，也不代表真实焊接过程或真实质量验证。
 
-ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部仿真器和机器人生态是 adapter 候选。它们可以在后续用于机器人任务、运动学、可达性、碰撞、示教数据或 benchmark 评估，但不能替代 `SkillDataset -> WeldSkillPackage -> evaluation/evidence` 这条核心模型。
+ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部仿真器和机器人生态是 adapter 候选。它们可以在后续用于机器人任务、运动学、可达性、碰撞、示教数据或 benchmark 评估，但不能替代 `ManipulationSkillAsset` 这个技能资产本体。
 
 ## 机器人工艺候选与预检边界
 
 `weldcore.robot_process` 可以把 `SimulationEvidenceBundle` 转成 `RobotProcessPackageDraft`，并用 `RobotContextSpec` 与轻量 `RobotFeasibilityResult` 表达机器人上下文和可执行性预检结果。
 
 当前默认只提供 `mock_6axis_welding_robot` 和 `lightweight_rule` 预检，用于验证数据结构与决策 pipeline。它最多把候选草案推进到 `ready_for_expert_review`，不表示机器人可以执行，也不表示 MoveIt/Gazebo、真实机器人、焊机过程参数或焊接质量已经验证。
+
+本轮新增的 `RobotBodyAsset` 只解析真实 URDF、mesh 引用、link/joint 拓扑和 joint limit。当前真实资产位于 `docs/real-urdf/robot.urdf`，解析结果为 7 links、6 revolute joints、33 unique mesh files、66 mesh references，状态可达到 `usable_as_robot_body_context`。这仍不表示 TCP 已标定、工件坐标系已绑定、场景碰撞已验证或真实机器人可执行。
 
 ## 当前边界
 
@@ -81,3 +87,4 @@ ManiSkill、SAPIEN、Isaac、ROS、MoveIt、Gazebo 等外部仿真器和机器�
 - 不把仿真输出接入 gate 写成完整 ManiSkill / Isaac / ROS 集成。
 - 不把公开资料、仿真假设或报告结论写成 WPS/PQR。
 - 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
+- 不把 `ready_for_contextual_precheck` 写成 `ready_for_robot_execution`。

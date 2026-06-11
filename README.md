@@ -15,53 +15,58 @@
 
 ## 当前定位
 
-当前项目已经从早期 POC / MVP / gate / 报告集合，收束为以 `WeldSkillPackage` 和 `WeldSkillUnit` 为核心的焊接技能资产底座。
+当前项目已经从早期 POC / MVP / gate / 报告集合，以及随后围绕仿真样本数和 modeled task specs 的扩展工作，进一步收束为以 `ManipulationSkillAsset` 为核心的焊接操作技能资产底座。
 
-现阶段主线是：**把焊接任务从少量默认样例推进到可批量建模、可小批量仿真验证、可继续审查的数据闭环**。当前已经保留 Phase 1 的 100 requested samples 启动入口、Phase 2 sharded scale 入口和 1000 requested samples next-batch 真实环境运行审查结果；在此基础上，本阶段新增批量焊接任务建模层，可从当前 2 个默认任务族生成 8 个 modeled `SimulationTaskSpec`，并输出建模 spec、可喂给 batch spec 的任务列表和 validation report。下一步应先用这些 modeled task specs 跑小批量仿真验证，再决定是否继续扩样本数或扩任务族。
+现阶段主线是：**先把 welding / manipulation 的动作、意图、约束、证据边界和迁移契约沉淀成 canonical skill asset，再把仿真、真实机器人日志、人工示教和专家标注作为不同证据来源接入这个本体**。样本数、仿真器、URDF 和机器人预检都服务于这个资产本体，而不是反过来成为项目核心。
 
 这意味着当前重点不是直接进入真实机器人执行或真实焊接质量结论，而是先回答：
 
-1. 一个焊接技能单元能否稳定生成仿真任务。
-2. 不同仿真路线能否按同一输出契约返回结果。
-3. 仿真结果能否转成经验数据、证据包和机器人候选草案。
-4. 哪些结论来自软件和仿真证据，哪些必须等待专家或真机验证。
-5. 仿真样本能否进入 accumulation index 和 accumulation report。
-6. 默认任务族能否扩成 modeled task specs，并保持 batch spec、验证报告和专家候选对象可追踪。
-7. 500、1000+ requested samples 的规模化仿真应如何分批、复用、强制重跑和审查。
+1. 一个焊接操作技能的可迁移资产结构是什么。
+2. 仿真证据如何生成 `ManipulationSkillAsset`，同时保留 `simulation_only` 等边界。
+3. 真实协作臂 URDF 应如何作为 `RobotBodyAsset` 参与迁移判断，而不是被误写成技能本体。
+4. `ManipulationSkillAsset + RobotBodyAsset` 能否生成 `SkillTransferAssessment`，明确已经通过的最小检查和仍缺失的上下文。
+5. 哪些结论来自软件、仿真和资产解析，哪些必须等待 TCP 标定、工件坐标系、场景上下文、IK/collision 和真机验证。
+6. 既有 100/500/1000 requested samples、modeled task specs 和 batch 运行结果如何继续作为 skill asset 的证据来源，而不是单独扩张成另一条主线。
 
 ## 核心链路
 
 当前核心链路是：
 
 ```text
-WeldSkillUnit
--> SimulationTaskSpec
--> simlite / ManiSkill-SAPIEN / Gazebo-MoveIt candidate adapter
--> SimulatorAdapterResult
--> SimulationEvidenceBundle
--> SkillDataset / experience dataset
--> RobotProcessPackageDraft
--> RobotContextSpec + RobotFeasibilityResult
--> ready_for_expert_review 或 blocked_*
+SimulationEvidenceBundle
+-> ManipulationSkillAsset
+
+real robot log later
+-> ManipulationSkillAsset
+
+human demonstration later
+-> ManipulationSkillAsset
+
+ManipulationSkillAsset + RobotBodyAsset(URDF)
+-> SkillTransferAssessment
+-> RobotContextSpec / SceneContextAsset later
 ```
 
 这条链路的含义是：
 
-- `WeldSkillUnit` 描述可复用、可训练、可评测的焊接动作能力。
-- `SimulationTaskSpec` 把技能单元转成仿真任务输入。
-- 仿真 adapter 负责尝试运行或明确记录失败边界。
-- `SimulationEvidenceBundle` 汇总任务、adapter 结果、转换后的数据和证据状态。
-- `SkillDataset` / experience dataset 是技能数据积累的当前承载形态。
-- `RobotProcessPackageDraft` 是未来机器人执行候选包草案，不是正式工艺包。
-- `RobotContextSpec` 与 `RobotFeasibilityResult` 只做上下文表达和轻量可行性预检，不代表真实机器人已可执行。
+- `ManipulationSkillAsset` 是本阶段的 canonical 技能资产实例，描述技能意图、TCP 轨迹、工具姿态、约束、证据来源、质量边界和迁移契约。
+- `SimulationEvidenceBundle` 是当前第一种证据来源，能够从 simlite / adapter 结果构建 `ManipulationSkillAsset`，但仍标记为 `simulation_only`。
+- `RobotBodyAsset` 是机器人身体资产上下文，当前由真实上传的 `docs/real-urdf/robot.urdf` 和 33 个 STL mesh 生成，用于说明“这台协作臂身体模型是否可作为迁移上下文”。
+- `SkillTransferAssessment` 只回答第一层迁移预检：技能运动是否存在、机器人身体资产是否可用，以及还缺哪些上下文。
+- `RobotContextSpec`、`SceneContextAsset`、TCP 标定、工件坐标系、IK、collision 和真机日志是下一层绑定对象。
+- `WeldSkillPackage`、`WeldSkillUnit`、`SimulationTaskSpec`、accumulation report 和 modeled task specs 仍保留，它们现在是资产证据、任务来源和历史兼容层。
 
-`ready_for_expert_review` 只表示这条候选草案具备进入专家审查的结构条件；`ready_for_robot_execution` 当前仍是保留状态，不应被默认触达。
+`ready_for_contextual_precheck` 只表示 `ManipulationSkillAsset + RobotBodyAsset` 具备进入上下文绑定预检的结构条件；`ready_for_robot_execution` 当前仍是保留状态，不应被默认触达。
 
 ## 已完成能力
 
 项目当前已经完成以下基础能力：
 
 - 可运行的 `weldcore` 引擎，详见 [weld-experience-engine/README.md](weld-experience-engine/README.md)。
+- `ManipulationSkillAsset` canonical 技能资产本体，可从 `SimulationEvidenceBundle` 构建，并保留 source refs、motion、constraints、evidence boundary、quality boundary 和 transfer contract。
+- `RobotBodyAsset` 真实机器人身体资产解析：`docs/real-urdf/robot.urdf` 可解析为 7 links、6 revolute joints、33 unique mesh files、66 mesh references，visual/collision mesh 各 33 次引用。
+- `SkillTransferAssessment` 可把 `ManipulationSkillAsset + RobotBodyAsset` 判定为 `ready_for_contextual_precheck` 或具体 blocked 状态，并输出 `requires_robot_context_spec`、`requires_tcp_calibration`、`requires_workpiece_frame`、`requires_scene_context_asset` 等后续缺口。
+- `weldcore.skill_asset.asset_report` 可输出 `skill_asset_report.json`、`robot_body_asset_report.json` 和 `skill_transfer_assessment.json`。
 - `SkillDataset`、`SkillSample`、`WeldSkillPackage`、迁移评测和 evidence 输出的基础数据结构。
 - 经验结构化 POC、技能迁移 MVP、资料底座 gate、`SyntheticSkillDataset v2` 输入规范 gate 和仿真输出接入 gate。
 - `WeldSkillUnit` 最小框架，以及长直横焊沿缝跟踪、包角横焊转角过渡等默认技能单元。
@@ -89,29 +94,29 @@ WeldSkillUnit
 
 ## 下一阶段方向
 
-本轮已完成 **批量焊接任务建模与仿真验证闭环启动层**。
+本轮已完成 **canonical manipulation skill asset 本体与真实 URDF RobotBodyAsset 接入层**。
 
-ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation 启动层、Phase 2 shard 编排和 1000 next-batch 已经具备软件入口、batch result、dataset index、accumulation report、复用和强制重跑契约。1000 next-batch 在真实 `weld-maniskill` 环境下完成审查后，当前项目判断是 `ready_to_continue_accumulation_with_conditions`；但继续扩大 requested samples 之前，需要先把“任务从哪里来、如何扩、哪些 modeled tasks 值得进入专家审查”说清楚。
+ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation 启动层、Phase 2 shard 编排、1000 next-batch 和批量任务建模层仍然有效，但它们现在应被重新解释为 `ManipulationSkillAsset` 的证据来源和压力测试来源。继续扩大 requested samples 之前，优先把“技能资产如何绑定真实机器人身体、TCP、工件坐标系和场景上下文”说清楚。
 
 因此下一阶段的更合理顺序是：
 
 ```text
-2 个默认 SimulationTaskSpec
--> BatchModelingSpec
--> 8 个 modeled SimulationTaskSpec
--> modeling_validation_report
--> 小批量 ManiSkill/SAPIEN batch 验证
--> accumulation ledger / 专家候选对象绑定
+ManipulationSkillAsset
++ RobotBodyAsset(URDF)
+-> SkillTransferAssessment
+-> RobotContextSpec
+-> SceneContextAsset
+-> lightweight IK / collision precheck
+-> expert review candidate
 ```
 
 下一阶段要形成的判断包括：
 
-- modeled task specs 能否在小批量 ManiSkill/SAPIEN batch 中稳定完成。
-- expert review candidate task ids 如何绑定后续 `SimulationEvidenceBundle`、experience dataset 和 `RobotProcessPackageDraft`。
-- 跨批次 accumulation ledger 如何记录 Phase 1、Phase 2、1000 next-batch 和 modeled batch 的运行元数据、复用状态、failure boundary counts 和 field coverage。
-- 当前 2 个默认任务族扩成 8 个 modeled tasks 后是否仍保持稳定。
-- 何时才适合新增第三个默认任务族。
-- 后续批次如果出现 failed samples，应先修复具体 failure boundary，再讨论切换仿真器或进入真实机器人路线。
+- `RobotContextSpec` 如何表达真实协作臂型号、关节限制、TCP、工具坐标系和控制接口边界。
+- `SceneContextAsset` 如何表达焊缝、工件坐标系、夹具/障碍、目标路径和安全边界。
+- `SkillTransferAssessment` 如何接入既有 `RobotFeasibilityResult`，把 `ready_for_contextual_precheck` 推进到更具体的 IK/collision/lightweight feasibility 结果。
+- 哪些 modeled task specs 和 1000 next-batch 样本应被回填为 `ManipulationSkillAsset` 的证据，而不是继续只作为 batch report。
+- 如果下一批出现 failed samples，应先修复具体 failure boundary；如果下一步出现 transfer boundary，应先修 RobotBodyAsset / RobotContextSpec / SceneContextAsset 的具体缺口。
 
 ## 如何验证
 
@@ -126,6 +131,8 @@ uv run pytest -q
 常用报告命令：
 
 ```bash
+uv run python -m weldcore.skill_asset.asset_report \
+  --outdir artifacts/skill-assets/canonical
 uv run python -m weldcore.report.mvp_report
 uv run python -m weldcore.report.data_foundation_report
 uv run python -m weldcore.report.synthetic_v2_input_report
@@ -133,7 +140,7 @@ uv run python -m weldcore.report.simulation_ingest_report
 uv run python -m weldcore.report.simulation_bakeoff_report
 ```
 
-其中 `simulation_bakeoff_report` 用于生成 `WeldSkillUnit` 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。
+其中 `asset_report` 是当前默认的 canonical skill asset 报告入口，会生成 `ManipulationSkillAsset`、`RobotBodyAsset` 和 `SkillTransferAssessment` 三份 JSON。`simulation_bakeoff_report` 用于生成 `WeldSkillUnit` 仿真 bake-off 证据；它记录 simlite、ManiSkill/SAPIEN 和 Gazebo/MoveIt 候选路线在同一任务契约下的尝试与失败边界，不表示最终仿真器已经选择。
 
 可选小批量仿真入口命令：
 
@@ -212,6 +219,7 @@ uv run python -m weldcore.report.scenario_report
 │   ├── skill-assets/                   # WeldSkillPackage 与 WeldSkillUnit
 │   ├── simulation/                     # 仿真路线、simlite 边界和外部 adapter 候选
 │   ├── evidence/                       # 资料来源、字段覆盖、证据报告和质量边界
+│   ├── real-urdf/                      # 真实协作臂 URDF 与 33 个 STL mesh，作为 RobotBodyAsset 输入
 │   ├── archive/                        # POC、MVP、gate、白皮书和旧计划归档
 │   └── superpowers/                    # 设计与实施计划记录
 └── weld-experience-engine/
