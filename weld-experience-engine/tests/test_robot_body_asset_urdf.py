@@ -76,6 +76,47 @@ def test_urdf_blocks_bad_xml(tmp_path):
     assert any(issue.startswith("xml_parse_error:") for issue in asset.validation_issues)
 
 
+def test_urdf_blocks_missing_urdf_file(tmp_path):
+    urdf = tmp_path / "missing.urdf"
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert any(issue.startswith("urdf_read_error:") for issue in asset.validation_issues)
+
+
+def test_urdf_blocks_invalid_robot_root(tmp_path):
+    urdf = _write_urdf(
+        tmp_path,
+        '<assembly name="not_robot">'
+        '<link name="a"/><link name="b"/>'
+        '<joint name="j1" type="revolute"><parent link="a"/><child link="b"/>'
+        '<limit lower="-1" upper="1" effort="1" velocity="1"/></joint>'
+        "</assembly>",
+    )
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "invalid_urdf_root:assembly" in asset.validation_issues
+
+
+def test_urdf_blocks_invalid_numeric_joint_limit(tmp_path):
+    urdf = _write_urdf(
+        tmp_path,
+        '<robot name="bad_limit">'
+        '<link name="a"/><link name="b"/>'
+        '<joint name="j1" type="revolute"><parent link="a"/><child link="b"/>'
+        '<limit lower="oops" upper="1" effort="1" velocity="1"/></joint>'
+        "</robot>",
+    )
+
+    asset = build_robot_body_asset_from_urdf(urdf)
+
+    assert asset.validation_status == "blocked_by_asset_issue"
+    assert "invalid_joint_limit:j1:lower" in asset.validation_issues
+
+
 def test_urdf_blocks_fewer_than_six_revolute_joints(tmp_path):
     urdf = _write_urdf(
         tmp_path,

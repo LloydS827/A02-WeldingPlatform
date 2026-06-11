@@ -19,6 +19,11 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
     urdf_path = Path(path)
     try:
         root = ElementTree.parse(urdf_path).getroot()
+    except OSError as exc:
+        return _asset(
+            source_urdf=str(path),
+            validation_issues=(f"urdf_read_error:{exc}",),
+        )
     except ElementTree.ParseError as exc:
         return _asset(
             source_urdf=str(path),
@@ -26,6 +31,10 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
         )
 
     robot_model = root.attrib.get("name", urdf_path.stem)
+    validation_issues = []
+    if root.tag != "robot":
+        validation_issues.append(f"invalid_urdf_root:{root.tag}")
+
     link_names = tuple(link.attrib.get("name", "") for link in root.findall("link"))
     joints = root.findall("joint")
     joint_names = tuple(joint.attrib.get("name", "") for joint in joints)
@@ -36,7 +45,6 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
     mesh_references = visual_meshes + collision_meshes
     mesh_files = tuple(dict.fromkeys(mesh_references))
 
-    validation_issues = []
     for mesh_file in mesh_files:
         if not (urdf_path.parent / mesh_file).exists():
             validation_issues.append(f"missing_mesh:{mesh_file}")
@@ -48,13 +56,21 @@ def build_robot_body_asset_from_urdf(path: str | Path) -> RobotBodyAsset:
         if limit is None or "lower" not in limit.attrib or "upper" not in limit.attrib:
             validation_issues.append(f"missing_joint_limit:{joint_name}")
             continue
+        lower = _required_float(limit.attrib["lower"], joint_name, "lower", validation_issues)
+        upper = _required_float(limit.attrib["upper"], joint_name, "upper", validation_issues)
+        effort = _optional_float(limit.attrib.get("effort"), joint_name, "effort", validation_issues)
+        velocity = _optional_float(
+            limit.attrib.get("velocity"), joint_name, "velocity", validation_issues
+        )
+        if lower is None or upper is None:
+            continue
         joint_limits.append(
             RobotJointLimit(
                 joint_name=joint_name,
-                lower=float(limit.attrib["lower"]),
-                upper=float(limit.attrib["upper"]),
-                effort=_optional_float(limit.attrib.get("effort")),
-                velocity=_optional_float(limit.attrib.get("velocity")),
+                lower=lower,
+                upper=upper,
+                effort=effort,
+                velocity=velocity,
             )
         )
 
@@ -87,10 +103,32 @@ def _mesh_filenames(root: ElementTree.Element, element_name: str) -> tuple[str, 
     return tuple(filenames)
 
 
-def _optional_float(value: str | None) -> float | None:
+def _required_float(
+    value: str,
+    joint_name: str,
+    field_name: str,
+    validation_issues: list[str],
+) -> float | None:
+    try:
+        return float(value)
+    except ValueError:
+        validation_issues.append(f"invalid_joint_limit:{joint_name}:{field_name}")
+        return None
+
+
+def _optional_float(
+    value: str | None,
+    joint_name: str,
+    field_name: str,
+    validation_issues: list[str],
+) -> float | None:
     if value is None:
         return None
-    return float(value)
+    try:
+        return float(value)
+    except ValueError:
+        validation_issues.append(f"invalid_joint_limit:{joint_name}:{field_name}")
+        return None
 
 
 def _asset(
