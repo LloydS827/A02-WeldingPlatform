@@ -2,6 +2,7 @@ from .builders import build_manipulation_skill_asset_from_simulation_bundle
 from .model import (
     ManipulationSkillAsset,
     RobotBodyAsset,
+    RobotBodyAssetValidationStatus,
     RobotJointLimit,
     SkillAssetEvidence,
     SkillAssetReviewStatus,
@@ -12,10 +13,12 @@ from .model import (
     SkillTransferContractStatus,
 )
 from .package import WeldSkillPackage, package_from_sample
+from .urdf import build_robot_body_asset_from_urdf
 
 __all__ = [
     "ManipulationSkillAsset",
     "RobotBodyAsset",
+    "RobotBodyAssetValidationStatus",
     "RobotJointLimit",
     "SkillAssetEvidence",
     "SkillAssetReviewStatus",
@@ -26,5 +29,6 @@ __all__ = [
     "SkillTransferContractStatus",
     "WeldSkillPackage",
     "build_manipulation_skill_asset_from_simulation_bundle",
+    "build_robot_body_asset_from_urdf",
     "package_from_sample",
 ]

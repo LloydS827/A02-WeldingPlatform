@@ -18,6 +18,10 @@ SkillTransferAssessmentStatus = Literal[
     "blocked_by_missing_skill_motion",
     "blocked_by_robot_body_asset_issue",
 ]
+RobotBodyAssetValidationStatus = Literal[
+    "usable_as_robot_body_context",
+    "blocked_by_asset_issue",
+]
 
 
 def _jsonable(value: Any) -> Any:
@@ -115,7 +119,7 @@ class RobotBodyAsset:
     revolute_joint_count: int
     visual_mesh_count: int
     collision_mesh_count: int
-    validation_status: str
+    validation_status: RobotBodyAssetValidationStatus
     validation_issues: tuple[str, ...]
     evidence_boundary: tuple[str, ...]
     version: str = "v0.1"
