@@ -291,6 +291,54 @@ def test_contextual_feasibility_consumes_blocked_scene_context():
     assert "missing_workpiece_frame" in result.blocking_reasons
 
 
+def test_contextual_feasibility_marks_missing_orientation_incomplete():
+    skill = _default_skill_asset()
+    skill = replace(skill, motion={**skill.motion, "tool_orientation": []})
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.orientation_feasibility_status == "missing"
+    assert "missing_tool_orientation" in result.blocking_reasons
+
+
+def test_contextual_feasibility_marks_missing_joint_limit_source_incomplete():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = replace(build_robot_context_from_body_asset(robot), joint_limits_source=None)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.joint_limit_status == "missing"
+    assert "missing_joint_limits_source" in result.blocking_reasons
+
+
+def test_contextual_feasibility_marks_single_point_path_continuity_missing():
+    skill = _default_skill_asset()
+    one_point_motion = {
+        **skill.motion,
+        "tcp_trajectory": skill.motion["tcp_trajectory"][:1],
+        "tool_orientation": skill.motion["tool_orientation"][:1],
+        "trajectory_point_count": 1,
+        "orientation_point_count": 1,
+    }
+    skill = replace(skill, motion=one_point_motion)
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.path_continuity_status == "missing"
+    assert "missing_path_continuity" in result.blocking_reasons
+
+
 def test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch():
     skill = _default_skill_asset()
 
@@ -383,6 +431,10 @@ Implementation rules:
 - Missing robot context: status `incomplete`, reachability `missing`, collision `not_checked`, joint limit `missing`, path continuity `missing`, orientation `missing`, blocking `missing_robot_context`.
 - Missing scene context: status `incomplete`, collision `missing`, path continuity `missing`, blocking `missing_scene_context`.
 - Blocked scene context: status `incomplete`, collision `missing`, path continuity `missing`, and all `scene_context.validation_issues` appear in `blocking_reasons`.
+- Missing `tcp_trajectory`: reachability `missing`, blocking `missing_tcp_trajectory`.
+- Missing `tool_orientation`: orientation feasibility `missing`, blocking `missing_tool_orientation`.
+- Missing `robot_context.joint_limits_source`: joint limit `missing`, blocking `missing_joint_limits_source`.
+- Path continuity requires at least two TCP points and at least two scene seam points; otherwise path continuity `missing`, blocking `missing_path_continuity`.
 - Workspace radius check uses sqrt(x² + y² + z²) over TCP trajectory when `max_radius_m` exists.
 - Collision is `assumed` only when scene context is usable; warning `collision_geometry_not_validated`.
 - Evidence boundary includes `lightweight_feasibility_precheck_only`, `not_full_ik_solver`, `not_collision_validated`, `not_moveit_validated`, `not_gazebo_validated`, `not_real_robot_validated`, `not_ready_for_robot_execution`.
