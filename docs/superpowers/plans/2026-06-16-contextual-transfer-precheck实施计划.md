@@ -161,7 +161,7 @@ git add weld-experience-engine/weldcore/skill_asset/model.py \
 git commit -m "feat: add contextual skill asset models"
 ```
 
-## Task 2: Context Builders and Lightweight Feasibility
+## Task 2: Context Builders, Lightweight Feasibility, and Evidence Writeback
 
 **Files:**
 - Create: `weld-experience-engine/weldcore/skill_asset/context.py`
@@ -181,6 +181,7 @@ from pathlib import Path
 from weldcore.robot_process import build_robot_context_from_body_asset
 from weldcore.skill_asset import (
     build_contextual_feasibility_result,
+    build_default_evidence_writeback_summary,
     build_default_scene_context_asset,
     build_manipulation_skill_asset_from_simulation_bundle,
     build_robot_body_asset_from_urdf,
@@ -211,6 +212,20 @@ def test_default_scene_context_asset_uses_skill_motion_and_boundaries():
     assert len(scene.seam_path) == skill.motion["trajectory_point_count"]
     assert "scene_context_asset_precheck_only" in scene.evidence_boundary
     assert "not_real_fixture_validated" in scene.evidence_boundary
+
+
+def test_scene_context_asset_blocks_missing_workpiece_frame_or_seam_path():
+    skill = _default_skill_asset()
+
+    missing_frame = build_default_scene_context_asset(skill, workpiece_frame=None)
+    assert missing_frame.validation_status == "blocked_by_scene_context_issue"
+    assert "missing_workpiece_frame" in missing_frame.validation_issues
+
+    missing_path = build_default_scene_context_asset(
+        replace(skill, motion={**skill.motion, "tcp_trajectory": []})
+    )
+    assert missing_path.validation_status == "blocked_by_scene_context_issue"
+    assert "missing_seam_path" in missing_path.validation_issues
 
 
 def test_robot_context_from_real_body_asset_keeps_tcp_boundary():
@@ -260,6 +275,23 @@ def test_contextual_feasibility_fails_when_workspace_hint_is_too_small():
     assert result.status == "failed"
     assert result.reachability_status == "failed"
     assert "tcp_trajectory_outside_workspace_hint" in result.blocking_reasons
+
+
+def test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch():
+    skill = _default_skill_asset()
+
+    summary = build_default_evidence_writeback_summary(skill)
+
+    assert summary.skill_asset_id == skill.asset_id
+    assert summary.modeled_task_count == 8
+    assert summary.simulation_sample_count == 1000
+    assert summary.completed_sample_count == 1000
+    assert summary.failed_sample_count == 0
+    assert summary.writeback_status == "evidence_candidates_identified"
+    assert "modeled_task_specs:8" in summary.candidate_evidence_refs
+    assert "next_batch_samples:1000" in summary.candidate_evidence_refs
+    assert "not_real_welding_quality_validation" in summary.evidence_boundary
+    assert "not_ready_for_robot_execution" in summary.evidence_boundary
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -304,7 +336,11 @@ Export from `robot_process/__init__.py`.
 Create `skill_asset/context.py`:
 
 ```python
-def build_default_scene_context_asset(skill_asset: ManipulationSkillAsset) -> SceneContextAsset:
+def build_default_scene_context_asset(
+    skill_asset: ManipulationSkillAsset,
+    *,
+    workpiece_frame: str | None = "workpiece",
+) -> SceneContextAsset:
     ...
 
 def build_contextual_feasibility_result(
@@ -312,6 +348,16 @@ def build_contextual_feasibility_result(
     robot_context: RobotContextSpec | None,
     scene_context: SceneContextAsset | None,
 ) -> RobotFeasibilityResult:
+    ...
+
+def build_default_evidence_writeback_summary(
+    skill_asset: ManipulationSkillAsset,
+    *,
+    modeled_task_count: int = 8,
+    simulation_sample_count: int = 1000,
+    completed_sample_count: int = 1000,
+    failed_sample_count: int = 0,
+) -> SkillAssetEvidenceWritebackSummary:
     ...
 ```
 
@@ -325,6 +371,10 @@ Implementation rules:
 - Workspace radius check uses sqrt(x² + y² + z²) over TCP trajectory when `max_radius_m` exists.
 - Collision is `assumed` only when scene context is usable; warning `collision_geometry_not_validated`.
 - Evidence boundary includes `lightweight_feasibility_precheck_only`, `not_full_ik_solver`, `not_collision_validated`, `not_moveit_validated`, `not_gazebo_validated`, `not_real_robot_validated`, `not_ready_for_robot_execution`.
+- Evidence writeback status is `evidence_candidates_identified` when modeled count and sample count are positive.
+- Evidence writeback candidate refs include `modeled_task_specs:{count}` and `next_batch_samples:{count}`.
+- Evidence writeback boundary includes `simulation_evidence_candidate_only`, `modeled_task_specs_not_expert_reviewed`, `not_real_welding_quality_validation`, `not_ready_for_robot_execution`.
+- Evidence writeback recommendation must say candidates are for expert review and future asset evidence selection, not execution proof.
 
 Export from `skill_asset/__init__.py`.
 
@@ -477,9 +527,22 @@ assert payload["robot_feasibility_result"]["status"] == "passed"
 assert payload["robot_feasibility_result"]["collision_status"] == "assumed"
 assert "not_ready_for_robot_execution" in payload["transfer_assessment"]["evidence_boundary"]
 assert "not_full_ik_solver" in payload["robot_feasibility_result"]["evidence_boundary"]
+assert payload["robot_context_spec"]["tcp_calibration_status"] == "nominal_from_asset_not_calibrated"
+assert "not_tcp_calibrated" in payload["robot_context_spec"]["evidence_notes"]
+assert payload["scene_context_asset"]["workpiece_frame"] == "workpiece"
+assert payload["scene_context_asset"]["validation_status"] == "usable_as_scene_context"
+assert "scene_context_asset_precheck_only" in payload["scene_context_asset"]["evidence_boundary"]
 assert payload["evidence_writeback_summary"]["modeled_task_count"] == 8
 assert payload["evidence_writeback_summary"]["simulation_sample_count"] == 1000
-for filename in (...seven filenames...):
+for filename in (
+    "skill_asset_report.json",
+    "robot_body_asset_report.json",
+    "robot_context_spec.json",
+    "scene_context_asset_report.json",
+    "skill_transfer_assessment.json",
+    "robot_feasibility_result.json",
+    "skill_asset_evidence_writeback_summary.json",
+):
     assert (tmp_path / filename).exists()
 ```
 
@@ -562,95 +625,7 @@ git add weld-experience-engine/weldcore/skill_asset/assessment.py \
 git commit -m "feat: extend skill transfer assessment with context precheck"
 ```
 
-## Task 4: Evidence Writeback Summary Builder
-
-**Files:**
-- Modify: `weld-experience-engine/weldcore/skill_asset/context.py`
-- Modify: `weld-experience-engine/weldcore/skill_asset/__init__.py`
-- Test: `weld-experience-engine/tests/test_contextual_transfer_precheck.py`
-
-- [ ] **Step 1: Write failing evidence writeback builder tests**
-
-Append:
-
-```python
-from weldcore.skill_asset import build_default_evidence_writeback_summary
-
-
-def test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch():
-    skill = _default_skill_asset()
-
-    summary = build_default_evidence_writeback_summary(skill)
-
-    assert summary.skill_asset_id == skill.asset_id
-    assert summary.modeled_task_count == 8
-    assert summary.simulation_sample_count == 1000
-    assert summary.completed_sample_count == 1000
-    assert summary.failed_sample_count == 0
-    assert summary.writeback_status == "evidence_candidates_identified"
-    assert "modeled_task_specs:8" in summary.candidate_evidence_refs
-    assert "next_batch_samples:1000" in summary.candidate_evidence_refs
-    assert "not_real_welding_quality_validation" in summary.evidence_boundary
-    assert "not_ready_for_robot_execution" in summary.evidence_boundary
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run:
-
-```bash
-cd weld-experience-engine
-uv run pytest tests/test_contextual_transfer_precheck.py::test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch -q
-```
-
-Expected: FAIL with missing builder.
-
-- [ ] **Step 3: Implement default summary builder**
-
-In `skill_asset/context.py`:
-
-```python
-def build_default_evidence_writeback_summary(
-    skill_asset: ManipulationSkillAsset,
-    *,
-    modeled_task_count: int = 8,
-    simulation_sample_count: int = 1000,
-    completed_sample_count: int = 1000,
-    failed_sample_count: int = 0,
-) -> SkillAssetEvidenceWritebackSummary:
-    ...
-```
-
-Rules:
-- If modeled count and sample count are positive, status `evidence_candidates_identified`.
-- Candidate refs include `modeled_task_specs:{count}` and `next_batch_samples:{count}`.
-- Evidence boundary includes `simulation_evidence_candidate_only`, `modeled_task_specs_not_expert_reviewed`, `not_real_welding_quality_validation`, `not_ready_for_robot_execution`.
-- Recommendation says to use candidates for expert review and future asset evidence selection, not as execution proof.
-
-Export from `skill_asset/__init__.py`.
-
-- [ ] **Step 4: Run focused tests**
-
-Run:
-
-```bash
-cd weld-experience-engine
-uv run pytest tests/test_contextual_transfer_precheck.py tests/test_skill_asset_report.py -q
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add weld-experience-engine/weldcore/skill_asset/context.py \
-  weld-experience-engine/weldcore/skill_asset/__init__.py \
-  weld-experience-engine/tests/test_contextual_transfer_precheck.py \
-  weld-experience-engine/tests/test_skill_asset_report.py
-git commit -m "feat: summarize skill asset evidence writeback candidates"
-```
-
-## Task 5: Documentation and Default Verification
+## Task 4: Documentation and Default Verification
 
 **Files:**
 - Modify: `README.md`
@@ -669,7 +644,7 @@ In `README.md`:
 
 In `details.md`:
 - Update date to 2026-06-16.
-- Add a new 2026-06-16 recent update section with implemented objects, report artifacts, evidence writeback summary, and verification result placeholder.
+- Add a new 2026-06-16 recent update section with implemented objects, report artifacts, evidence writeback summary, and a verification result to be filled from the fresh test run in Step 3.
 - Move “尚未完成/下一步建议” to the new stage.
 - Update default verification count after running full tests.
 
@@ -699,7 +674,7 @@ Expected:
 
 - [ ] **Step 4: Update docs with verified test count**
 
-If pytest count differs from the placeholder, update `details.md` and `details.html` with the exact result.
+After Step 3 finishes, update `details.md` and `details.html` with the exact pytest result.
 
 - [ ] **Step 5: Commit**
 
