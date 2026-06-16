@@ -169,7 +169,8 @@ blocked_by_failed_feasibility_check
 
 1. skill motion 或 robot body 不通过时，沿用现有 blocked 状态。
 2. 如果只调用旧版两输入评估，即只传入 `ManipulationSkillAsset + RobotBodyAsset`，且两者结构可用，则保持兼容状态 `ready_for_contextual_precheck`，并继续在 warning gaps 中列出 robot / scene context 缺口。
-3. 如果调用者显式进入 contextual assessment，即传入了 `contextual_precheck_requested=True` 或传入任一 contextual 对象，那么缺 `RobotContextSpec` 时状态为 `blocked_by_missing_robot_context`，缺 `SceneContextAsset` 时状态为 `blocked_by_missing_scene_context`。
+3. 如果调用者显式进入 contextual assessment，即传入了 `contextual_precheck_requested=True` 或传入任一 contextual 对象，那么缺 `RobotContextSpec` 时顶层状态为 `blocked_by_missing_robot_context`，缺 `SceneContextAsset` 时顶层状态为 `blocked_by_missing_scene_context`。
+   如果 robot context 和 scene context 同时缺失，顶层状态优先 `blocked_by_missing_robot_context`，因为机器人上下文是进入执行坐标绑定的前置条件；`missing_scene_context` 同时进入 `blocking_gaps`。
 4. 有 robot context 和 scene context，但没有 feasibility result 时，状态为 `ready_for_lightweight_feasibility_precheck`。
 5. 有 feasibility result 且通过，无 blocking reasons 时，状态为 `ready_for_expert_review`。
 6. feasibility result 为 failed，或关键检查项 failed，状态为 `blocked_by_failed_feasibility_check`。
@@ -285,10 +286,12 @@ README、details、`weld-experience-engine/README.md` 和对应 HTML 阅读版�
 5. 旧版两输入 `build_skill_transfer_assessment(skill, robot)` 继续返回 `ready_for_contextual_precheck`，保持现有报告兼容。
 6. 显式 contextual assessment 缺 robot context 时 blocked by missing robot context。
 7. 显式 contextual assessment 缺 scene context 时 blocked by missing scene context。
-8. workspace hint 半径过小时 feasibility failed，assessment blocked by failed feasibility check。
-9. asset report 写出七个 JSON artifact。
-10. evidence writeback summary 记录 modeled task 和 1000 next-batch 为 evidence candidates，而不是真实执行结论。
-11. 全量 `uv run pytest -q` 保持通过。
+8. 显式 contextual assessment 同时缺 robot context 和 scene context 时，顶层 blocked by missing robot context，且 `blocking_gaps` 包含 `missing_scene_context`。
+9. 有 robot context 和 scene context 但没有 feasibility result 时，assessment 返回 `ready_for_lightweight_feasibility_precheck`。
+10. workspace hint 半径过小时 feasibility failed，assessment blocked by failed feasibility check。
+11. asset report 写出七个 JSON artifact。
+12. evidence writeback summary 记录 modeled task 和 1000 next-batch 为 evidence candidates，而不是真实执行结论。
+13. 全量 `uv run pytest -q` 保持通过。
 
 ## 8. 成功标准
 
