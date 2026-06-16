@@ -246,6 +246,43 @@ def test_contextual_feasibility_marks_missing_joint_limit_source_incomplete():
     assert "missing_joint_limits_source" in result.blocking_reasons
 
 
+def test_contextual_feasibility_blocks_robot_body_asset_issue_notes():
+    skill = _default_skill_asset()
+    robot = replace(
+        build_robot_body_asset_from_urdf(URDF),
+        validation_status="blocked_by_asset_issue",
+        validation_issues=("missing_mesh:foo.stl",),
+    )
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert "robot_body_asset_issue" in result.blocking_reasons
+    assert "missing_mesh:foo.stl" in result.blocking_reasons
+
+
+def test_contextual_feasibility_fails_when_z_workspace_hint_is_exceeded():
+    skill = _default_skill_asset()
+    out_of_z_motion = {
+        **skill.motion,
+        "tcp_trajectory": [
+            {**point, "z": -0.3} for point in skill.motion["tcp_trajectory"]
+        ],
+    }
+    skill = replace(skill, motion=out_of_z_motion)
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "failed"
+    assert result.reachability_status == "failed"
+    assert "tcp_trajectory_outside_workspace_hint" in result.blocking_reasons
+
+
 def test_contextual_feasibility_marks_single_point_path_continuity_missing():
     skill = _default_skill_asset()
     one_point_motion = {
@@ -282,3 +319,18 @@ def test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch()
     assert "next_batch_samples:1000" in summary.candidate_evidence_refs
     assert "not_real_welding_quality_validation" in summary.evidence_boundary
     assert "not_ready_for_robot_execution" in summary.evidence_boundary
+
+
+def test_evidence_writeback_summary_omits_zero_count_candidate_refs():
+    skill = _default_skill_asset()
+
+    summary = build_default_evidence_writeback_summary(
+        skill,
+        modeled_task_count=0,
+        simulation_sample_count=0,
+        completed_sample_count=0,
+        failed_sample_count=0,
+    )
+
+    assert summary.writeback_status == "blocked_by_missing_evidence_source"
+    assert summary.candidate_evidence_refs == ()

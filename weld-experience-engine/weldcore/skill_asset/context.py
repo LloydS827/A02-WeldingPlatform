@@ -99,6 +99,13 @@ def build_contextual_feasibility_result(
             blocking_reasons.append("tcp_trajectory_outside_workspace_hint")
             reachability_status = "failed"
 
+        if "robot_body_asset_issue" in robot_context.evidence_notes:
+            blocking_reasons.extend(
+                issue
+                for issue in robot_context.evidence_notes
+                if issue == "robot_body_asset_issue" or ":" in issue
+            )
+
         if robot_context.joint_limits_source is None:
             blocking_reasons.append("missing_joint_limits_source")
             joint_limit_status = "missing"
@@ -179,9 +186,9 @@ def build_default_evidence_writeback_summary(
         simulation_sample_count=simulation_sample_count,
         completed_sample_count=completed_sample_count,
         failed_sample_count=failed_sample_count,
-        candidate_evidence_refs=(
-            f"modeled_task_specs:{modeled_task_count}",
-            f"next_batch_samples:{simulation_sample_count}",
+        candidate_evidence_refs=_candidate_evidence_refs(
+            modeled_task_count,
+            simulation_sample_count,
         ),
         writeback_status=status,
         evidence_boundary=EVIDENCE_WRITEBACK_BOUNDARY,
@@ -197,9 +204,14 @@ def _outside_workspace_hint(
     workspace_hint: dict[str, Any],
 ) -> bool:
     max_radius = workspace_hint.get("max_radius_m")
-    if max_radius is None:
-        return False
-    return any(_point_radius(point) > max_radius for point in tcp_trajectory)
+    z_min = workspace_hint.get("z_min_m")
+    z_max = workspace_hint.get("z_max_m")
+    return any(
+        (max_radius is not None and _point_radius(point) > max_radius)
+        or (z_min is not None and float(point.get("z", 0.0)) < z_min)
+        or (z_max is not None and float(point.get("z", 0.0)) > z_max)
+        for point in tcp_trajectory
+    )
 
 
 def _point_radius(point: dict[str, Any]) -> float:
@@ -236,6 +248,18 @@ def _feasibility_status(
     ):
         return "incomplete"
     return "incomplete" if blocking_reasons else "passed"
+
+
+def _candidate_evidence_refs(
+    modeled_task_count: int,
+    simulation_sample_count: int,
+) -> tuple[str, ...]:
+    refs = []
+    if modeled_task_count > 0:
+        refs.append(f"modeled_task_specs:{modeled_task_count}")
+    if simulation_sample_count > 0:
+        refs.append(f"next_batch_samples:{simulation_sample_count}")
+    return tuple(refs)
 
 
 def _dedupe_text(values: list[str]) -> tuple[str, ...]:

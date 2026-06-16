@@ -58,15 +58,7 @@ def build_robot_context_from_body_asset(
         joint_limits_source=robot_body_asset.source_urdf if robot_body_asset.joint_limits else None,
         workspace_hint={"max_radius_m": 1.4, "z_min_m": -0.2, "z_max_m": 1.5},
         context_source="manual_precheck",
-        evidence_notes=_append_unique(
-            (
-                "uploaded_urdf_asset",
-                "not_tcp_calibrated",
-                "not_vendor_validated",
-                "not_ready_for_robot_execution",
-            ),
-            robot_body_asset.validation_issues,
-        ),
+        evidence_notes=_robot_context_evidence_notes(robot_body_asset),
     )
 
 
@@ -285,3 +277,17 @@ def _first_link_name(robot_body_asset: RobotBodyAsset) -> str | None:
         if link_name:
             return link_name
     return None
+
+
+def _robot_context_evidence_notes(robot_body_asset: RobotBodyAsset) -> tuple[str, ...]:
+    notes = ["uploaded_urdf_asset"]
+    if robot_body_asset.validation_status == "blocked_by_asset_issue":
+        notes.append("robot_body_asset_issue")
+    notes.extend(
+        (
+            "not_tcp_calibrated",
+            "not_vendor_validated",
+            "not_ready_for_robot_execution",
+        )
+    )
+    return _append_unique(tuple(notes), robot_body_asset.validation_issues)
