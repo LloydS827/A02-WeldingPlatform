@@ -277,6 +277,20 @@ def test_contextual_feasibility_fails_when_workspace_hint_is_too_small():
     assert "tcp_trajectory_outside_workspace_hint" in result.blocking_reasons
 
 
+def test_contextual_feasibility_consumes_blocked_scene_context():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill, workpiece_frame=None)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.collision_status != "passed"
+    assert result.path_continuity_status != "passed"
+    assert "missing_workpiece_frame" in result.blocking_reasons
+
+
 def test_default_evidence_writeback_summary_links_modeled_tasks_and_next_batch():
     skill = _default_skill_asset()
 
@@ -368,6 +382,7 @@ Implementation rules:
 - Feasibility result uses `draft_id=skill_asset.asset_id`, `context_id=robot_context.context_id if present else "missing-context"`.
 - Missing robot context: status `incomplete`, reachability `missing`, collision `not_checked`, joint limit `missing`, path continuity `missing`, orientation `missing`, blocking `missing_robot_context`.
 - Missing scene context: status `incomplete`, collision `missing`, path continuity `missing`, blocking `missing_scene_context`.
+- Blocked scene context: status `incomplete`, collision `missing`, path continuity `missing`, and all `scene_context.validation_issues` appear in `blocking_reasons`.
 - Workspace radius check uses sqrt(x² + y² + z²) over TCP trajectory when `max_radius_m` exists.
 - Collision is `assumed` only when scene context is usable; warning `collision_geometry_not_validated`.
 - Evidence boundary includes `lightweight_feasibility_precheck_only`, `not_full_ik_solver`, `not_collision_validated`, `not_moveit_validated`, `not_gazebo_validated`, `not_real_robot_validated`, `not_ready_for_robot_execution`.
@@ -513,6 +528,25 @@ def test_contextual_assessment_blocks_failed_feasibility_result():
 
     assert assessment.status == "blocked_by_failed_feasibility_check"
     assert "tcp_trajectory_outside_workspace_hint" in assessment.blocking_gaps
+
+
+def test_contextual_assessment_blocks_incomplete_scene_feasibility_result():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill, workpiece_frame=None)
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+        feasibility_result=result,
+    )
+
+    assert assessment.status == "blocked_by_incomplete_feasibility_result"
+    assert "missing_workpiece_frame" in assessment.blocking_gaps
 ```
 
 This covers both explicit `contextual_precheck_requested=True` and implicit contextual triggering by passing a contextual object.
