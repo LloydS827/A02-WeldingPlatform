@@ -118,6 +118,10 @@ def build_contextual_feasibility_result(
         blocking_reasons.extend(scene_context.validation_issues or ("blocked_scene_context",))
         collision_status = "missing"
         path_continuity_status = "missing"
+    elif robot_context is not None and _workpiece_frame_mismatch(robot_context, scene_context):
+        blocking_reasons.append("workpiece_frame_mismatch")
+        collision_status = "missing"
+        path_continuity_status = "missing"
     else:
         warning_reasons.append("collision_geometry_not_validated")
 
@@ -219,6 +223,19 @@ def _point_radius(point: dict[str, Any]) -> float:
         float(point.get("x", 0.0)) ** 2
         + float(point.get("y", 0.0)) ** 2
         + float(point.get("z", 0.0)) ** 2
+    )
+
+
+def _workpiece_frame_mismatch(
+    robot_context: RobotContextSpec,
+    scene_context: SceneContextAsset,
+) -> bool:
+    scene_frame = scene_context.workpiece_frame
+    target_frame = scene_context.target_region.get("frame")
+    robot_frame = robot_context.workpiece_frame
+    return bool(
+        (scene_frame and robot_frame and scene_frame != robot_frame)
+        or (target_frame and robot_frame and target_frame != robot_frame)
     )
 
 

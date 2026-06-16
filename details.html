@@ -69,7 +69,7 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
       <li>扩展 <code>build_skill_transfer_assessment</code>：旧版 <code>ManipulationSkillAsset + RobotBodyAsset</code> 两输入路径仍保持 <code>ready_for_contextual_precheck</code>；显式传入 <code>RobotContextSpec + SceneContextAsset + RobotFeasibilityResult</code> 时，默认路径推进到 <code>ready_for_expert_review</code>，失败时输出具体 missing / incomplete / failed 状态。</li>
       <li>扩展 <code>weldcore.skill_asset.asset_report</code>，默认输出 <code>skill_asset_report.json</code>、<code>robot_body_asset_report.json</code>、<code>robot_context_spec.json</code>、<code>scene_context_asset_report.json</code>、<code>skill_transfer_assessment.json</code>、<code>robot_feasibility_result.json</code> 和 <code>skill_asset_evidence_writeback_summary.json</code> 七份 JSON。</li>
       <li>新增 <code>SkillAssetEvidenceWritebackSummary</code>，把 8 个 modeled task specs 和 1000 next-batch samples 记录为 <code>ManipulationSkillAsset</code> evidence candidates，而不是继续把扩样本数作为孤立主线。</li>
-      <li>本轮验证：<code>uv run pytest -q</code> 通过 <code>388 passed</code>；<code>asset_report</code> 可写出 7 份 JSON，默认 <code>transfer_assessment.status=ready_for_expert_review</code>，<code>robot_feasibility_result.status=passed</code>。</li>
+      <li>本轮验证：<code>uv run pytest -q</code> 通过 <code>390 passed</code>；<code>asset_report</code> 可写出 7 份 JSON，默认 <code>transfer_assessment.status=ready_for_expert_review</code>，<code>robot_feasibility_result.status=passed</code>。</li>
       <li>当前边界仍然明确：不是完整 IK solver，不是真实 collision validation，不是真实机器人执行，不是 WPS/PQR，也不是真实焊接质量验证。</li>
     </ul>
     <h3>2026-06-11</h3>
@@ -264,7 +264,7 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
     <p>进入 <code>weld-experience-engine</code> 后运行：</p>
     <pre><code>uv sync --extra dev --extra viz
 uv run pytest -q</code></pre>
-    <p>当前分支最近一次完整验证结果为 <code>388 passed</code>。</p>
+    <p>当前分支最近一次完整验证结果为 <code>390 passed</code>。</p>
     <p>当前 canonical skill asset 报告命令：</p>
     <pre><code>uv run python -m weldcore.skill_asset.asset_report \
   --outdir artifacts/skill-assets/canonical</code></pre>

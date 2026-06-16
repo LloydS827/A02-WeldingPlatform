@@ -213,6 +213,30 @@ def test_transfer_assessment_ready_for_expert_review_after_passed_feasibility():
     assert "not_ready_for_robot_execution" in assessment.evidence_boundary
 
 
+def test_transfer_assessment_blocks_mismatched_feasibility_result_binding():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+    feasibility = replace(
+        build_contextual_feasibility_result(skill, robot_context, scene),
+        draft_id="skill-asset-other",
+        context_id="context-other",
+    )
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+        feasibility_result=feasibility,
+    )
+
+    assert assessment.status == "blocked_by_incomplete_feasibility_result"
+    assert "feasibility_result_skill_mismatch" in assessment.blocking_gaps
+    assert "feasibility_result_context_mismatch" in assessment.blocking_gaps
+
+
 def test_transfer_assessment_blocks_failed_feasibility_and_carries_gap():
     skill = _default_skill_asset()
     robot = _default_robot_body_asset()
@@ -300,6 +324,27 @@ def test_contextual_feasibility_blocks_scene_context_without_specific_issue():
     assert result.collision_status == "missing"
     assert result.path_continuity_status == "missing"
     assert "blocked_scene_context" in result.blocking_reasons
+
+
+def test_contextual_feasibility_blocks_workpiece_frame_mismatch():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = replace(
+        build_robot_context_from_body_asset(robot),
+        workpiece_frame="workpiece_A",
+    )
+    scene = replace(
+        build_default_scene_context_asset(skill),
+        workpiece_frame="workpiece_B",
+        target_region={"frame": "workpiece_C"},
+    )
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.collision_status != "passed"
+    assert result.path_continuity_status != "passed"
+    assert "workpiece_frame_mismatch" in result.blocking_reasons
 
 
 def test_contextual_feasibility_marks_missing_robot_context_incomplete():

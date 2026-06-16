@@ -48,7 +48,7 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 - 扩展 `build_skill_transfer_assessment`：旧版 `ManipulationSkillAsset + RobotBodyAsset` 两输入路径仍保持 `ready_for_contextual_precheck`；显式传入 `RobotContextSpec + SceneContextAsset + RobotFeasibilityResult` 时，默认路径推进到 `ready_for_expert_review`，失败时输出具体 missing / incomplete / failed 状态。
 - 扩展 `weldcore.skill_asset.asset_report`，默认输出 `skill_asset_report.json`、`robot_body_asset_report.json`、`robot_context_spec.json`、`scene_context_asset_report.json`、`skill_transfer_assessment.json`、`robot_feasibility_result.json` 和 `skill_asset_evidence_writeback_summary.json` 七份 JSON。
 - 新增 `SkillAssetEvidenceWritebackSummary`，把 8 个 modeled task specs 和 1000 next-batch samples 记录为 `ManipulationSkillAsset` evidence candidates，而不是继续把扩样本数作为孤立主线。
-- 本轮验证：`uv run pytest -q` 通过 `388 passed`；`asset_report` 可写出 7 份 JSON，默认 `transfer_assessment.status=ready_for_expert_review`，`robot_feasibility_result.status=passed`。
+- 本轮验证：`uv run pytest -q` 通过 `390 passed`；`asset_report` 可写出 7 份 JSON，默认 `transfer_assessment.status=ready_for_expert_review`，`robot_feasibility_result.status=passed`。
 - 当前边界仍然明确：不是完整 IK solver，不是真实 collision validation，不是真实机器人执行，不是 WPS/PQR，也不是真实焊接质量验证。
 
 ### 2026-06-11
@@ -252,7 +252,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `388 passed`。
+当前分支最近一次完整验证结果为 `390 passed`。
 
 当前 canonical skill asset 报告命令：
 

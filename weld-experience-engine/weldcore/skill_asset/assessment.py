@@ -72,6 +72,13 @@ def build_skill_transfer_assessment(
         blocking_gaps.append("missing_scene_context")
     elif feasibility_result is None:
         status = "ready_for_lightweight_feasibility_precheck"
+    elif feasibility_binding_gaps := _feasibility_binding_gaps(
+        skill_asset,
+        robot_context,
+        feasibility_result,
+    ):
+        status = "blocked_by_incomplete_feasibility_result"
+        blocking_gaps.extend(feasibility_binding_gaps)
     elif _has_failed_feasibility_check(feasibility_result):
         status = "blocked_by_failed_feasibility_check"
         blocking_gaps.extend(feasibility_result.blocking_reasons)
@@ -148,3 +155,16 @@ def _has_failed_feasibility_check(feasibility_result: RobotFeasibilityResult) ->
         feasibility_result.path_continuity_status,
         feasibility_result.orientation_feasibility_status,
     )
+
+
+def _feasibility_binding_gaps(
+    skill_asset: ManipulationSkillAsset,
+    robot_context: RobotContextSpec,
+    feasibility_result: RobotFeasibilityResult,
+) -> tuple[str, ...]:
+    gaps = []
+    if feasibility_result.draft_id != skill_asset.asset_id:
+        gaps.append("feasibility_result_skill_mismatch")
+    if feasibility_result.context_id != robot_context.context_id:
+        gaps.append("feasibility_result_context_mismatch")
+    return tuple(gaps)
