@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from weldcore.skill_asset.model import RobotBodyAsset
+
 from .model import (
     RobotExecutionReadiness,
     RobotContextSpec,
@@ -34,6 +36,38 @@ LIGHTWEIGHT_FEASIBILITY_EVIDENCE_BOUNDARY = (
     "not_real_robot_validated",
     "not_ready_for_robot_execution",
 )
+
+
+def build_robot_context_from_body_asset(
+    robot_body_asset: RobotBodyAsset,
+    *,
+    context_id: str | None = None,
+    base_frame: str | None = None,
+    tcp_frame: str = "torch_tcp_nominal",
+    workpiece_frame: str = "workpiece",
+) -> RobotContextSpec:
+    return RobotContextSpec(
+        context_id=context_id or f"context-{robot_body_asset.robot_id}",
+        robot_model=robot_body_asset.robot_model,
+        robot_family=robot_body_asset.robot_family,
+        base_frame=base_frame or _first_link_name(robot_body_asset) or "robot_base",
+        tcp_frame=tcp_frame,
+        tcp_calibration_status="nominal_from_asset_not_calibrated",
+        workpiece_frame=workpiece_frame,
+        tool_payload={},
+        joint_limits_source=robot_body_asset.source_urdf if robot_body_asset.joint_limits else None,
+        workspace_hint={"max_radius_m": 1.4, "z_min_m": -0.2, "z_max_m": 1.5},
+        context_source="manual_precheck",
+        evidence_notes=_append_unique(
+            (
+                "uploaded_urdf_asset",
+                "not_tcp_calibrated",
+                "not_vendor_validated",
+                "not_ready_for_robot_execution",
+            ),
+            robot_body_asset.validation_issues,
+        ),
+    )
 
 
 def default_mock_robot_context() -> RobotContextSpec:
@@ -244,3 +278,10 @@ def _append_unique(existing: tuple[str, ...], additions: tuple[str, ...]) -> tup
         if item not in values:
             values.append(item)
     return tuple(values)
+
+
+def _first_link_name(robot_body_asset: RobotBodyAsset) -> str | None:
+    for link_name in robot_body_asset.link_names:
+        if link_name:
+            return link_name
+    return None
