@@ -168,11 +168,12 @@ blocked_by_failed_feasibility_check
 判断规则：
 
 1. skill motion 或 robot body 不通过时，沿用现有 blocked 状态。
-2. 缺 `RobotContextSpec` 或 `SceneContextAsset` 时，仍可达到 `ready_for_contextual_precheck`，但不能进入 lightweight feasibility。
-3. 有 robot context 和 scene context，但没有 feasibility result 时，状态为 `ready_for_lightweight_feasibility_precheck`。
-4. 有 feasibility result 且通过，无 blocking reasons 时，状态为 `ready_for_expert_review`。
-5. feasibility result 为 failed，或关键检查项 failed，状态为 `blocked_by_failed_feasibility_check`。
-6. feasibility result incomplete 或存在 blocking reasons，状态为 `blocked_by_incomplete_feasibility_result`。
+2. 如果只调用旧版两输入评估，即只传入 `ManipulationSkillAsset + RobotBodyAsset`，且两者结构可用，则保持兼容状态 `ready_for_contextual_precheck`，并继续在 warning gaps 中列出 robot / scene context 缺口。
+3. 如果调用者显式进入 contextual assessment，即传入了 `contextual_precheck_requested=True` 或传入任一 contextual 对象，那么缺 `RobotContextSpec` 时状态为 `blocked_by_missing_robot_context`，缺 `SceneContextAsset` 时状态为 `blocked_by_missing_scene_context`。
+4. 有 robot context 和 scene context，但没有 feasibility result 时，状态为 `ready_for_lightweight_feasibility_precheck`。
+5. 有 feasibility result 且通过，无 blocking reasons 时，状态为 `ready_for_expert_review`。
+6. feasibility result 为 failed，或关键检查项 failed，状态为 `blocked_by_failed_feasibility_check`。
+7. feasibility result incomplete 或存在 blocking reasons，状态为 `blocked_by_incomplete_feasibility_result`。
 
 所有状态都必须保留 `not_ready_for_robot_execution`，不得默认生成 `ready_for_robot_execution`。
 
@@ -281,12 +282,13 @@ README、details、`weld-experience-engine/README.md` 和对应 HTML 阅读版�
 2. 可从默认 simulation task / skill asset 构建默认 scene context。
 3. 可从真实 URDF `RobotBodyAsset` 构建 `RobotContextSpec`，并保留 `not_tcp_calibrated` 边界。
 4. `build_contextual_feasibility_result` 在完整默认上下文下 passed，但 collision 为 `assumed` 且 evidence boundary 正确。
-5. 缺 robot context 时 assessment blocked by missing robot context。
-6. 缺 scene context 时 assessment blocked by missing scene context。
-7. workspace hint 半径过小时 feasibility failed，assessment blocked by failed feasibility check。
-8. asset report 写出七个 JSON artifact。
-9. evidence writeback summary 记录 modeled task 和 1000 next-batch 为 evidence candidates，而不是真实执行结论。
-10. 全量 `uv run pytest -q` 保持通过。
+5. 旧版两输入 `build_skill_transfer_assessment(skill, robot)` 继续返回 `ready_for_contextual_precheck`，保持现有报告兼容。
+6. 显式 contextual assessment 缺 robot context 时 blocked by missing robot context。
+7. 显式 contextual assessment 缺 scene context 时 blocked by missing scene context。
+8. workspace hint 半径过小时 feasibility failed，assessment blocked by failed feasibility check。
+9. asset report 写出七个 JSON artifact。
+10. evidence writeback summary 记录 modeled task 和 1000 next-batch 为 evidence candidates，而不是真实执行结论。
+11. 全量 `uv run pytest -q` 保持通过。
 
 ## 8. 成功标准
 
