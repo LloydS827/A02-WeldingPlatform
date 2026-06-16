@@ -5,6 +5,7 @@ from weldcore.robot_process import build_robot_context_from_body_asset
 from weldcore.skill_asset import (
     SceneContextAsset,
     SkillAssetEvidenceWritebackSummary,
+    build_skill_transfer_assessment,
     build_contextual_feasibility_result,
     build_default_evidence_writeback_summary,
     build_default_scene_context_asset,
@@ -25,6 +26,10 @@ def _default_skill_asset():
     task_spec = default_simulation_task_specs()[0]
     bundle = build_simulation_evidence_bundle(task_spec, run_simlite_reference(task_spec))
     return build_manipulation_skill_asset_from_simulation_bundle(bundle)
+
+
+def _default_robot_body_asset():
+    return build_robot_body_asset_from_urdf(URDF)
 
 
 def test_scene_context_asset_serializes_precheck_contract():
@@ -113,7 +118,7 @@ def test_robot_context_from_real_body_asset_keeps_tcp_boundary():
 
 def test_contextual_feasibility_passes_default_context_as_lightweight_precheck():
     skill = _default_skill_asset()
-    robot = build_robot_body_asset_from_urdf(URDF)
+    robot = _default_robot_body_asset()
     robot_context = build_robot_context_from_body_asset(robot)
     scene = build_default_scene_context_asset(skill)
 
@@ -128,6 +133,125 @@ def test_contextual_feasibility_passes_default_context_as_lightweight_precheck()
     assert "collision_geometry_not_validated" in result.warning_reasons
     assert "not_full_ik_solver" in result.evidence_boundary
     assert "not_ready_for_robot_execution" in result.evidence_boundary
+
+
+def test_transfer_assessment_legacy_two_input_stays_ready_for_contextual_precheck():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+
+    assessment = build_skill_transfer_assessment(skill, robot)
+
+    assert assessment.status == "ready_for_contextual_precheck"
+    assert "requires_robot_context_spec" in assessment.warning_gaps
+    assert "requires_scene_context_asset" in assessment.warning_gaps
+
+
+def test_transfer_assessment_blocks_explicit_contextual_request_without_contexts():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        contextual_precheck_requested=True,
+    )
+
+    assert assessment.status == "blocked_by_missing_robot_context"
+    assert "missing_robot_context" in assessment.blocking_gaps
+    assert "missing_scene_context" in assessment.blocking_gaps
+
+
+def test_transfer_assessment_blocks_missing_scene_context_after_robot_context():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = build_robot_context_from_body_asset(robot)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        contextual_precheck_requested=True,
+    )
+
+    assert assessment.status == "blocked_by_missing_scene_context"
+    assert "missing_scene_context" in assessment.blocking_gaps
+
+
+def test_transfer_assessment_ready_for_feasibility_when_contexts_are_present():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+    )
+
+    assert assessment.status == "ready_for_lightweight_feasibility_precheck"
+
+
+def test_transfer_assessment_ready_for_expert_review_after_passed_feasibility():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+    feasibility = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+        feasibility_result=feasibility,
+    )
+
+    assert assessment.status == "ready_for_expert_review"
+    assert "lightweight_feasibility_precheck_passed" in assessment.passed_checks
+    assert "not_ready_for_robot_execution" in assessment.evidence_boundary
+
+
+def test_transfer_assessment_blocks_failed_feasibility_and_carries_gap():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = replace(
+        build_robot_context_from_body_asset(robot),
+        workspace_hint={"max_radius_m": 0.001},
+    )
+    scene = build_default_scene_context_asset(skill)
+    feasibility = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+        feasibility_result=feasibility,
+    )
+
+    assert assessment.status == "blocked_by_failed_feasibility_check"
+    assert "tcp_trajectory_outside_workspace_hint" in assessment.blocking_gaps
+
+
+def test_transfer_assessment_blocks_incomplete_scene_feasibility_and_carries_gap():
+    skill = _default_skill_asset()
+    robot = _default_robot_body_asset()
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill, workpiece_frame=None)
+    feasibility = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assessment = build_skill_transfer_assessment(
+        skill,
+        robot,
+        robot_context=robot_context,
+        scene_context=scene,
+        feasibility_result=feasibility,
+    )
+
+    assert assessment.status == "blocked_by_incomplete_feasibility_result"
+    assert "missing_workpiece_frame" in assessment.blocking_gaps
 
 
 def test_contextual_feasibility_fails_when_workspace_hint_is_too_small():

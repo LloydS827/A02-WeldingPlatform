@@ -10,9 +10,15 @@ from weldcore.simulation_bakeoff import (
     default_simulation_task_specs,
     run_simlite_reference,
 )
+from weldcore.robot_process import build_robot_context_from_body_asset
 
 from .assessment import build_skill_transfer_assessment
 from .builders import build_manipulation_skill_asset_from_simulation_bundle
+from .context import (
+    build_contextual_feasibility_result,
+    build_default_evidence_writeback_summary,
+    build_default_scene_context_asset,
+)
 from .urdf import build_robot_body_asset_from_urdf
 
 
@@ -27,17 +33,42 @@ def run_skill_asset_report(outdir: str | Path, urdf_path: str | Path | None = No
     bundle = build_simulation_evidence_bundle(task_spec, run_simlite_reference(task_spec))
     skill_asset = build_manipulation_skill_asset_from_simulation_bundle(bundle)
     robot_body_asset = build_robot_body_asset_from_urdf(urdf_path or DEFAULT_URDF_PATH)
-    assessment = build_skill_transfer_assessment(skill_asset, robot_body_asset)
+    robot_context = build_robot_context_from_body_asset(robot_body_asset)
+    scene_context = build_default_scene_context_asset(skill_asset)
+    feasibility_result = build_contextual_feasibility_result(
+        skill_asset,
+        robot_context,
+        scene_context,
+    )
+    evidence_writeback_summary = build_default_evidence_writeback_summary(skill_asset)
+    assessment = build_skill_transfer_assessment(
+        skill_asset,
+        robot_body_asset,
+        robot_context=robot_context,
+        scene_context=scene_context,
+        feasibility_result=feasibility_result,
+    )
 
     payload = {
         "skill_asset": skill_asset.to_dict(),
         "robot_body_asset": robot_body_asset.to_dict(),
+        "robot_context_spec": robot_context.to_dict(),
+        "scene_context_asset": scene_context.to_dict(),
         "transfer_assessment": assessment.to_dict(),
+        "robot_feasibility_result": feasibility_result.to_dict(),
+        "evidence_writeback_summary": evidence_writeback_summary.to_dict(),
     }
 
     _write_json(output_dir / "skill_asset_report.json", payload["skill_asset"])
     _write_json(output_dir / "robot_body_asset_report.json", payload["robot_body_asset"])
+    _write_json(output_dir / "robot_context_spec.json", payload["robot_context_spec"])
+    _write_json(output_dir / "scene_context_asset_report.json", payload["scene_context_asset"])
     _write_json(output_dir / "skill_transfer_assessment.json", payload["transfer_assessment"])
+    _write_json(output_dir / "robot_feasibility_result.json", payload["robot_feasibility_result"])
+    _write_json(
+        output_dir / "skill_asset_evidence_writeback_summary.json",
+        payload["evidence_writeback_summary"],
+    )
 
     return payload
 
