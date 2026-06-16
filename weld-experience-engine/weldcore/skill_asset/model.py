@@ -15,12 +15,26 @@ SkillAssetReviewStatus = Literal["not_reviewed", "expert_review_candidate", "rev
 SkillTransferContractStatus = Literal["requires_contextual_precheck", "blocked"]
 SkillTransferAssessmentStatus = Literal[
     "ready_for_contextual_precheck",
+    "ready_for_lightweight_feasibility_precheck",
+    "ready_for_expert_review",
     "blocked_by_missing_skill_motion",
     "blocked_by_robot_body_asset_issue",
+    "blocked_by_missing_robot_context",
+    "blocked_by_missing_scene_context",
+    "blocked_by_incomplete_feasibility_result",
+    "blocked_by_failed_feasibility_check",
 ]
 RobotBodyAssetValidationStatus = Literal[
     "usable_as_robot_body_context",
     "blocked_by_asset_issue",
+]
+SceneContextAssetValidationStatus = Literal[
+    "usable_as_scene_context",
+    "blocked_by_scene_context_issue",
+]
+SkillAssetEvidenceWritebackStatus = Literal[
+    "evidence_candidates_identified",
+    "blocked_by_missing_evidence_source",
 ]
 
 
@@ -129,6 +143,25 @@ class RobotBodyAsset:
 
 
 @dataclass(frozen=True)
+class SceneContextAsset:
+    scene_id: str
+    scene_type: str
+    workpiece_frame: str
+    seam_path: list[dict[str, Any]]
+    fixture_obstacles: tuple[dict[str, Any], ...]
+    safety_boundary: dict[str, Any]
+    target_region: dict[str, Any]
+    source_refs: dict[str, str]
+    validation_status: SceneContextAssetValidationStatus
+    validation_issues: tuple[str, ...]
+    evidence_boundary: tuple[str, ...]
+    version: str = "v0.1"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
 class SkillTransferAssessment:
     assessment_id: str
     skill_asset_id: str
@@ -141,6 +174,23 @@ class SkillTransferAssessment:
     next_step_recommendation: str
     evidence_notes: tuple[str, ...]
     version: str = "v0.1"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class SkillAssetEvidenceWritebackSummary:
+    summary_id: str
+    skill_asset_id: str
+    modeled_task_count: int
+    simulation_sample_count: int
+    completed_sample_count: int
+    failed_sample_count: int
+    candidate_evidence_refs: tuple[str, ...]
+    writeback_status: SkillAssetEvidenceWritebackStatus
+    evidence_boundary: tuple[str, ...]
+    next_step_recommendation: str
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)

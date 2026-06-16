@@ -3,6 +3,7 @@ from .feasibility import (
     LIGHTWEIGHT_FEASIBILITY_EVIDENCE_BOUNDARY,
     MOCK_CONTEXT_EVIDENCE_BOUNDARY,
     build_robot_feasibility_result,
+    build_robot_context_from_body_asset,
     default_mock_robot_context,
     update_robot_process_draft_with_feasibility,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "RobotFeasibilityStrategy",
     "RobotProcessDraftStatus",
     "RobotProcessPackageDraft",
+    "build_robot_context_from_body_asset",
     "build_robot_feasibility_result",
     "build_robot_process_package_draft",
     "default_mock_robot_context",
