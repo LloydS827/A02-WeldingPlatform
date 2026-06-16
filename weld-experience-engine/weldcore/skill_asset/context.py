@@ -108,7 +108,7 @@ def build_contextual_feasibility_result(
         collision_status = "missing"
         path_continuity_status = "missing"
     elif scene_context.validation_status != "usable_as_scene_context":
-        blocking_reasons.extend(scene_context.validation_issues)
+        blocking_reasons.extend(scene_context.validation_issues or ("blocked_scene_context",))
         collision_status = "missing"
         path_continuity_status = "missing"
     else:
@@ -227,6 +227,14 @@ def _feasibility_status(
         orientation_status,
     ):
         return "failed"
+    if "missing" in (
+        reachability_status,
+        collision_status,
+        joint_limit_status,
+        path_continuity_status,
+        orientation_status,
+    ):
+        return "incomplete"
     return "incomplete" if blocking_reasons else "passed"
 
 

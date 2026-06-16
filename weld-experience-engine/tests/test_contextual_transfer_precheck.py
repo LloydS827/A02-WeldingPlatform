@@ -160,6 +160,65 @@ def test_contextual_feasibility_consumes_blocked_scene_context():
     assert "missing_workpiece_frame" in result.blocking_reasons
 
 
+def test_contextual_feasibility_blocks_scene_context_without_specific_issue():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = replace(
+        build_default_scene_context_asset(skill),
+        validation_status="blocked_by_scene_context_issue",
+        validation_issues=(),
+    )
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.collision_status == "missing"
+    assert result.path_continuity_status == "missing"
+    assert "blocked_scene_context" in result.blocking_reasons
+
+
+def test_contextual_feasibility_marks_missing_robot_context_incomplete():
+    skill = _default_skill_asset()
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, None, scene)
+
+    assert result.status == "incomplete"
+    assert result.context_id == "missing-context"
+    assert result.reachability_status == "missing"
+    assert result.collision_status == "not_checked"
+    assert result.joint_limit_status == "missing"
+    assert "missing_robot_context" in result.blocking_reasons
+
+
+def test_contextual_feasibility_marks_missing_scene_context_incomplete():
+    skill = _default_skill_asset()
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+
+    result = build_contextual_feasibility_result(skill, robot_context, None)
+
+    assert result.status == "incomplete"
+    assert result.collision_status == "missing"
+    assert result.path_continuity_status == "missing"
+    assert "missing_scene_context" in result.blocking_reasons
+
+
+def test_contextual_feasibility_marks_missing_tcp_trajectory_incomplete():
+    skill = _default_skill_asset()
+    skill = replace(skill, motion={**skill.motion, "tcp_trajectory": []})
+    robot = build_robot_body_asset_from_urdf(URDF)
+    robot_context = build_robot_context_from_body_asset(robot)
+    scene = build_default_scene_context_asset(skill)
+
+    result = build_contextual_feasibility_result(skill, robot_context, scene)
+
+    assert result.status == "incomplete"
+    assert result.reachability_status == "missing"
+    assert "missing_tcp_trajectory" in result.blocking_reasons
+
+
 def test_contextual_feasibility_marks_missing_orientation_incomplete():
     skill = _default_skill_asset()
     skill = replace(skill, motion={**skill.motion, "tool_orientation": []})
