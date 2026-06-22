@@ -1,8 +1,8 @@
-# 焊接技能大师平台项目进展记录
+# A02 机器人技能大师焊接技能资产底座项目进展记录
 
-更新时间：2026-06-16
+更新时间：2026-06-22
 
-这份文件用于记录 A02「焊接技能大师平台」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 [README.md](README.md)。
+这份文件用于记录 A02「机器人技能大师能力的焊接技能资产底座」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 [README.md](README.md)。
 
 ## 文件定位
 
@@ -13,31 +13,43 @@
 
 ## 当前一句话状态
 
-项目已经把主线从单纯扩大仿真样本数和 modeled task specs，修订为以 `ManipulationSkillAsset` 为核心的 canonical manipulation skill asset 路线。当前已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，并让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`。这个状态只表示进入专家审查候选，不表示真实机器人可执行；100/500/1000 requested samples、modeled `SimulationTaskSpec` 和 batch/accumulation report 仍然保留，但现在被定位为技能资产的证据来源和压力测试来源。
+项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff 和 IP support matrix。这个状态只表示进入专家审查候选，不表示真实机器人可执行。
 
 ## 当前主线判断
 
-现在不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成，也不应继续只按 requested samples 数量线性扩张。更合理的节奏是先把“技能资产本体是什么、它如何绑定机器人身体和场景上下文、哪些缺口阻止迁移验证”做清楚，再继续扩大仿真数据积累。
+现在不适合跳到真实机器人控制或完整 MoveIt/Gazebo 集成，也不应继续只按 requested samples 数量线性扩张。更合理的节奏是先把“技能资产本体是什么、A01/B06 数据如何成为 evidence、专家审查到底审什么、哪些真实上下文缺口阻止迁移验证”做清楚，再继续扩大仿真数据积累。
 
 更合理的主线是：
 
 ```text
-SimulationEvidenceBundle
+SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell run
 -> ManipulationSkillAsset
-
-ManipulationSkillAsset + RobotBodyAsset(URDF)
++ RobotBodyAsset(URDF)
 -> SkillTransferAssessment
 -> RobotContextSpec
 -> SceneContextAsset
 -> RobotFeasibilityResult
--> ready_for_expert_review
+-> ExpertReviewRecord
+-> A02->A01 product validation handoff / IP evidence support
 ```
 
-这一段必须先稳定下来。只有当 skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界和数据转换都可复跑、可比较、可审查之后，项目才适合继续进入更大规模的持续数据积累或真实机器人迁移验证。
+这一段必须先稳定下来。只有当 skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界、A01/B06 字段映射和专家审查记录都可复跑、可比较、可审查之后，项目才适合继续进入更大规模的持续数据积累或真实机器人迁移验证。
 
 这里的“反证工作”很重要：候选仿真软件不是因为名字先进就自动成为主线，而要通过同一组任务、同一套输出契约和同一份证据报告证明它能接入项目数据结构；不能接入的地方也要明确记录失败原因。
 
 ## 近期更新
+
+### 2026-06-22
+
+- 完成 A02 战略口径修订：默认定位从“焊接技能大师平台”收束为“机器人技能大师能力的焊接技能资产底座”。
+- 标准化 `ManipulationSkillAsset` evidence source type：canonical skill asset 层使用 `simulation_only`、`human_demo`、`real_robot_log`、`h300_workcell_run` 和 `expert_annotation`；低层仿真 source manifest 仍可保留 `simulation`。
+- 新增 A01 H300 工站回采与 B06 Physical AI Package 到 `ManipulationSkillAsset` 的 mapping artifact，覆盖 path points、robot pose、torch pose、manual correction、quality result、trajectory、human correction、quality labels 和 rerun replay ref。
+- 新增 `ExpertReviewRecord`，绑定技能资产 ID、机器人上下文、场景上下文、feasibility result、source evidence summary、审查状态、阻塞原因、required real context 和 next actions。
+- 新增 A02->A01 product validation handoff，明确 A02 输出的是 skill package candidate、trajectory candidate、torch posture suggestion、process parameter hint 和 failure boundary summary，不是可直接派发的 robot program。
+- 新增 IP support matrix，把 P0-02“焊接技能包”、P0-03“焊接轨迹结构化转换”、P0-04“仿真优先焊接技能数据集”映射到 supporting objects、supporting reports 和 missing real-world evidence。
+- 扩展 `weldcore.skill_asset.asset_report`，默认从 7 份 JSON 扩展为 12 份 JSON artifact，优先服务 A01 产品验证和 IP 交底准备。
+- 更新 README、引擎 README、架构文档和技能包文档，减少平台化表达，明确 `WeldSkillPackage` 是历史兼容 / facade，当前 canonical object 是 `ManipulationSkillAsset`。
+- 本轮最终验证结果将在本分支收尾前更新到“最近一次验证方式”。
 
 ### 2026-06-16
 
@@ -168,7 +180,12 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 - `RobotFeasibilityResult` 已接入 `SkillTransferAssessment` 主线，可做 lightweight reachability、collision-assumed、joint-limit source、path continuity 和 orientation 结构预检。
 - `SkillTransferAssessment` 可输出 `ready_for_contextual_precheck`、`ready_for_lightweight_feasibility_precheck`、`ready_for_expert_review` 和具体 blocked 状态。
 - `SkillAssetEvidenceWritebackSummary` 可把 modeled task specs 和 1000 next-batch 样本记录为 skill asset evidence candidates。
-- `weldcore.skill_asset.asset_report`，可生成 skill asset、robot body asset、robot context spec、scene context asset、transfer assessment、robot feasibility result 和 evidence writeback summary 七份 JSON。
+- `EvidenceSourceCatalogEntry`，可标准化记录 `simulation_only`、`human_demo`、`real_robot_log`、`h300_workcell_run` 和 `expert_annotation`。
+- `A01B06SkillAssetMapping`，可把 A01 H300 工站回采和 B06 Physical AI Package 字段映射到 `ManipulationSkillAsset`。
+- `ExpertReviewRecord`，可绑定技能资产、机器人上下文、场景上下文、预检结果和人工审查边界。
+- `A02ToA01ProductValidationHandoff`，可表达 A02 反哺 A01 产品验证的候选输出和失败边界。
+- `IPDisclosureSupportMatrix`，可把 P0-02、P0-03、P0-04 关联到支撑对象、报告和缺失真实证据。
+- `weldcore.skill_asset.asset_report`，可生成 skill asset、robot body asset、robot context spec、scene context asset、transfer assessment、robot feasibility result、evidence writeback summary、evidence source catalog、A01/B06 mapping、expert review record、A02->A01 handoff 和 IP support matrix 十二份 JSON。
 - `SkillDataset`、`SkillSample`、`WeldSkillPackage` 和迁移评测基础结构。
 - `WeldSkillUnit` 最小技能单元表达。
 - `SimulationTaskSpec`、`SimulatorAdapterResult`、`SimulationEvidenceBundle` 仿真证据结构。
@@ -193,7 +210,8 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 - 跨批次 accumulation ledger 尚未建立。
 - 候选仿真软件面对 modeled task specs 的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。
 - 经验数据与 `ManipulationSkillAsset` 之间的跨批次字段追踪还需要进一步收束。
-- 专家审查记录结构尚未作为主线对象实现。
+- 专家审查记录结构已经作为 artifact 实现，但尚未接入真实专家结论、审查人、审查时间和闭环动作。
+- A01 H300 工站回采和 B06 Physical AI Package 目前是字段合同和报告 artifact，尚未接入真实或脱敏样本。
 - 真实 TCP 标定记录、工具坐标系标定记录和工件坐标系测量记录尚未替换当前 nominal context。
 - 完整 IK、真实碰撞检测、MoveIt/Gazebo adapter、机器人控制接口和真机日志尚未接入当前 `RobotFeasibilityResult`。
 - 真实焊机、机器人、焊材、焊后检测和质量结果尚未接成闭环。
@@ -201,16 +219,16 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 
 ## 下一步建议
 
-推荐下一阶段任务是：**定义专家审查对象与真实标定记录接入**。
+推荐下一阶段任务是：**用真实或脱敏工站证据替换 nominal context，并运行专家审查闭环**。
 
-目标是在 `ready_for_expert_review` 之后，把“专家到底审什么、哪些 nominal context 必须被真实标定替换、重型 robot adapter 如何作为同一结果结构的证据”说清楚：
+目标是在当前 `ready_for_expert_review` 和 `pending_expert_review` 基础上，把“真实上下文证据从哪里来、专家如何审、A02 如何反哺 A01、IP 交底缺哪些真实证据”说清楚：
 
-1. 定义 expert review record，让它消费 `ManipulationSkillAsset`、`RobotContextSpec`、`SceneContextAsset`、`RobotFeasibilityResult` 和 evidence writeback summary。
-2. 定义真实 TCP 标定记录、工具坐标系标定记录和工件坐标系测量记录，并替换当前 `nominal_from_asset_not_calibrated` 的默认上下文。
-3. 做一个最小 MoveIt/Gazebo 或等价 robot adapter 反证实验，让更重的 IK / collision 结果填入同一份 `RobotFeasibilityResult`，而不是另建机器人主线。
-4. 运行 modeled task specs 的小批量 ManiSkill/SAPIEN 验证，并把结果继续回填到 `ManipulationSkillAsset` evidence。
-5. 建立跨批次 evidence ledger，让 100/500/1000 requested samples、modeled task specs 和后续 adapter 结果能按同一资产追踪。
-6. 后续若出现 failed samples，先修复具体 failure boundary；若出现 transfer boundary，先修 `RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset` 或 `RobotFeasibilityResult` 的具体缺口。
+1. 用真实 TCP calibration record、tool frame calibration 和 workpiece frame measurement records 替换当前 nominal context。
+2. 使用 B06 Physical AI Package / A01 H300 真实或脱敏样本作为 `h300_workcell_run`、`real_robot_log` 或 `human_demo` evidence。
+3. 运行 `ExpertReviewRecord` 工作流，填入专家结论、阻塞原因、下一步动作和是否允许进入更重 robot adapter 验证。
+4. 将 A02 输出回送 A01 产品验证，明确候选轨迹、姿态/参数建议和失败边界如何被 H300 工站消费。
+5. 准备 P0-02、P0-03、P0-04 evidence packs，补齐当前 IP support matrix 中列出的 missing real-world evidence。
+6. 做一个最小 MoveIt/Gazebo 或等价 robot adapter 反证实验，让更重的 IK / collision 结果填入同一份 `RobotFeasibilityResult`，而不是另建机器人主线。
 
 这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把结果写成最终仿真器选型。
 
@@ -218,7 +236,7 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 
 - 暂缓新增更多任务族或第三个 `WeldSkillUnit` 作为默认积累对象，避免在 scale shard 未稳定前同时扩大任务复杂度。
 - 暂缓完整 Gazebo/MoveIt 或 ROS 侧集成，除非它作为候选 adapter 的最小反证实验出现。
-- 暂缓专家审核系统化录入；下一阶段先定义 expert review record 和真实标定记录，而不是直接建设审核系统。
+- 暂缓专家审核系统化产品录入；下一阶段先运行最小 `ExpertReviewRecord` 工作流和真实标定记录替换，而不是直接建设审核系统。
 - 暂缓真实机器人执行结论，当前只做候选草案和审查前置条件。
 
 ## 当前可交付物清单
@@ -227,14 +245,14 @@ ManipulationSkillAsset + RobotBodyAsset(URDF)
 - `details.md`：阶段更新记录和下一步计划。
 - `docs/strategy/`：公司级 Physical AI 判断与当前项目承接关系。
 - `docs/architecture/`：五层架构、模块边界和 adapter 原则。
-- `docs/skill-assets/`：`WeldSkillPackage` 与 `WeldSkillUnit`。
+- `docs/skill-assets/`：`ManipulationSkillAsset` 主线说明，以及 `WeldSkillPackage` 历史兼容 / facade。
 - `docs/simulation/`：仿真路线、simlite 边界、外部 adapter 候选和 ManiSkill/SAPIEN 开发环境说明。
 - `docs/evidence/`：资料来源、字段覆盖、证据报告和质量边界。
 - `docs/archive/`：POC、MVP、gate、白皮书和旧计划归档。
 - `docs/superpowers/specs/`：阶段设计文档。
 - `docs/superpowers/plans/`：阶段实施计划。
 - `docs/real-urdf/robot.urdf` 与 `docs/real-urdf/meshes/`：真实协作臂 RobotBodyAsset 输入资产。
-- `weldcore.skill_asset.asset_report`：canonical skill asset 报告入口，默认生成七份 JSON，包括 `SceneContextAsset`、`RobotContextSpec`、`RobotFeasibilityResult` 和 evidence writeback summary。
+- `weldcore.skill_asset.asset_report`：canonical skill asset 报告入口，默认生成十二份 JSON，包括 `ManipulationSkillAsset`、`RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、`SkillTransferAssessment`、`RobotFeasibilityResult`、evidence writeback summary、evidence source catalog、A01/B06 mapping、expert review record、A02->A01 handoff 和 IP support matrix。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline`：100 requested samples 口径的仿真数据积累入口。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 5 --samples-per-task 50`：5 shards x 100 requested samples，共 500 requested samples 的 Phase 2 shard 积累入口。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 10 --samples-per-task 50`：10 shards x 100 requested samples，共 1000 requested samples 的 next-batch 积累入口。
@@ -252,7 +270,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `390 passed`。
+当前分支最近一次完整验证结果将在本轮最终验证后更新。
 
 当前 canonical skill asset 报告命令：
 
@@ -261,7 +279,7 @@ uv run python -m weldcore.skill_asset.asset_report \
   --outdir artifacts/skill-assets/canonical
 ```
 
-该命令会生成 `skill_asset_report.json`、`robot_body_asset_report.json`、`robot_context_spec.json`、`scene_context_asset_report.json`、`skill_transfer_assessment.json`、`robot_feasibility_result.json` 和 `skill_asset_evidence_writeback_summary.json`。当前默认结果中，`robot_body_asset.validation_status` 为 `usable_as_robot_body_context`，`transfer_assessment.status` 为 `ready_for_expert_review`，`robot_feasibility_result.status` 为 `passed`；它仍然不表示真实机器人可执行。
+该命令会生成 12 份 JSON：`skill_asset_report.json`、`robot_body_asset_report.json`、`robot_context_spec.json`、`scene_context_asset_report.json`、`skill_transfer_assessment.json`、`robot_feasibility_result.json`、`skill_asset_evidence_writeback_summary.json`、`skill_asset_evidence_source_catalog.json`、`a01_b06_skill_asset_mapping.json`、`expert_review_record.json`、`a02_to_a01_product_validation_handoff.json` 和 `ip_disclosure_support_matrix.json`。当前默认结果中，`robot_body_asset.validation_status` 为 `usable_as_robot_body_context`，`transfer_assessment.status` 为 `ready_for_expert_review`，`expert_review_record.review_status` 为 `pending_expert_review`，`robot_feasibility_result.status` 为 `passed`；它仍然不表示真实机器人可执行。
 
 可选小批量入口命令：
 

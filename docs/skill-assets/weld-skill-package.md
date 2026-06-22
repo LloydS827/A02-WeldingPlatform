@@ -2,33 +2,42 @@
 
 ## 定位
 
-`WeldSkillPackage` 是 A02 焊接技能大师平台的核心对象，用于承载可学习、可迁移、可执行、可审计的焊接技能资产。
+`WeldSkillPackage` 是 A02 早期技能包 facade 和历史兼容层，用于承接既有 `SkillDataset`、迁移评测、MVP 报告和旧 evidence 输出。当前 canonical 技能资产对象已经收束为 `ManipulationSkillAsset`。
 
-## 最小字段
+因此，后续新增字段和报告应优先围绕 `ManipulationSkillAsset`、`SkillAssetEvidence`、`RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、`SkillTransferAssessment`、`RobotFeasibilityResult` 和 `ExpertReviewRecord` 建模。`WeldSkillPackage` 可以作为对外技能包视图或兼容 facade，但不再承担项目主线本体角色。
 
-- task
-- source
-- trajectory
-- posture
-- process parameters
-- applicability
-- transfer rules
-- failure boundary
-- robot execution suggestion
-- evidence status
+## 与 `ManipulationSkillAsset` 的关系
+
+`ManipulationSkillAsset` 描述：
+
+- skill intent
+- TCP trajectory
+- tool orientation
+- process constraints
+- evidence source
+- quality boundary
+- transfer contract
+- robot and scene context requirements
+
+`WeldSkillPackage` 可以从这些信息中派生技能包视图，但不应绕过 `ManipulationSkillAsset` 直接成为新 evidence、A01 回采、B06 Physical AI Package 或专家审查的承载对象。
 
 ## 与 SkillDataset 的关系
 
-`SkillDataset` 提供工艺知识、动作经验和过程数据的结构化输入，`WeldSkillPackage` 在此基础上表达技能资产的适用范围、迁移规则和执行建议。
+`SkillDataset` 继续提供工艺知识、动作经验和过程数据的结构化输入。新的默认路径是把这些输入沉淀为 `ManipulationSkillAsset` evidence；`WeldSkillPackage` 只保留对既有迁移评测和报告的兼容作用。
 
 ## 与机器人执行的关系
 
-机器人训练、类机器人仿真和执行基线应读取或生成可回写到 `WeldSkillPackage` 的信息，而不是绕过技能资产直接成为项目主线。
+机器人训练、类机器人仿真、A01 H300 工站回采和 B06 Physical AI Package 应读取或生成可回写到 `ManipulationSkillAsset` 的信息。`WeldSkillPackage` 中出现的执行建议只能是候选说明，不能写成真实机器人可执行、生产派发包或控制器程序。
+
+`ready_for_expert_review` 只表示专家审查候选；当前不宣称 `ready_for_robot_execution`。
 
 ## 与证据边界的关系
 
-`WeldSkillPackage` 必须携带 evidence status 和 failure boundary。证据用于约束技能资产，不等于真实焊接质量验证，不替代 WPS/PQR。
+任何从 `WeldSkillPackage` 或历史报告继承的结论，都必须携带 evidence status 和 failure boundary。证据用于约束技能资产，不等于真实焊接质量验证，不替代 WPS/PQR，不表示最终仿真器选型。
 
 ## 当前代码对应
 
-当前基础模型保留在 `weldcore.model`，技能迁移与评测能力主要对应 `weldcore.transfer`。后续重构会围绕技能资产建立更清晰的 import 边界。
+- 当前 canonical 技能资产主线在 `weldcore.skill_asset`。
+- `WeldSkillPackage` 和 `package_from_sample` 保留在 `weldcore.skill_asset` 的兼容导出中。
+- 早期迁移评测能力主要对应 `weldcore.transfer`。
+- 默认技能资产报告入口是 `weldcore.skill_asset.asset_report`。
