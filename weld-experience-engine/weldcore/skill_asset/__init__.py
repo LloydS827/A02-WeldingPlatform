@@ -6,6 +6,11 @@ from .context import (
     build_default_scene_context_asset,
 )
 from .model import (
+    A01B06SkillAssetMapping,
+    A02ToA01ProductValidationHandoff,
+    EvidenceSourceCatalogEntry,
+    ExpertReviewRecord,
+    IPDisclosureSupportMatrix,
     ManipulationSkillAsset,
     RobotBodyAsset,
     RobotBodyAssetValidationStatus,
@@ -23,9 +28,21 @@ from .model import (
     SkillTransferContractStatus,
 )
 from .package import WeldSkillPackage, package_from_sample
+from .strategic_alignment import (
+    build_a01_b06_skill_asset_mapping,
+    build_a02_to_a01_product_validation_handoff,
+    build_default_evidence_source_catalog,
+    build_default_expert_review_record,
+    build_ip_disclosure_support_matrix,
+)
 from .urdf import build_robot_body_asset_from_urdf
 
 __all__ = [
+    "A01B06SkillAssetMapping",
+    "A02ToA01ProductValidationHandoff",
+    "EvidenceSourceCatalogEntry",
+    "ExpertReviewRecord",
+    "IPDisclosureSupportMatrix",
     "ManipulationSkillAsset",
     "RobotBodyAsset",
     "RobotBodyAssetValidationStatus",
@@ -42,9 +59,14 @@ __all__ = [
     "SkillTransferContract",
     "SkillTransferContractStatus",
     "WeldSkillPackage",
+    "build_a01_b06_skill_asset_mapping",
+    "build_a02_to_a01_product_validation_handoff",
     "build_contextual_feasibility_result",
+    "build_default_evidence_source_catalog",
     "build_default_evidence_writeback_summary",
+    "build_default_expert_review_record",
     "build_default_scene_context_asset",
+    "build_ip_disclosure_support_matrix",
     "build_manipulation_skill_asset_from_simulation_bundle",
     "build_robot_body_asset_from_urdf",
     "build_skill_transfer_assessment",

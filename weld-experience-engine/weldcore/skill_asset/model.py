@@ -195,3 +195,90 @@ class SkillAssetEvidenceWritebackSummary:
 
     def to_dict(self) -> dict[str, Any]:
         return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class EvidenceSourceCatalogEntry:
+    source_type: SkillAssetSourceType
+    role: str
+    status: str
+    expected_fields: tuple[str, ...]
+    evidence_boundary: tuple[str, ...]
+    next_step_recommendation: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class A01B06SkillAssetMapping:
+    mapping_id: str
+    source_system: str
+    target_skill_asset_id: str
+    evidence_source_type: SkillAssetSourceType
+    workcell_fields: tuple[str, ...]
+    package_fields: tuple[str, ...]
+    skill_asset_field_mapping: dict[str, str]
+    context_mapping: dict[str, str]
+    quality_feedback_mapping: dict[str, str]
+    artifact_refs: dict[str, str]
+    evidence_boundary: tuple[str, ...]
+    next_step_recommendation: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class ExpertReviewRecord:
+    review_id: str
+    skill_asset_id: str
+    robot_context_id: str
+    scene_context_id: str
+    feasibility_result_id: str
+    robot_context_snapshot: dict[str, Any]
+    scene_context_snapshot: dict[str, Any]
+    feasibility_status_snapshot: dict[str, Any]
+    source_evidence_summary: dict[str, Any]
+    review_status: str
+    review_conclusion: str | None
+    blocking_reasons: tuple[str, ...]
+    required_real_context: tuple[dict[str, Any], ...]
+    next_actions: tuple[str, ...]
+    review_boundary: tuple[str, ...]
+    reviewer_role: str
+    version: str = "v0.1"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class A02ToA01ProductValidationHandoff:
+    handoff_id: str
+    skill_asset_id: str
+    target_product: str
+    candidate_outputs: tuple[str, ...]
+    trajectory_candidate_ref: str
+    posture_parameter_suggestions: dict[str, Any]
+    failure_boundaries: tuple[str, ...]
+    required_confirmations: tuple[str, ...]
+    not_ready_reasons: tuple[str, ...]
+    evidence_refs: tuple[str, ...]
+    handoff_boundary: tuple[str, ...]
+    next_step_recommendation: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
+
+
+@dataclass(frozen=True)
+class IPDisclosureSupportMatrix:
+    support_id: str
+    skill_asset_id: str
+    items: tuple[dict[str, Any], ...]
+    evidence_boundary: tuple[str, ...]
+    next_step_recommendation: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return _model_dict(self)
