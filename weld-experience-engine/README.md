@@ -51,6 +51,17 @@ uv run python -m weldcore.skill_asset.asset_report \
 
 这些 artifact 用于服务 A01 产品验证、专家审查候选和 IP 交底准备。它们不是可直接下发给机器人控制器的程序，不是真实焊接质量验证，不是正式 WPS/PQR，也不是最终仿真器选型结论。
 
+## 默认 Demo Evidence Pack
+
+```bash
+uv run python -m weldcore.skill_asset.demo_report \
+  --outdir artifacts/demo/skill-asset-evidence
+```
+
+`asset_report` 是单任务 canonical 输出，默认生成一组 12 份 JSON artifact，用于检查当前技能资产主链路。`demo_report` 是多任务解释型 evidence pack，默认运行 2 个仿真任务；每个任务输出同名 12 份 canonical artifact 和 `simulation_evidence_bundle.json`，顶层输出 `demo_summary.md`、`demo_summary.json` 和 `demo_summary.html`。
+
+`demo_report` 面向专家审查、A02->A01 handoff 和 IP evidence pack 讨论，默认状态是 `ready_for_expert_review` evidence / `ready_for_expert_review_candidate_pack`。它保留 `not_ready_for_robot_execution`、`simulation_only`、`not_full_ik_solver`、`not_real_collision_validation` 和 `not_real_welding_quality_validation` 边界，不是机器人控制器程序、生产派发包或真实机器人执行验证。
+
 ## 证据与历史支撑命令
 
 既有 POC / MVP / report 命令仍可用，但它们用于技能资产 evidence、证据边界、仿真接入证据或历史支撑，不是默认研发主线本身。

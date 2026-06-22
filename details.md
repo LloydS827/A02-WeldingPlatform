@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff 和 IP support matrix。这个状态只表示进入专家审查候选，不表示真实机器人可执行。
+项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。这个状态只表示进入专家审查候选和 `ready_for_expert_review` evidence，不表示真实机器人可执行。
 
 ## 当前主线判断
 
@@ -48,8 +48,9 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 新增 A02->A01 product validation handoff，明确 A02 输出的是 skill package candidate、trajectory candidate、torch posture suggestion、process parameter hint 和 failure boundary summary，不是可直接派发的 robot program。
 - 新增 IP support matrix，把 P0-02“焊接技能包”、P0-03“焊接轨迹结构化转换”、P0-04“仿真优先焊接技能数据集”映射到 supporting objects、supporting reports 和 missing real-world evidence。
 - 扩展 `weldcore.skill_asset.asset_report`，默认从 7 份 JSON 扩展为 12 份 JSON artifact，优先服务 A01 产品验证和 IP 交底准备。
+- 新增 `weldcore.skill_asset.demo_report`，默认运行 2 个仿真任务；每个任务输出 12 份 canonical artifact 原始文件名和 `simulation_evidence_bundle.json`，顶层输出 `demo_summary.md/json/html`，用于形成解释型 demo evidence pack。
 - 更新 README、引擎 README、架构文档和技能包文档，减少平台化表达，明确 `WeldSkillPackage` 是历史兼容 / facade，当前 canonical object 是 `ManipulationSkillAsset`。
-- 本轮验证：`uv run pytest -q` 通过 `395 passed`；`asset_report` 已确认写出 12 份 JSON，默认 `transfer_assessment.status=ready_for_expert_review`，`expert_review_record.review_status=pending_expert_review`，`robot_feasibility_result.status=passed`。
+- 本轮验证：`uv run pytest -q` 通过 `395 passed`；`asset_report` 已确认写出 12 份 JSON；`demo_report` 已确认写出 2 个默认任务的 evidence pack。默认 `transfer_assessment.status=ready_for_expert_review`，`expert_review_record.review_status=pending_expert_review`，`robot_feasibility_result.status=passed`，demo pack 顶层状态为 `ready_for_expert_review_candidate_pack`。
 
 ### 2026-06-16
 
@@ -186,6 +187,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - `A02ToA01ProductValidationHandoff`，可表达 A02 反哺 A01 产品验证的候选输出和失败边界。
 - `IPDisclosureSupportMatrix`，可把 P0-02、P0-03、P0-04 关联到支撑对象、报告和缺失真实证据。
 - `weldcore.skill_asset.asset_report`，可生成 skill asset、robot body asset、robot context spec、scene context asset、transfer assessment、robot feasibility result、evidence writeback summary、evidence source catalog、A01/B06 mapping、expert review record、A02->A01 handoff 和 IP support matrix 十二份 JSON。
+- `weldcore.skill_asset.demo_report`，可生成 2 个默认仿真任务的解释型 demo evidence pack；每个任务保留 12 份 canonical artifact 原始文件名和 `simulation_evidence_bundle.json`，顶层生成 `demo_summary.md/json/html`。
 - `SkillDataset`、`SkillSample`、`WeldSkillPackage` 和迁移评测基础结构。
 - `WeldSkillUnit` 最小技能单元表达。
 - `SimulationTaskSpec`、`SimulatorAdapterResult`、`SimulationEvidenceBundle` 仿真证据结构。
@@ -211,6 +213,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 候选仿真软件面对 modeled task specs 的稳定性、可复跑性、输出字段覆盖率和失败边界仍需在下一批继续反证。
 - 经验数据与 `ManipulationSkillAsset` 之间的跨批次字段追踪还需要进一步收束。
 - 专家审查记录结构已经作为 artifact 实现，但尚未接入真实专家结论、审查人、审查时间和闭环动作。
+- demo evidence pack 已能进入 `ready_for_expert_review` evidence 讨论，但仍缺真实专家审查结论、真实执行日志和真实焊接质量反馈。
 - A01 H300 工站回采和 B06 Physical AI Package 目前是字段合同和报告 artifact，尚未接入真实或脱敏样本。
 - 真实 TCP 标定记录、工具坐标系标定记录和工件坐标系测量记录尚未替换当前 nominal context。
 - 完整 IK、真实碰撞检测、MoveIt/Gazebo adapter、机器人控制接口和真机日志尚未接入当前 `RobotFeasibilityResult`。
@@ -228,7 +231,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 3. 运行 `ExpertReviewRecord` 工作流，填入专家结论、阻塞原因、下一步动作和是否允许进入更重 robot adapter 验证。
 4. 将 A02 输出回送 A01 产品验证，明确候选轨迹、姿态/参数建议和失败边界如何被 H300 工站消费。
 5. 准备 P0-02、P0-03、P0-04 evidence packs，补齐当前 IP support matrix 中列出的 missing real-world evidence。
-6. 做一个最小 MoveIt/Gazebo 或等价 robot adapter 反证实验，让更重的 IK / collision 结果填入同一份 `RobotFeasibilityResult`，而不是另建机器人主线。
+6. 用 `weldcore.skill_asset.demo_report` 产出的 demo evidence pack 作为专家审查材料模板，补齐真实标定、真实工站样本、真实执行日志和焊接质量反馈。
+7. 做一个最小 MoveIt/Gazebo 或等价 robot adapter 反证实验，让更重的 IK / collision 结果填入同一份 `RobotFeasibilityResult`，而不是另建机器人主线。
 
 这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把结果写成最终仿真器选型。
 
@@ -253,6 +257,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - `docs/superpowers/plans/`：阶段实施计划。
 - `docs/real-urdf/robot.urdf` 与 `docs/real-urdf/meshes/`：真实协作臂 RobotBodyAsset 输入资产。
 - `weldcore.skill_asset.asset_report`：canonical skill asset 报告入口，默认生成十二份 JSON，包括 `ManipulationSkillAsset`、`RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、`SkillTransferAssessment`、`RobotFeasibilityResult`、evidence writeback summary、evidence source catalog、A01/B06 mapping、expert review record、A02->A01 handoff 和 IP support matrix。
+- `weldcore.skill_asset.demo_report`：默认 demo evidence pack 入口，生成 2 个仿真任务的 per-task canonical artifacts、`simulation_evidence_bundle.json` 和顶层 `demo_summary.md/json/html`。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline`：100 requested samples 口径的仿真数据积累入口。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 5 --samples-per-task 50`：5 shards x 100 requested samples，共 500 requested samples 的 Phase 2 shard 积累入口。
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 10 --samples-per-task 50`：10 shards x 100 requested samples，共 1000 requested samples 的 next-batch 积累入口。
@@ -280,6 +285,15 @@ uv run python -m weldcore.skill_asset.asset_report \
 ```
 
 该命令会生成 12 份 JSON：`skill_asset_report.json`、`robot_body_asset_report.json`、`robot_context_spec.json`、`scene_context_asset_report.json`、`skill_transfer_assessment.json`、`robot_feasibility_result.json`、`skill_asset_evidence_writeback_summary.json`、`skill_asset_evidence_source_catalog.json`、`a01_b06_skill_asset_mapping.json`、`expert_review_record.json`、`a02_to_a01_product_validation_handoff.json` 和 `ip_disclosure_support_matrix.json`。当前默认结果中，`robot_body_asset.validation_status` 为 `usable_as_robot_body_context`，`transfer_assessment.status` 为 `ready_for_expert_review`，`expert_review_record.review_status` 为 `pending_expert_review`，`robot_feasibility_result.status` 为 `passed`；它仍然不表示真实机器人可执行。
+
+当前默认 demo evidence pack 命令：
+
+```bash
+uv run python -m weldcore.skill_asset.demo_report \
+  --outdir artifacts/demo/skill-asset-evidence
+```
+
+该命令运行 2 个默认仿真任务；每个任务输出 12 份 canonical artifact 原始文件名和 `simulation_evidence_bundle.json`，顶层输出 `demo_summary.md`、`demo_summary.json` 和 `demo_summary.html`。默认状态是 `ready_for_expert_review` evidence / `ready_for_expert_review_candidate_pack`，并保留 `not_ready_for_robot_execution`、`simulation_only`、`not_full_ik_solver`、`not_real_collision_validation` 和 `not_real_welding_quality_validation` 边界。
 
 可选小批量入口命令：
 
