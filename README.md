@@ -151,6 +151,20 @@ uv run python -m weldcore.skill_asset.asset_report \
 
 默认结果中，`transfer_assessment.status` 为 `ready_for_expert_review`，`expert_review_record.review_status` 为 `pending_expert_review`，`robot_feasibility_result.status` 为 `passed`，但 evidence boundary 仍包含 `not_ready_for_robot_execution`、`not_full_ik_solver`、`not_collision_validated` 和相关真实上下文缺口。
 
+## 默认 Demo Evidence Pack
+
+默认 Demo Evidence Pack 入口：
+
+```bash
+cd weld-experience-engine
+uv run python -m weldcore.skill_asset.demo_report \
+  --outdir artifacts/demo/skill-asset-evidence
+```
+
+该命令运行 2 个默认仿真任务。每个任务目录输出 12 份 canonical artifact 原始文件名和 1 份 `simulation_evidence_bundle.json`；顶层输出 `demo_summary.md`、`demo_summary.json` 和 `demo_summary.html`。
+
+该 evidence pack 用来把 `ManipulationSkillAsset`、仿真证据、A02->A01 handoff、专家审查候选和 IP support matrix 放在同一组可审查材料里。默认状态是 `ready_for_expert_review` evidence pack / `ready_for_expert_review_candidate_pack`，边界仍是 `not_ready_for_robot_execution`、`simulation_only`、`not_full_ik_solver`、`not_real_collision_validation` 和 `not_real_welding_quality_validation`；它不是控制器可下载程序，不是生产派发包，也不是真实机器人执行结论。
+
 ## 历史能力索引
 
 以下能力仍可作为 evidence source、历史支撑或反证来源，不再作为默认项目主线：
