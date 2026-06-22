@@ -18,6 +18,23 @@ REQUIRED_NOT_EXECUTION_GAPS = {
     "real_welding_quality_feedback",
 }
 
+EXPECTED_CANONICAL_TASK_ARTIFACTS = {
+    "skill_asset_report.json",
+    "robot_body_asset_report.json",
+    "robot_context_spec.json",
+    "scene_context_asset_report.json",
+    "skill_transfer_assessment.json",
+    "robot_feasibility_result.json",
+    "skill_asset_evidence_writeback_summary.json",
+    "skill_asset_evidence_source_catalog.json",
+    "a01_b06_skill_asset_mapping.json",
+    "expert_review_record.json",
+    "a02_to_a01_product_validation_handoff.json",
+    "ip_disclosure_support_matrix.json",
+}
+
+EXPECTED_EXTRA_TASK_ARTIFACTS = {"simulation_evidence_bundle.json"}
+
 
 def test_demo_evidence_pack_writes_summary_and_per_task_artifacts(tmp_path):
     payload = run_demo_evidence_pack(tmp_path)
@@ -33,7 +50,9 @@ def test_demo_evidence_pack_writes_summary_and_per_task_artifacts(tmp_path):
         assert (tmp_path / filename).exists()
         assert filename in payload["generated_artifacts"]
 
-    expected_task_files = set(CANONICAL_TASK_ARTIFACTS) | set(EXTRA_TASK_ARTIFACTS)
+    assert set(CANONICAL_TASK_ARTIFACTS) == EXPECTED_CANONICAL_TASK_ARTIFACTS
+    assert set(EXTRA_TASK_ARTIFACTS) == EXPECTED_EXTRA_TASK_ARTIFACTS
+    expected_task_files = EXPECTED_CANONICAL_TASK_ARTIFACTS | EXPECTED_EXTRA_TASK_ARTIFACTS
     for task in payload["tasks"]:
         task_dir = tmp_path / task["task_id"]
         assert task_dir.exists()
