@@ -19,6 +19,13 @@ from .context import (
     build_default_evidence_writeback_summary,
     build_default_scene_context_asset,
 )
+from .strategic_alignment import (
+    build_a01_b06_skill_asset_mapping,
+    build_a02_to_a01_product_validation_handoff,
+    build_default_evidence_source_catalog,
+    build_default_expert_review_record,
+    build_ip_disclosure_support_matrix,
+)
 from .urdf import build_robot_body_asset_from_urdf
 
 
@@ -48,6 +55,16 @@ def run_skill_asset_report(outdir: str | Path, urdf_path: str | Path | None = No
         scene_context=scene_context,
         feasibility_result=feasibility_result,
     )
+    evidence_source_catalog = build_default_evidence_source_catalog(skill_asset)
+    a01_b06_mapping = build_a01_b06_skill_asset_mapping(skill_asset)
+    expert_review_record = build_default_expert_review_record(
+        skill_asset,
+        robot_context,
+        scene_context,
+        feasibility_result,
+    )
+    a02_to_a01_handoff = build_a02_to_a01_product_validation_handoff(skill_asset)
+    ip_disclosure_support_matrix = build_ip_disclosure_support_matrix(skill_asset)
 
     payload = {
         "skill_asset": skill_asset.to_dict(),
@@ -57,6 +74,11 @@ def run_skill_asset_report(outdir: str | Path, urdf_path: str | Path | None = No
         "transfer_assessment": assessment.to_dict(),
         "robot_feasibility_result": feasibility_result.to_dict(),
         "evidence_writeback_summary": evidence_writeback_summary.to_dict(),
+        "evidence_source_catalog": [entry.to_dict() for entry in evidence_source_catalog],
+        "a01_b06_skill_asset_mapping": a01_b06_mapping.to_dict(),
+        "expert_review_record": expert_review_record.to_dict(),
+        "a02_to_a01_product_validation_handoff": a02_to_a01_handoff.to_dict(),
+        "ip_disclosure_support_matrix": ip_disclosure_support_matrix.to_dict(),
     }
 
     _write_json(output_dir / "skill_asset_report.json", payload["skill_asset"])
@@ -69,6 +91,14 @@ def run_skill_asset_report(outdir: str | Path, urdf_path: str | Path | None = No
         output_dir / "skill_asset_evidence_writeback_summary.json",
         payload["evidence_writeback_summary"],
     )
+    _write_json(output_dir / "skill_asset_evidence_source_catalog.json", payload["evidence_source_catalog"])
+    _write_json(output_dir / "a01_b06_skill_asset_mapping.json", payload["a01_b06_skill_asset_mapping"])
+    _write_json(output_dir / "expert_review_record.json", payload["expert_review_record"])
+    _write_json(
+        output_dir / "a02_to_a01_product_validation_handoff.json",
+        payload["a02_to_a01_product_validation_handoff"],
+    )
+    _write_json(output_dir / "ip_disclosure_support_matrix.json", payload["ip_disclosure_support_matrix"])
 
     return payload
 

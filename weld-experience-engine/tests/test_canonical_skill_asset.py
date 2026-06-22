@@ -23,7 +23,7 @@ URDF = ROOT / "docs" / "real-urdf" / "robot.urdf"
 
 def test_manipulation_skill_asset_serializes_core_contract():
     evidence = SkillAssetEvidence(
-        source_type="simulation",
+        source_type="simulation_only",
         source_id="bundle-1",
         adapter_name="simlite_reference",
         status="completed",
@@ -54,7 +54,7 @@ def test_manipulation_skill_asset_serializes_core_contract():
         name="Long straight tracking",
         domain="welding",
         skill_type="seam_tracking",
-        source_type="simulation",
+        source_type="simulation_only",
         source_refs={"bundle_id": "bundle-1"},
         intent={"task": "follow seam"},
         motion={"tcp_trajectory": [], "tool_orientation": []},
@@ -69,7 +69,7 @@ def test_manipulation_skill_asset_serializes_core_contract():
     data = asset.to_dict()
 
     assert data["asset_id"] == "skill-asset-1"
-    assert data["evidence"]["source_type"] == "simulation"
+    assert data["evidence"]["source_type"] == "simulation_only"
     assert "expert_review" in data["transfer_contract"]["required_checks"]
     assert data["transfer_contract"]["transfer_status"] == "requires_contextual_precheck"
 
@@ -82,7 +82,7 @@ def test_simulation_evidence_bundle_builds_manipulation_skill_asset():
     data = asset.to_dict()
 
     assert asset.domain == "welding"
-    assert asset.source_type == "simulation"
+    assert asset.source_type == "simulation_only"
     assert asset.source_refs["bundle_id"] == bundle.bundle_id
     assert asset.motion["trajectory_point_count"] == len(bundle.adapter_result.tcp_trajectory)
     assert asset.motion["orientation_point_count"] == len(bundle.adapter_result.tool_orientation)
