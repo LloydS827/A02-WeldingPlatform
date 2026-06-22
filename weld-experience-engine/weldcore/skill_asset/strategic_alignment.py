@@ -170,8 +170,10 @@ def build_default_expert_review_record(
             "tcp_calibration_status": robot_context.tcp_calibration_status,
             "workpiece_frame": robot_context.workpiece_frame,
             "joint_limits_source": robot_context.joint_limits_source,
-            "evidence_notes": tuple(robot_context.evidence_notes)
-            + ("not_ready_for_robot_execution",),
+            "evidence_notes": _dedupe_text(
+                *robot_context.evidence_notes,
+                "not_ready_for_robot_execution",
+            ),
         },
         scene_context_snapshot={
             "scene_id": scene_context.scene_id,
@@ -408,3 +410,7 @@ def _required_real_context() -> tuple[dict[str, Any], ...]:
             "blocking_if_missing": True,
         },
     )
+
+
+def _dedupe_text(*items: str) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(item for item in items if item))

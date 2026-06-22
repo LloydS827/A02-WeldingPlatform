@@ -118,6 +118,7 @@ def test_expert_review_record_requires_real_context_and_snapshots():
     assert data["robot_context_snapshot"]["context_id"] == robot_context.context_id
     assert data["robot_context_snapshot"]["tcp_calibration_status"] == "nominal_from_asset_not_calibrated"
     assert "not_ready_for_robot_execution" in data["robot_context_snapshot"]["evidence_notes"]
+    assert data["robot_context_snapshot"]["evidence_notes"].count("not_ready_for_robot_execution") == 1
     assert data["scene_context_snapshot"]["scene_id"] == scene.scene_id
     assert data["scene_context_snapshot"]["validation_status"] == scene.validation_status
     assert "not_collision_validated" in data["scene_context_snapshot"]["evidence_boundary"]
