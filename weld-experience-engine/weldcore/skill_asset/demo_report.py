@@ -148,6 +148,8 @@ def run_demo_evidence_pack(
                     *assessment.evidence_boundary,
                     *feasibility_result.evidence_boundary,
                     *expert_review_record.review_boundary,
+                    *a02_to_a01_handoff.handoff_boundary,
+                    *ip_disclosure_support_matrix.evidence_boundary,
                 ),
                 "why_ready_for_expert_review": [
                     "lightweight feasibility precheck passed",
@@ -176,13 +178,27 @@ def run_demo_evidence_pack(
             "intent": "Intent captures the welding task identity, seam target, and expected operation boundary.",
             "motion": "Motion captures candidate TCP trajectory and tool orientation from simulation evidence.",
             "constraints": "Constraints remain candidate hints until expert review and real workcell validation.",
+            "context_requirements": (
+                "Context requirements capture the real robot, TCP, workpiece frame, joint limit, "
+                "and scene evidence still required before execution."
+            ),
             "evidence": "Evidence is simulation_only and suitable for review packaging, not direct robot execution.",
+            "transfer_contract": (
+                "Transfer contract defines how A02 skill candidates map into A01 validation inputs, "
+                "without becoming controller-downloadable robot programs."
+            ),
+            "quality_boundary": (
+                "Quality boundary records that weld quality, WPS/PQR, collision, IK, and real workcell "
+                "validation are outside this demo evidence pack."
+            ),
         },
         "simulation_evidence_explanation": {
             "SimulationEvidenceBundle": (
                 "Per-task bundle containing task_spec, SimLite adapter result, run record, "
                 "dataset candidate, rerun status, and bakeoff score."
             ),
+            "simlite_reference": "Deterministic SimLite reference output used as modeled evidence.",
+            "metrics": "Candidate simulation metrics for review triage, not real weld quality validation.",
             "source_type": "simulation_only",
             "boundary": "Not a real robot log and not real welding quality validation.",
         },
@@ -197,7 +213,9 @@ def run_demo_evidence_pack(
 
     _write_text(output_dir / "demo_summary.md", _render_markdown(payload))
     _write_text(output_dir / "demo_summary.html", _render_html(payload))
-    payload["generated_artifacts"] = sorted([*_generated_artifacts(output_dir), "demo_summary.json"])
+    payload["generated_artifacts"] = sorted(
+        [*_generated_artifacts(output_dir, exclude={"demo_summary.json"}), "demo_summary.json"]
+    )
     _write_json(output_dir / "demo_summary.json", payload)
     return payload
 
@@ -270,6 +288,26 @@ def _render_markdown(payload: dict[str, Any]) -> str:
         "Handoff boundary: "
         + ", ".join(f"`{item}`" for item in payload["a02_to_a01_handoff_summary"]["handoff_boundary"]),
         "",
+        "## Field Explanation",
+        "",
+        (
+            "`ManipulationSkillAsset` is not a single trajectory. It is a skill asset that contains "
+            "intent, motion, constraints, context requirements, evidence, transfer contract, and "
+            "quality boundary information."
+        ),
+        "",
+        *(
+            f"- {field}: {explanation}"
+            for field, explanation in payload["field_explanation"].items()
+        ),
+        "",
+        "## IP Support",
+        "",
+        *(
+            f"- {item['patent_item_id']}: {item['patent_item_name']}"
+            for item in payload["ip_support_summary"]
+        ),
+        "",
         "## Tasks",
         "",
     ]
@@ -290,6 +328,10 @@ def _render_markdown(payload: dict[str, Any]) -> str:
 
 def _render_html(payload: dict[str, Any]) -> str:
     boundary = ", ".join(html.escape(item) for item in payload["readiness_boundary"])
+    field_items = "\n".join(
+        f"<li><strong>{html.escape(field)}</strong>: {html.escape(explanation)}</li>"
+        for field, explanation in payload["field_explanation"].items()
+    )
     task_sections = "\n".join(
         "<section>"
         f"<h2>{html.escape(task['task_id'])}</h2>"
@@ -309,6 +351,11 @@ def _render_html(payload: dict[str, Any]) -> str:
         "<h1>A02 Demo Evidence Pack</h1>\n"
         f"<p>Overall status: {html.escape(payload['overall_status'])}</p>\n"
         f"<p>Boundary: {boundary}</p>\n"
+        "<h2>Field Explanation</h2>\n"
+        "<p>ManipulationSkillAsset is not a single trajectory. It is a skill asset that contains "
+        "intent, motion, constraints, context requirements, evidence, transfer contract, and "
+        "quality boundary information.</p>\n"
+        f"<ul>{field_items}</ul>\n"
         "<h2>IP Support</h2>\n"
         f"<ul>{ip_items}</ul>\n"
         "<h2>A02 -&gt; A01</h2>\n"
@@ -319,11 +366,14 @@ def _render_html(payload: dict[str, Any]) -> str:
     )
 
 
-def _generated_artifacts(output_dir: Path) -> list[str]:
+def _generated_artifacts(output_dir: Path, exclude: set[str] | None = None) -> list[str]:
+    excluded = exclude or set()
     return sorted(
-        str(path.relative_to(output_dir))
+        relative_path
         for path in output_dir.rglob("*")
         if path.is_file()
+        for relative_path in (str(path.relative_to(output_dir)),)
+        if relative_path not in excluded
     )
 
 
