@@ -163,7 +163,8 @@ uv run pytest -q</code></pre>
     <p>默认结果中，<code>transfer_assessment.status</code> 为 <code>ready_for_expert_review</code>，<code>expert_review_record.review_status</code> 为 <code>pending_expert_review</code>，<code>robot_feasibility_result.status</code> 为 <code>passed</code>，但 evidence boundary 仍包含 <code>not_ready_for_robot_execution</code>、<code>not_full_ik_solver</code>、<code>not_collision_validated</code> 和相关真实上下文缺口。</p>
     <h2>默认 Demo Evidence Pack</h2>
     <p>默认 Demo Evidence Pack 入口：</p>
-    <pre><code>uv run python -m weldcore.skill_asset.demo_report \
+    <pre><code>cd weld-experience-engine
+uv run python -m weldcore.skill_asset.demo_report \
   --outdir artifacts/demo/skill-asset-evidence</code></pre>
     <p>该命令运行 2 个默认仿真任务。每个任务目录输出 12 份 canonical artifact 原始文件名和 1 份 <code>simulation_evidence_bundle.json</code>；顶层输出 <code>demo_summary.md</code>、<code>demo_summary.json</code> 和 <code>demo_summary.html</code>。</p>
     <p>该 evidence pack 用来把 <code>ManipulationSkillAsset</code>、仿真证据、A02-&gt;A01 handoff、专家审查候选和 IP support matrix 放在同一组可审查材料里。默认状态是 <code>ready_for_expert_review</code> evidence pack / <code>ready_for_expert_review_candidate_pack</code>，边界仍是 <code>not_ready_for_robot_execution</code>、<code>simulation_only</code>、<code>not_full_ik_solver</code>、<code>not_real_collision_validation</code> 和 <code>not_real_welding_quality_validation</code>；它不是控制器可下载程序，不是生产派发包，也不是真实机器人执行结论。</p>

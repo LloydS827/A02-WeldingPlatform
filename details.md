@@ -50,7 +50,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 扩展 `weldcore.skill_asset.asset_report`，默认从 7 份 JSON 扩展为 12 份 JSON artifact，优先服务 A01 产品验证和 IP 交底准备。
 - 新增 `weldcore.skill_asset.demo_report`，默认运行 2 个仿真任务；每个任务输出 12 份 canonical artifact 原始文件名和 `simulation_evidence_bundle.json`，顶层输出 `demo_summary.md/json/html`，用于形成解释型 demo evidence pack。
 - 更新 README、引擎 README、架构文档和技能包文档，减少平台化表达，明确 `WeldSkillPackage` 是历史兼容 / facade，当前 canonical object 是 `ManipulationSkillAsset`。
-- 本轮验证：`uv run pytest -q` 通过 `395 passed`；`asset_report` 已确认写出 12 份 JSON；`demo_report` 已确认写出 2 个默认任务的 evidence pack。默认 `transfer_assessment.status=ready_for_expert_review`，`expert_review_record.review_status=pending_expert_review`，`robot_feasibility_result.status=passed`，demo pack 顶层状态为 `ready_for_expert_review_candidate_pack`。
+- 本轮验证：`uv run pytest -q` 通过 `398 passed`；`asset_report` 已确认写出 12 份 JSON；`demo_report` 已确认写出 2 个默认任务的 evidence pack。默认 `transfer_assessment.status=ready_for_expert_review`，`expert_review_record.review_status=pending_expert_review`，`robot_feasibility_result.status=passed`，demo pack 顶层状态为 `ready_for_expert_review_candidate_pack`。
 
 ### 2026-06-16
 
@@ -289,6 +289,7 @@ uv run python -m weldcore.skill_asset.asset_report \
 当前默认 demo evidence pack 命令：
 
 ```bash
+cd weld-experience-engine
 uv run python -m weldcore.skill_asset.demo_report \
   --outdir artifacts/demo/skill-asset-evidence
 ```

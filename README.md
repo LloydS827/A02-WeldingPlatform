@@ -156,6 +156,7 @@ uv run python -m weldcore.skill_asset.asset_report \
 默认 Demo Evidence Pack 入口：
 
 ```bash
+cd weld-experience-engine
 uv run python -m weldcore.skill_asset.demo_report \
   --outdir artifacts/demo/skill-asset-evidence
 ```

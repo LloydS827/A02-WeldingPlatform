@@ -110,8 +110,13 @@ def test_demo_summary_explains_a01_and_ip_support(tmp_path):
     assert "real_welding_quality_feedback" in md
     assert "A02 -> A01" in md
     assert "ManipulationSkillAsset" in md
+    assert "SimulationEvidenceBundle" in md
+    assert "simlite_reference" in md
+    assert "metrics" in md
     assert "P0-03" in md
     assert "P0-02" in html
+    assert "SimulationEvidenceBundle" in html
+    assert "simlite_reference" in html
     assert "workpiece_frame_measurement" in html
     assert "real_robot_execution_log" in html
 

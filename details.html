@@ -71,7 +71,7 @@ li { margin: 0.35em 0; }
       <li>扩展 <code>weldcore.skill_asset.asset_report</code>，默认从 7 份 JSON 扩展为 12 份 JSON artifact，优先服务 A01 产品验证和 IP 交底准备。</li>
       <li>新增 <code>weldcore.skill_asset.demo_report</code>，默认运行 2 个仿真任务；每个任务输出 12 份 canonical artifact 原始文件名和 <code>simulation_evidence_bundle.json</code>，顶层输出 <code>demo_summary.md/json/html</code>，用于形成解释型 demo evidence pack。</li>
       <li>更新 README、引擎 README、架构文档和技能包文档，减少平台化表达，明确 <code>WeldSkillPackage</code> 是历史兼容 / facade，当前 canonical object 是 <code>ManipulationSkillAsset</code>。</li>
-      <li>本轮验证：<code>uv run pytest -q</code> 通过 <code>395 passed</code>；<code>asset_report</code> 已确认写出 12 份 JSON；<code>demo_report</code> 已确认写出 2 个默认任务的 evidence pack。默认 <code>transfer_assessment.status=ready_for_expert_review</code>，<code>expert_review_record.review_status=pending_expert_review</code>，<code>robot_feasibility_result.status=passed</code>，demo pack 顶层状态为 <code>ready_for_expert_review_candidate_pack</code>。</li>
+      <li>本轮验证：<code>uv run pytest -q</code> 通过 <code>398 passed</code>；<code>asset_report</code> 已确认写出 12 份 JSON；<code>demo_report</code> 已确认写出 2 个默认任务的 evidence pack。默认 <code>transfer_assessment.status=ready_for_expert_review</code>，<code>expert_review_record.review_status=pending_expert_review</code>，<code>robot_feasibility_result.status=passed</code>，demo pack 顶层状态为 <code>ready_for_expert_review_candidate_pack</code>。</li>
     </ul>
     <h3>2026-06-16</h3>
     <ul>
@@ -293,7 +293,8 @@ uv run pytest -q</code></pre>
   --outdir artifacts/skill-assets/canonical</code></pre>
     <p>该命令会生成 12 份 JSON：<code>skill_asset_report.json</code>、<code>robot_body_asset_report.json</code>、<code>robot_context_spec.json</code>、<code>scene_context_asset_report.json</code>、<code>skill_transfer_assessment.json</code>、<code>robot_feasibility_result.json</code>、<code>skill_asset_evidence_writeback_summary.json</code>、<code>skill_asset_evidence_source_catalog.json</code>、<code>a01_b06_skill_asset_mapping.json</code>、<code>expert_review_record.json</code>、<code>a02_to_a01_product_validation_handoff.json</code> 和 <code>ip_disclosure_support_matrix.json</code>。当前默认结果中，<code>robot_body_asset.validation_status</code> 为 <code>usable_as_robot_body_context</code>，<code>transfer_assessment.status</code> 为 <code>ready_for_expert_review</code>，<code>expert_review_record.review_status</code> 为 <code>pending_expert_review</code>，<code>robot_feasibility_result.status</code> 为 <code>passed</code>；它仍然不表示真实机器人可执行。</p>
     <p>当前默认 demo evidence pack 命令：</p>
-    <pre><code>uv run python -m weldcore.skill_asset.demo_report \
+    <pre><code>cd weld-experience-engine
+uv run python -m weldcore.skill_asset.demo_report \
   --outdir artifacts/demo/skill-asset-evidence</code></pre>
     <p>该命令运行 2 个默认仿真任务；每个任务输出 12 份 canonical artifact 原始文件名和 <code>simulation_evidence_bundle.json</code>，顶层输出 <code>demo_summary.md</code>、<code>demo_summary.json</code> 和 <code>demo_summary.html</code>。默认状态是 <code>ready_for_expert_review</code> evidence / <code>ready_for_expert_review_candidate_pack</code>，并保留 <code>not_ready_for_robot_execution</code>、<code>simulation_only</code>、<code>not_full_ik_solver</code>、<code>not_real_collision_validation</code> 和 <code>not_real_welding_quality_validation</code> 边界。</p>
     <p>可选小批量入口命令：</p>

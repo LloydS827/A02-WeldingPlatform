@@ -301,6 +301,13 @@ def _render_markdown(payload: dict[str, Any]) -> str:
             for field, explanation in payload["field_explanation"].items()
         ),
         "",
+        "## Simulation Evidence",
+        "",
+        *(
+            f"- {field}: {explanation}"
+            for field, explanation in payload["simulation_evidence_explanation"].items()
+        ),
+        "",
         "## IP Support",
         "",
         *(
@@ -332,6 +339,10 @@ def _render_html(payload: dict[str, Any]) -> str:
         f"<li><strong>{html.escape(field)}</strong>: {html.escape(explanation)}</li>"
         for field, explanation in payload["field_explanation"].items()
     )
+    simulation_items = "\n".join(
+        f"<li><strong>{html.escape(field)}</strong>: {html.escape(explanation)}</li>"
+        for field, explanation in payload["simulation_evidence_explanation"].items()
+    )
     task_sections = "\n".join(
         "<section>"
         f"<h2>{html.escape(task['task_id'])}</h2>"
@@ -356,6 +367,8 @@ def _render_html(payload: dict[str, Any]) -> str:
         "intent, motion, constraints, context requirements, evidence, transfer contract, and "
         "quality boundary information.</p>\n"
         f"<ul>{field_items}</ul>\n"
+        "<h2>Simulation Evidence</h2>\n"
+        f"<ul>{simulation_items}</ul>\n"
         "<h2>IP Support</h2>\n"
         f"<ul>{ip_items}</ul>\n"
         "<h2>A02 -&gt; A01</h2>\n"
