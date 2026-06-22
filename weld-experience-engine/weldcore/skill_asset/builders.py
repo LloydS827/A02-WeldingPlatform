@@ -25,7 +25,7 @@ def build_manipulation_skill_asset_from_simulation_bundle(
     dataset_id = bundle.dataset.dataset_id if bundle.dataset is not None else None
 
     evidence = SkillAssetEvidence(
-        source_type="simulation",
+        source_type="simulation_only",
         source_id=bundle.bundle_id,
         adapter_name=adapter_result.adapter_name,
         status=adapter_result.status,
@@ -53,7 +53,7 @@ def build_manipulation_skill_asset_from_simulation_bundle(
         name=task_spec.name,
         domain="welding",
         skill_type=task_spec.unit_id,
-        source_type="simulation",
+        source_type="simulation_only",
         source_refs={
             "bundle_id": bundle.bundle_id,
             "task_id": task_spec.task_id,

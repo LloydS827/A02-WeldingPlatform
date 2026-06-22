@@ -6,9 +6,10 @@ from typing import Any, Literal
 
 
 SkillAssetSourceType = Literal[
-    "simulation",
+    "simulation_only",
+    "human_demo",
     "real_robot_log",
-    "human_demonstration",
+    "h300_workcell_run",
     "expert_annotation",
 ]
 SkillAssetReviewStatus = Literal["not_reviewed", "expert_review_candidate", "reviewed"]
