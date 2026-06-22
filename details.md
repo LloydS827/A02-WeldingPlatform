@@ -49,7 +49,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 新增 IP support matrix，把 P0-02“焊接技能包”、P0-03“焊接轨迹结构化转换”、P0-04“仿真优先焊接技能数据集”映射到 supporting objects、supporting reports 和 missing real-world evidence。
 - 扩展 `weldcore.skill_asset.asset_report`，默认从 7 份 JSON 扩展为 12 份 JSON artifact，优先服务 A01 产品验证和 IP 交底准备。
 - 更新 README、引擎 README、架构文档和技能包文档，减少平台化表达，明确 `WeldSkillPackage` 是历史兼容 / facade，当前 canonical object 是 `ManipulationSkillAsset`。
-- 本轮最终验证结果将在本分支收尾前更新到“最近一次验证方式”。
+- 本轮验证：`uv run pytest -q` 通过 `395 passed`；`asset_report` 已确认写出 12 份 JSON，默认 `transfer_assessment.status=ready_for_expert_review`，`expert_review_record.review_status=pending_expert_review`，`robot_feasibility_result.status=passed`。
 
 ### 2026-06-16
 
@@ -270,7 +270,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果将在本轮最终验证后更新。
+当前分支最近一次完整验证结果为 `395 passed`。
 
 当前 canonical skill asset 报告命令：
 
