@@ -25,12 +25,18 @@ _DATA_TYPES = {
     "数值": "number",
     "整数": "integer",
 }
+_EXPECTED_ROW_COUNT = 48
 _EXPECTED_FIELD_COUNT = 47
 _EXPECTED_CATEGORY_COUNT = 8
 _EXPECTED_REQUIREMENT_SUMMARY = {
     "required": 21,
     "conditional_required": 12,
     "supplemental": 14,
+}
+_EXPECTED_DATA_TYPE_SUMMARY = {
+    "text": 25,
+    "number": 21,
+    "integer": 1,
 }
 _FIELD_OVERRIDES: dict[str, dict[str, Any]] = {
     "WPS编号": {
@@ -150,13 +156,27 @@ def build_weld_procedure_knowledge_contract(
         "conditional_required": requirement_counts["conditional_required"],
         "supplemental": requirement_counts["supplemental"],
     }
-    _validate_baseline(fields, categories, requirement_summary)
+    data_type_counts = Counter(field["data_type"] for field in fields)
+    data_type_summary = {
+        "text": data_type_counts["text"],
+        "number": data_type_counts["number"],
+        "integer": data_type_counts["integer"],
+    }
+    _validate_baseline(
+        row_count=len(rows),
+        fields=fields,
+        categories=categories,
+        requirement_summary=requirement_summary,
+        data_type_summary=data_type_summary,
+    )
     return {
         "source_workbook_ref": str(path.resolve()),
         "contract_version": CONTRACT_VERSION,
+        "row_count": len(rows),
         "field_count": len(fields),
         "category_count": len(categories),
         "requirement_summary": requirement_summary,
+        "data_type_summary": data_type_summary,
         "categories": categories,
         "fields": fields,
         "a02_target_paths": sorted(
@@ -202,19 +222,25 @@ def _build_field(
 
 
 def _validate_baseline(
+    *,
+    row_count: int,
     fields: list[dict[str, Any]],
     categories: list[str],
     requirement_summary: dict[str, int],
+    data_type_summary: dict[str, int],
 ) -> None:
     if (
-        len(fields) != _EXPECTED_FIELD_COUNT
+        row_count != _EXPECTED_ROW_COUNT
+        or len(fields) != _EXPECTED_FIELD_COUNT
         or len(categories) != _EXPECTED_CATEGORY_COUNT
         or requirement_summary != _EXPECTED_REQUIREMENT_SUMMARY
+        or data_type_summary != _EXPECTED_DATA_TYPE_SUMMARY
     ):
         raise ValueError(
             "Weld procedure workbook baseline drift: "
-            f"fields={len(fields)}, categories={len(categories)}, "
-            f"requirement_summary={requirement_summary}"
+            f"rows={row_count}, fields={len(fields)}, categories={len(categories)}, "
+            f"requirement_summary={requirement_summary}, "
+            f"data_type_summary={data_type_summary}"
         )
 
 

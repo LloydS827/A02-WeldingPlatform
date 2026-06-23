@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 import pytest
 
 from weldcore.skill_asset.procedure_contract import (
@@ -22,12 +22,18 @@ def test_build_weld_procedure_contract_summarizes_excel_contract():
         "docs/焊接工艺数据库主要参数表.xlsx"
     )
     assert contract["contract_version"] == "k01.v0.1"
+    assert contract["row_count"] == 48
     assert contract["field_count"] == 47
     assert contract["category_count"] == 8
     assert contract["requirement_summary"] == {
         "required": 21,
         "conditional_required": 12,
         "supplemental": 14,
+    }
+    assert contract["data_type_summary"] == {
+        "text": 25,
+        "number": 21,
+        "integer": 1,
     }
 
 
@@ -118,6 +124,17 @@ def test_build_weld_procedure_contract_rejects_baseline_drift(tmp_path):
     worksheet.title = "工艺数据库参数总表"
     worksheet.append(("参数类别", "参数名称", "参数说明", "数据类型", "是否必填", "备注"))
     worksheet.append(("母材信息", "母材厚度(mm)", "母材的板厚尺寸", "数值", "必填", ""))
+    workbook.save(workbook_path)
+
+    with pytest.raises(ValueError, match="baseline drift"):
+        build_weld_procedure_knowledge_contract(workbook_path)
+
+
+def test_build_weld_procedure_contract_rejects_data_type_baseline_drift(tmp_path):
+    workbook_path = tmp_path / "data-type-drift.xlsx"
+    workbook = load_workbook(DEFAULT_PROCEDURE_WORKBOOK_PATH)
+    worksheet = workbook["工艺数据库参数总表"]
+    worksheet["D3"] = "文本"
     workbook.save(workbook_path)
 
     with pytest.raises(ValueError, match="baseline drift"):
