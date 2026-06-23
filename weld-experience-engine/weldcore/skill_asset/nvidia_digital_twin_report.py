@@ -113,15 +113,26 @@ def _ensure_source_demo_pack(
     if source_demo_dir is None:
         source_dir = output_dir / "_source_demo_evidence"
         source_summary = run_demo_evidence_pack(source_dir)
-        return source_dir, [
-            f"_source_demo_evidence/{artifact}"
-            for artifact in source_summary["generated_artifacts"]
-        ]
+        return source_dir, _source_demo_generated_artifacts(source_summary)
 
     source_dir = Path(source_demo_dir)
     if not source_dir.exists():
         raise FileNotFoundError(source_dir)
     return source_dir, []
+
+
+def _source_demo_generated_artifacts(source_summary: dict[str, Any]) -> list[str]:
+    artifacts = [
+        "demo_summary.md",
+        "demo_summary.html",
+        "demo_summary.json",
+    ]
+    artifacts.extend(
+        artifact_ref
+        for task in source_summary["tasks"]
+        for artifact_ref in task["artifact_refs"].values()
+    )
+    return sorted(f"_source_demo_evidence/{artifact}" for artifact in artifacts)
 
 
 def _write_task_payloads(

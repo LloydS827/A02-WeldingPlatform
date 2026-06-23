@@ -209,6 +209,23 @@ def test_nvidia_report_generated_artifacts_exclude_preexisting_files(tmp_path):
     ]
 
 
+def test_nvidia_report_generated_artifacts_exclude_preexisting_source_files(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    outdir = tmp_path / "nv01"
+    source_dir = outdir / "_source_demo_evidence"
+    source_dir.mkdir(parents=True)
+    user_note = source_dir / "user_note.txt"
+    user_note.write_text("keep this user file\n")
+
+    summary = run_nvidia_digital_twin_report(outdir=outdir)
+
+    assert user_note.exists()
+    assert "_source_demo_evidence/user_note.txt" not in summary["generated_artifacts"]
+
+
 def test_nvidia_report_main_prints_json(tmp_path, capsys):
     from weldcore.skill_asset import nvidia_digital_twin_report
 
