@@ -24,3 +24,14 @@
 - adapter 必须输出或转换为项目 canonical schema。
 - adapter 不能替代 `ManipulationSkillAsset`。
 - `WeldSkillPackage` 可继续作为历史兼容 / facade，但不能被写成默认主线核心对象。
+
+## NVIDIA-native 边界
+
+OpenUSD / Isaac Sim / Isaac Lab 是 A02 未来真实仿真训练闭环的主底座方向，但它们仍然通过清晰边界接入：
+
+- OpenUSD 是数字孪生交换层，不是 A02 内部 canonical schema 的替代品。
+- Isaac Sim 是未来默认目标仿真运行时，不是当前默认测试依赖。
+- Isaac Lab 是未来训练闭环目标层，不是当前已经运行的策略训练系统。
+- Cosmos、Nucleus、Isaac ROS 和 Jetson/边缘部署属于后续增强、协同或部署层，不进入 NV01 默认路径。
+- NVIDIA-oriented artifact 必须能追溯到 `ManipulationSkillAsset`、`RobotContextSpec`、`SceneContextAsset`、`RobotFeasibilityResult`、`ExpertReviewRecord` 或其他 A02 canonical evidence。
+- 任何 `ready_for_simulation_replay_package_design`、`ready_for_training_design_review` 或类似状态都不能被写成 `ready_for_robot_execution`。

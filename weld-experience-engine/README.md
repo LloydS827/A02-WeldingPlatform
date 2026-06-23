@@ -18,6 +18,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 其中 `ManipulationSkillAsset` 是当前 canonical 技能资产实例；`RobotBodyAsset` 是机器人身体上下文；`RobotContextSpec` 和 `SceneContextAsset` 是迁移预检的上下文对象；`RobotFeasibilityResult` 是轻量预检结果；`SkillTransferAssessment` 和 `ExpertReviewRecord` 用于进入专家审查候选。既有 `SkillDataset -> WeldSkillPackage -> evaluation / evidence` 仍保留为历史兼容和 facade，不再是默认主线。
 
+下一阶段路线是 NV01 NVIDIA-Native Weld Skill Digital Twin Foundation：以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 将优先生成面向这些重底座的 manifest/report，而不是自研通用物理引擎、3D 场景标准或训练框架。
+
 ## 运行
 
 ```bash
@@ -49,7 +51,7 @@ uv run python -m weldcore.skill_asset.asset_report \
 - `a02_to_a01_product_validation_handoff.json`
 - `ip_disclosure_support_matrix.json`
 
-这些 artifact 用于服务 A01 产品验证、专家审查候选和 IP 交底准备。它们不是可直接下发给机器人控制器的程序，不是真实焊接质量验证，不是正式 WPS/PQR，也不是最终仿真器选型结论。
+这些 artifact 用于服务 A01 产品验证、专家审查候选和 IP 交底准备。它们不是可直接下发给机器人控制器的程序，不是真实焊接质量验证，不是正式 WPS/PQR，也不是 Isaac Sim runtime 验证结论。
 
 ## 默认 Demo Evidence Pack
 
@@ -105,6 +107,7 @@ uv run python -m weldcore.report.scenario_report
 - 不把仿真输出接入 gate 写成完整 ManiSkill / Isaac / ROS 集成。
 - 不把公开资料、仿真假设或报告结论写成 WPS/PQR。
 - 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
+- 不把 OpenUSD / Isaac Sim / Isaac Lab 写成已接入的默认 runtime；它们是下一阶段主底座方向和输出合同目标。
 - 不把 `ready_for_contextual_precheck` 写成 `ready_for_robot_execution`。
 - 不把 `ready_for_expert_review` 写成 `ready_for_robot_execution`。
 - 不把 lightweight `RobotFeasibilityResult` 写成完整 IK、真实碰撞检测或真实机器人执行验证。

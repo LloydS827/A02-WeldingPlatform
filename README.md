@@ -6,6 +6,8 @@ A02 是公司机器人技能大师能力的焊接技能资产底座项目，目�
 
 本项目对应公司 MAS 中的 M，也就是机器人技能大师能力。它不是一个独立对外讲述的平台概念，而是公司长期积累机器人操作能力的技术底座。当前第一场景是焊接，后续可以承接打磨、喷涂、切割、装配、检测等工业操作技能。
 
+经过 NVIDIA 物理 AI 技术框架调研，本项目的未来重底座选型调整为：以 OpenUSD 作为数字孪生交换层，以 Isaac Sim 作为默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 自己负责焊接技能资产语义、工艺知识、证据治理、专家审查和 A01/IP handoff。
+
 ## 文件入口
 
 - [README HTML 阅读版](README.html)
@@ -38,6 +40,7 @@ SimulationEvidenceBundle
 -> SkillTransferAssessment
 -> ExpertReviewRecord
 -> A02->A01 product validation handoff / IP evidence support
+-> future OpenUSD / Isaac Sim / Isaac Lab digital twin and training package
 ```
 
 这条链路的含义是：
@@ -59,6 +62,19 @@ SimulationEvidenceBundle
 - `A01B06SkillAssetMapping`：把 A01 H300 工站回采和 B06 Physical AI Package 字段映射到 `ManipulationSkillAsset`。
 - `A02ToA01ProductValidationHandoff`：A02 反哺 A01 的候选技能包、轨迹候选、姿态/参数建议和失败边界。
 - `IPDisclosureSupportMatrix`：把 P0-02、P0-03、P0-04 对应到支撑对象、报告和缺失真实证据。
+
+## NVIDIA-native 物理 AI 底座路线
+
+下一阶段的路线主题是 **NV01 NVIDIA-Native Weld Skill Digital Twin Foundation**。它把 A02 从“仅能解释技能资产 demo”推进为“能产出面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。
+
+推荐的职责边界是：
+
+- OpenUSD：未来统一表达机器人、工件、工装、焊缝、传感器、坐标系、语义标签和工艺 metadata。
+- Isaac Sim：未来默认目标仿真运行时，用于机器人导入、replay、传感器仿真、Replicator 合成数据、可达性/碰撞/视野验证。
+- Isaac Lab：未来训练闭环目标层，用于 seam tracking、局部位姿修正、受约束策略评估和 sim-to-real 训练设计。
+- A02：继续以 `ManipulationSkillAsset` 为 canonical truth，负责焊接领域语义、证据来源、审查状态、失败边界、专家 gate、A02->A01 handoff 和 IP 支撑。
+
+NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 `WeldSkillDigitalTwinPackage`、`openusd_scene_manifest`、`isaac_sim_replay_config`、`domain_randomization_recipe` 和 `training_readiness_report`。这些 artifact 的目标是把当前 A02 evidence pack 编译成 NVIDIA physical AI 工作流可理解的输入合同。
 
 ## A01/B06/A02 接口
 
@@ -99,23 +115,23 @@ SimulationEvidenceBundle
 
 ## 下一阶段任务
 
-1. 用真实 TCP calibration record、tool frame calibration 和 workpiece frame measurement 替换当前 nominal context。
-2. 接入 A01 H300 工站真实或脱敏回采样本，填充 `h300_workcell_run` evidence。
-3. 从 B06 Physical AI Package 读取作业窗口、轨迹、事件、人工修正和质量标签，回填为 `ManipulationSkillAsset` evidence。
-4. 运行 `ExpertReviewRecord` 工作流，让专家结论、阻塞原因和下一步动作成为默认审查对象。
-5. 将 A02 输出回送 A01 产品验证，明确候选轨迹、姿态/参数建议和失败边界。
-6. 为 P0-02、P0-03、P0-04 补齐真实工站证据、专家审查证据和质量反馈证据。
-7. 在同一 `RobotFeasibilityResult` 结构下引入 MoveIt/Gazebo 或其他 robot adapter 的反证结果，不另建平行机器人主线。
+1. 完成 NV01 设计和实现：从当前 demo evidence pack 生成 NVIDIA-native 焊接技能数字孪生与训练准备包。
+2. 定义 `openusd_scene_manifest`，把 `RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、焊缝路径、TCP 轨迹和 evidence binding 映射到未来 USD stage 结构。
+3. 定义 `isaac_sim_replay_config`，说明 Isaac Sim replay、机器人导入、传感器、Replicator、验证检查和缺失 runtime 边界。
+4. 定义 `domain_randomization_recipe`，覆盖坡口/间隙/反光/烟尘/弧光/TCP 偏差/传感器外参/工艺参数窗口等焊接有效扰动。
+5. 定义 `training_readiness_report`，为 Isaac Lab 的 observation、action、reward、termination、curriculum、dataset 和 expert gate 预留合同。
+6. 保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package 和专家审查结论作为 NV01 之后的真实闭环输入。
+7. 暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。
 
 ## 边界
 
 - 当前不宣称真实机器人可执行。
 - 当前不宣称真实焊接质量验证。
 - 当前不宣称正式 WPS/PQR。
-- 当前不宣称最终仿真器选型。
+- 当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向，但不宣称已经完成 Isaac Sim 集成、OpenUSD stage authoring、Isaac Lab 训练或真实 sim-to-real 验证。
 - `ready_for_expert_review` 不是 `ready_for_robot_execution`。
 - `RobotFeasibilityResult` 不是完整 IK solver，不是真实 collision validation，不是真机日志验证。
-- ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 都是同一技能资产主线下的 evidence source 或反证来源，不是平行主线。
+- ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源，不再作为未来重底座的平行默认候选。
 
 ## 验证命令
 
@@ -164,6 +180,29 @@ uv run python -m weldcore.skill_asset.demo_report \
 该命令运行 2 个默认仿真任务。每个任务目录输出 12 份 canonical artifact 原始文件名和 1 份 `simulation_evidence_bundle.json`；顶层输出 `demo_summary.md`、`demo_summary.json` 和 `demo_summary.html`。
 
 该 evidence pack 用来把 `ManipulationSkillAsset`、仿真证据、A02->A01 handoff、专家审查候选和 IP support matrix 放在同一组可审查材料里。默认状态是 `ready_for_expert_review` evidence pack / `ready_for_expert_review_candidate_pack`，边界仍是 `not_ready_for_robot_execution`、`simulation_only`、`not_full_ik_solver`、`not_real_collision_validation` 和 `not_real_welding_quality_validation`；它不是控制器可下载程序，不是生产派发包，也不是真实机器人执行结论。
+
+## 下一阶段 NV01 输出目标
+
+NV01 的目标命令暂定为：
+
+```bash
+cd weld-experience-engine
+uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
+  --source-demo-dir artifacts/demo/skill-asset-evidence \
+  --outdir artifacts/demo/nvidia-digital-twin-foundation
+```
+
+预期输出包括：
+
+- `nv01_summary.md/json`
+- `weld_skill_digital_twin_package.json`
+- `openusd_scene_manifest.json`
+- `isaac_sim_replay_config.json`
+- `domain_randomization_recipe.json`
+- `training_readiness_report.json`
+- `nvidia_stack_alignment_matrix.json`
+
+这些 artifact 的第一版目标是 `ready_for_simulation_replay_package_design` 和 `not_ready_for_policy_training`。它们是面向 OpenUSD/Isaac 的输入合同和审查材料，不是已完成的 Isaac Sim runtime 结果。
 
 ## 历史能力索引
 
