@@ -34,7 +34,6 @@ TASK_PAYLOAD_FILES = {
     "sensor_and_annotation_manifest": "sensor_and_annotation_manifest.json",
     "training_task_readiness": "training_task_readiness.json",
 }
-SUMMARY_FILES = ("nv01_summary.md", "nv01_summary.json")
 
 
 def run_nvidia_digital_twin_report(
@@ -61,7 +60,16 @@ def run_nvidia_digital_twin_report(
         _write_json(output_dir / filename, payloads[payload_name])
     _write_task_payloads(output_dir, payloads["task_payloads"])
 
-    summary = _build_summary(demo_summary, payloads)
+    summary = _build_summary(demo_summary, payloads, [])
+    _write_text(output_dir / "nv01_summary.md", _render_markdown(summary))
+
+    generated_artifacts = sorted(
+        [
+            *_generated_artifacts(output_dir, exclude={"nv01_summary.json"}),
+            "nv01_summary.json",
+        ]
+    )
+    summary = _build_summary(demo_summary, payloads, generated_artifacts)
     _write_text(output_dir / "nv01_summary.md", _render_markdown(summary))
     _write_json(output_dir / "nv01_summary.json", summary)
     return summary
@@ -96,8 +104,7 @@ def _ensure_source_demo_pack(
 
     source_dir = Path(source_demo_dir)
     if not source_dir.exists():
-        source_dir = output_dir / "_source_demo_evidence"
-        run_demo_evidence_pack(source_dir)
+        raise FileNotFoundError(source_dir)
     return source_dir
 
 
@@ -115,6 +122,7 @@ def _write_task_payloads(
 def _build_summary(
     demo_summary: dict[str, Any],
     payloads: dict[str, Any],
+    generated_artifacts: list[str],
 ) -> dict[str, Any]:
     task_payloads = payloads["task_payloads"]
     return {
@@ -133,26 +141,12 @@ def _build_summary(
             "not_isaac_sim_runtime_validation",
             "not_policy_training_result",
         ],
-        "generated_artifacts": _generated_artifacts(task_payloads),
+        "generated_artifacts": generated_artifacts,
         "tasks": _task_summaries(task_payloads),
         "next_step_recommendation": (
             "Proceed to NV01-B OpenUSD Authoring Spike after expert review of K01 gaps."
         ),
     }
-
-
-def _generated_artifacts(task_payloads: dict[str, dict[str, Any]]) -> list[str]:
-    top_level = [
-        *SUMMARY_FILES,
-        "weld_procedure_knowledge_contract.json",
-        *TOP_LEVEL_PAYLOAD_FILES.values(),
-    ]
-    task_files = [
-        f"{_task_output_dir_name(task_id)}/{filename}"
-        for task_id in task_payloads
-        for filename in TASK_PAYLOAD_FILES.values()
-    ]
-    return sorted([*top_level, *task_files])
 
 
 def _task_summaries(task_payloads: dict[str, dict[str, Any]]) -> list[dict[str, str]]:
@@ -212,6 +206,17 @@ def _render_markdown(summary: dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def _generated_artifacts(output_dir: Path, exclude: set[str] | None = None) -> list[str]:
+    excluded = exclude or set()
+    return sorted(
+        relative_path
+        for path in output_dir.rglob("*")
+        if path.is_file()
+        for relative_path in (str(path.relative_to(output_dir)),)
+        if relative_path not in excluded
+    )
 
 
 def _write_json(path: Path, data: Any) -> None:

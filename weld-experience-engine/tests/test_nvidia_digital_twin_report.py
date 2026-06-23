@@ -164,7 +164,12 @@ def test_nvidia_report_writes_top_level_and_per_task_artifacts(tmp_path):
     assert "ready_for_procedure_contract_review" in summary["readiness_states"]
     assert "not_ready_for_policy_training" in summary["readiness_states"]
     assert "not_formal_WPS_PQR" in summary["readiness_boundary"]
-    assert EXPECTED_TOP_LEVEL_ARTIFACTS.issubset(set(summary["generated_artifacts"]))
+    actual_files = sorted(
+        str(path.relative_to(outdir))
+        for path in outdir.rglob("*")
+        if path.is_file()
+    )
+    assert sorted(summary["generated_artifacts"]) == actual_files
 
     for filename in EXPECTED_TOP_LEVEL_ARTIFACTS:
         assert (outdir / filename).exists()
@@ -206,5 +211,19 @@ def test_existing_source_demo_with_missing_canonical_artifact_fails(tmp_path):
     with pytest.raises(MissingCanonicalArtifactError, match="missing_canonical_artifacts"):
         run_nvidia_digital_twin_report(
             source_demo_dir=source_dir,
+            outdir=tmp_path / "nv01",
+        )
+
+
+def test_missing_explicit_source_demo_dir_fails(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    missing_source_dir = tmp_path / "missing-source"
+
+    with pytest.raises(FileNotFoundError):
+        run_nvidia_digital_twin_report(
+            source_demo_dir=missing_source_dir,
             outdir=tmp_path / "nv01",
         )
