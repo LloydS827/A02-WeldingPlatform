@@ -185,7 +185,11 @@ def build_weld_procedure_knowledge_contract(
         "nv01_usage_tags": sorted(
             {usage for field in fields for usage in field["nv01_usage"]}
         ),
-        "evidence_boundary": "workbook_contract_only",
+        "evidence_boundary": [
+            "excel_field_contract_source",
+            "not_formal_WPS_PQR",
+            "requires_human_confirmation_before_expert_review",
+        ],
     }
 
 

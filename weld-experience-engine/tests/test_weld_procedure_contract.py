@@ -35,6 +35,11 @@ def test_build_weld_procedure_contract_summarizes_excel_contract():
         "number": 21,
         "integer": 1,
     }
+    assert contract["evidence_boundary"] == [
+        "excel_field_contract_source",
+        "not_formal_WPS_PQR",
+        "requires_human_confirmation_before_expert_review",
+    ]
 
 
 def test_build_weld_procedure_contract_preserves_expected_categories():
