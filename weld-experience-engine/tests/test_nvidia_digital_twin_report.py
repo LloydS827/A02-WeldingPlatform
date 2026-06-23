@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from weldcore.skill_asset.demo_report import run_demo_evidence_pack
@@ -10,6 +12,32 @@ from weldcore.skill_asset.nvidia_digital_twin import (
 from weldcore.skill_asset.procedure_contract import (
     build_weld_procedure_knowledge_contract,
 )
+
+
+EXPECTED_TOP_LEVEL_ARTIFACTS = {
+    "nv01_summary.md",
+    "nv01_summary.json",
+    "weld_procedure_knowledge_contract.json",
+    "weld_procedure_parameter_set.json",
+    "weld_procedure_validation_report.json",
+    "procedure_to_nv01_mapping_matrix.json",
+    "weld_skill_digital_twin_package.json",
+    "openusd_scene_manifest.json",
+    "isaac_sim_replay_config.json",
+    "domain_randomization_recipe.json",
+    "training_readiness_report.json",
+    "nvidia_stack_alignment_matrix.json",
+}
+
+EXPECTED_TASK_ARTIFACTS = {
+    "skill_asset_ref.json",
+    "weld_procedure_parameter_set.json",
+    "weld_procedure_validation_report.json",
+    "openusd_task_manifest.json",
+    "isaac_replay_task_config.json",
+    "sensor_and_annotation_manifest.json",
+    "training_task_readiness.json",
+}
 
 
 def test_nvidia_payloads_bind_procedure_contract_to_canonical_demo(tmp_path):
@@ -119,3 +147,64 @@ def test_load_task_artifacts_raises_for_missing_referenced_artifact(tmp_path):
 
     with pytest.raises(MissingCanonicalArtifactError, match="missing_canonical_artifacts"):
         load_task_artifacts(tmp_path, task)
+
+
+def test_nvidia_report_writes_top_level_and_per_task_artifacts(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    outdir = tmp_path / "nv01"
+
+    summary = run_nvidia_digital_twin_report(outdir=outdir)
+
+    assert summary["report_id"] == "k01-nv01-a-procedure-constrained-manifest-evidence-pack"
+    assert summary["task_count"] == 2
+    assert summary["overall_status"] == "ready_for_simulation_replay_package_design"
+    assert "ready_for_procedure_contract_review" in summary["readiness_states"]
+    assert "not_ready_for_policy_training" in summary["readiness_states"]
+    assert "not_formal_WPS_PQR" in summary["readiness_boundary"]
+    assert EXPECTED_TOP_LEVEL_ARTIFACTS.issubset(set(summary["generated_artifacts"]))
+
+    for filename in EXPECTED_TOP_LEVEL_ARTIFACTS:
+        assert (outdir / filename).exists()
+
+    for task in summary["tasks"]:
+        task_dir = outdir / task["task_output_dir"]
+        for filename in EXPECTED_TASK_ARTIFACTS:
+            assert (task_dir / filename).exists()
+
+    markdown = (outdir / "nv01_summary.md").read_text(encoding="utf-8")
+    assert "不是正式 WPS/PQR" in markdown
+    assert "不是 ready_for_robot_execution" in markdown
+    assert "不是 Isaac Sim runtime 验证" in markdown
+    assert "不是 policy training 结果" in markdown
+
+    restored = json.loads((outdir / "nv01_summary.json").read_text(encoding="utf-8"))
+    assert restored == summary
+
+
+def test_nvidia_report_main_prints_json(tmp_path, capsys):
+    from weldcore.skill_asset import nvidia_digital_twin_report
+
+    nvidia_digital_twin_report.main(["--outdir", str(tmp_path)])
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["overall_status"] == "ready_for_simulation_replay_package_design"
+
+
+def test_existing_source_demo_with_missing_canonical_artifact_fails(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    source_dir = tmp_path / "source"
+    demo = run_demo_evidence_pack(source_dir)
+    first_task = demo["tasks"][0]
+    (source_dir / first_task["artifact_refs"]["skill_asset_report.json"]).unlink()
+
+    with pytest.raises(MissingCanonicalArtifactError, match="missing_canonical_artifacts"):
+        run_nvidia_digital_twin_report(
+            source_demo_dir=source_dir,
+            outdir=tmp_path / "nv01",
+        )
