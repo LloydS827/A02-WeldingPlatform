@@ -68,7 +68,7 @@ SimulationEvidenceBundle
 
 ## NVIDIA-native 物理 AI 底座路线
 
-下一阶段的路线主题是 **K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation**。它把 A02 从“仅能解释技能资产 demo”推进为“能产出由焊接工艺字段合同约束、面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。
+当前已完成的路线主题是 **K01 + NV01-A Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation**。它把 A02 从“仅能解释技能资产 demo”推进为“能产出由焊接工艺字段合同约束、面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。
 
 推荐的职责边界是：
 
@@ -78,7 +78,7 @@ SimulationEvidenceBundle
 - K01 焊接工艺知识合同：从 Excel 中 47 个字段生成字段定义、必填/条件必填/补充分类、人填/计算/仿真推导/工站回采/资料库引用来源分类、字段覆盖和缺口报告。
 - A02：继续以 `ManipulationSkillAsset` 为 canonical truth，负责焊接领域语义、工艺知识合同、证据来源、审查状态、失败边界、专家 gate、A02->A01 handoff 和 IP 支撑。
 
-K01 + NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 `weld_procedure_knowledge_contract`、`weld_procedure_parameter_set`、`weld_procedure_validation_report`、`WeldSkillDigitalTwinPackage`、`openusd_scene_manifest`、`isaac_sim_replay_config`、`domain_randomization_recipe` 和 `training_readiness_report`。这些 artifact 的目标是把当前 A02 evidence pack 编译成带焊接工艺知识约束的 NVIDIA physical AI 工作流输入合同。
+K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 `weld_procedure_knowledge_contract`、`weld_procedure_parameter_set`、`weld_procedure_validation_report`、`procedure_to_nv01_mapping_matrix`、`WeldSkillDigitalTwinPackage`、`openusd_scene_manifest`、`isaac_sim_replay_config`、`domain_randomization_recipe`、`training_readiness_report` 和 `nvidia_stack_alignment_matrix`。这些 artifact 的目标是把当前 A02 evidence pack 编译成带焊接工艺知识约束的 NVIDIA physical AI 工作流输入合同。
 
 ## A01/B06/A02 接口
 
@@ -108,7 +108,8 @@ K01 + NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查�
 
 - 可运行的 `weldcore` 引擎，详见 [weld-experience-engine/README.md](weld-experience-engine/README.md)。
 - 从 `SimulationEvidenceBundle` 构建 `ManipulationSkillAsset`，canonical evidence source type 为 `simulation_only`。
-- 已纳入 `docs/焊接工艺数据库主要参数表.xlsx`，其中包含 47 个焊接工艺字段、8 个参数类别、21 个必填字段、12 个条件必填字段和 14 个补充字段；下一阶段将从它生成 K01 工艺知识合同。
+- 已从 `docs/焊接工艺数据库主要参数表.xlsx` 生成 K01 工艺知识合同，覆盖 47 个焊接工艺字段、8 个参数类别、21 个必填字段、12 个条件必填字段和 14 个补充字段，并显式标注人填/确认、系统计算、仿真推导和工站回采边界。
+- `weldcore.skill_asset.nvidia_digital_twin_report` 默认生成 K01 + NV01-A evidence pack：procedure contract、parameter set、validation report、procedure-to-NV01 mapping、OpenUSD/Isaac-oriented manifest/report、training readiness 和 stack alignment matrix。
 - 从 `docs/real-urdf/robot.urdf` 解析 `RobotBodyAsset`，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。
 - 从 `RobotBodyAsset` 构建 nominal `RobotContextSpec`，保留 `nominal_from_asset_not_calibrated`、`not_tcp_calibrated`、`not_vendor_validated` 和 `not_ready_for_robot_execution` 边界。
 - 构建默认 `SceneContextAsset`，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。
@@ -120,15 +121,11 @@ K01 + NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查�
 
 ## 下一阶段任务
 
-1. 完成 K01 + NV01 设计和实现：从焊接工艺 Excel 和当前 demo evidence pack 生成带工艺知识约束的 NVIDIA-native 焊接技能数字孪生与训练准备包。
-2. 定义 `weld_procedure_knowledge_contract`，把 47 个字段按必填、条件必填、补充字段，以及人填、系统计算、仿真推导、工站回采、资料库引用来源分类。
-3. 定义 `weld_procedure_parameter_set` 和 `weld_procedure_validation_report`，说明当前任务哪些字段已填、缺哪些人填字段、哪些字段可计算或仿真推导、哪些阻塞专家审查或训练设计。
-4. 定义 `openusd_scene_manifest`，把 `RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、焊缝路径、TCP 轨迹、procedure metadata 和 evidence binding 映射到未来 USD stage 结构。
-5. 定义 `isaac_sim_replay_config`，说明 Isaac Sim replay、机器人导入、工艺参数输入、传感器、Replicator、验证检查和缺失 runtime 边界。
-6. 定义 `domain_randomization_recipe`，覆盖坡口/间隙/反光/烟尘/弧光/TCP 偏差/传感器外参/工艺参数窗口等焊接有效扰动，并追溯到 K01 字段。
-7. 定义 `training_readiness_report`，为 Isaac Lab 的 observation、action、reward、termination、curriculum、dataset、procedure gate 和 expert gate 预留合同。
-8. 保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package、工艺人员确认和专家审查结论作为 K01 + NV01 之后的真实闭环输入。
-9. 暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。
+1. NV01-B OpenUSD Authoring Spike：把当前 `openusd_scene_manifest` 推进为最小 `.usda` stage authoring 原型，优先覆盖 root prim、robot/workpiece/weld task prim、坐标系、语义标签和 procedure metadata。
+2. 建立 USD artifact validation gate：检查 stage 是否可解析、关键 prim 是否存在、K01 字段 metadata 是否可追溯、canonical demo refs 是否保留。
+3. 继续不把 NV01-B 写成 Isaac Sim runtime 集成；Isaac Sim robot import、replay、sensor/Replicator 和 collision validation 进入 NV01-C。
+4. 保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package、工艺人员确认和专家审查结论作为 K01 + NV01 后续真实闭环输入。
+5. 暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。
 
 ## 边界
 
@@ -189,14 +186,13 @@ uv run python -m weldcore.skill_asset.demo_report \
 
 该 evidence pack 用来把 `ManipulationSkillAsset`、仿真证据、A02->A01 handoff、专家审查候选和 IP support matrix 放在同一组可审查材料里。默认状态是 `ready_for_expert_review` evidence pack / `ready_for_expert_review_candidate_pack`，边界仍是 `not_ready_for_robot_execution`、`simulation_only`、`not_full_ik_solver`、`not_real_collision_validation` 和 `not_real_welding_quality_validation`；它不是控制器可下载程序，不是生产派发包，也不是真实机器人执行结论。
 
-## 下一阶段 K01 + NV01 输出目标
+## K01 + NV01-A 当前输出入口
 
-K01 + NV01 的目标命令暂定为：
+K01 + NV01-A 默认 report 入口：
 
 ```bash
 cd weld-experience-engine
 uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
-  --source-demo-dir artifacts/demo/skill-asset-evidence \
   --outdir artifacts/demo/nvidia-digital-twin-foundation
 ```
 
@@ -214,7 +210,7 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 - `training_readiness_report.json`
 - `nvidia_stack_alignment_matrix.json`
 
-这些 artifact 的第一版目标是 `ready_for_procedure_contract_review`、`ready_for_simulation_replay_package_design` 和 `not_ready_for_policy_training`。它们是面向工艺/专家审查和 OpenUSD/Isaac 的输入合同，不是正式 WPS/PQR，也不是已完成的 Isaac Sim runtime 结果。
+这些 artifact 的第一版目标是 `ready_for_procedure_contract_review`、`ready_for_simulation_replay_package_design`、`ready_for_training_design_review` 和 `not_ready_for_policy_training`。它们是面向工艺/专家审查和 OpenUSD/Isaac 的输入合同，不是正式 WPS/PQR，也不是已完成的 Isaac Sim runtime、policy training 或 robot execution 结果。
 
 ## 历史能力索引
 
@@ -228,7 +224,7 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 - Gazebo/MoveIt 候选路线失败边界记录。
 - 从 `SimulationEvidenceBundle` 到 `RobotProcessPackageDraft` 的机器人候选草案转换。
 - Rerun 证据回放兼容处理。
-- 焊接工艺参数 Excel 表格；它已被提升为下一阶段 K01 工艺知识合同源，但仍不是正式 WPS/PQR。
+- 焊接工艺参数 Excel 表格；它已被提升为 K01 工艺知识合同源，但仍不是正式 WPS/PQR。
 - 前期 POC、MVP、gate、白皮书和旧计划材料，统一保留在 `docs/archive/`。
 
 ## 当前目录结构
