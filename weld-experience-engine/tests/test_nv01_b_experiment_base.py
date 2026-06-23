@@ -242,11 +242,24 @@ def test_build_nv01_b_payloads_create_stage_fixture_and_blocking_reports(tmp_pat
         "source_nv01a_summary_ref",
         "generated_artifacts",
         "command",
+        "report_cli_status",
         "default_dependency_boundary",
         "source_artifact_refs",
         "validation_commands",
     ):
         assert key in repro
+    assert repro["command"] == (
+        "builder_only: "
+        "weldcore.skill_asset.nv01_b_experiment_base."
+        "build_nv01_b_experiment_payloads(source_nv01a_dir)"
+    )
+    assert "nv01_b_experiment_base_report" not in repro["command"]
+    assert repro["report_cli_status"] == "pending_task_2_report_cli"
+    assert repro["source_nv01a_root_ref"] == "source_nv01a"
+    assert repro["validation_commands"] == [
+        "pytest tests/test_nv01_b_experiment_base.py -q"
+    ]
+    assert all("uv run" not in command for command in repro["validation_commands"])
     assert "no_isaac_sim_default_dependency" in repro["default_dependency_boundary"]
 
 

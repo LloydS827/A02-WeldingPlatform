@@ -550,7 +550,7 @@ def _build_experiment_reproducibility_manifest(
 ) -> dict[str, Any]:
     return {
         "manifest_id": "nv01-b-experiment-reproducibility-manifest",
-        "source_nv01a_root_ref": str(artifacts["root"]),
+        "source_nv01a_root_ref": "source_nv01a",
         "source_nv01a_summary_ref": "nv01_summary.json",
         "generated_artifacts": [
             "openusd_stage.usda",
@@ -562,9 +562,11 @@ def _build_experiment_reproducibility_manifest(
             "experiment_reproducibility_manifest.json",
         ],
         "command": (
-            "uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report "
-            "--outdir artifacts/demo/nv01-b-experiment-base"
+            "builder_only: "
+            "weldcore.skill_asset.nv01_b_experiment_base."
+            "build_nv01_b_experiment_payloads(source_nv01a_dir)"
         ),
+        "report_cli_status": "pending_task_2_report_cli",
         "default_dependency_boundary": [
             "no_isaac_sim_default_dependency",
             "no_openusd_sdk_default_dependency",
@@ -574,7 +576,7 @@ def _build_experiment_reproducibility_manifest(
             name: rel for name, rel in REQUIRED_NV01A_FILES.items()
         },
         "validation_commands": [
-            "uv run pytest tests/test_nv01_b_experiment_base.py -q",
+            "pytest tests/test_nv01_b_experiment_base.py -q",
         ],
     }
 
