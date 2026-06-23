@@ -203,6 +203,8 @@ def build_weld_procedure_parameter_set(
     missing_conditional_fields: list[str] = []
     supplemental_gaps: list[str] = []
     computed_fields: list[str] = []
+    blocked_fields: list[str] = []
+    blocked_computed_fields: list[str] = []
     inferred_fields: list[str] = []
     workcell_logged_gaps: list[str] = []
 
@@ -217,8 +219,12 @@ def build_weld_procedure_parameter_set(
             missing_conditional_fields.append(field_id)
         if status["coverage_status"] == "supplemental_gap":
             supplemental_gaps.append(field_id)
+        if status["coverage_status"].startswith("blocked_"):
+            blocked_fields.append(field_id)
         if field["acquisition_mode"] == "system_computed":
             computed_fields.append(field_id)
+            if status["coverage_status"].startswith("blocked_"):
+                blocked_computed_fields.append(field_id)
         if field["acquisition_mode"] == "asset_or_simulation_inferred":
             inferred_fields.append(field_id)
         if field["acquisition_mode"] == "workcell_logged" and status["value"] is None:
@@ -233,6 +239,8 @@ def build_weld_procedure_parameter_set(
         "missing_conditional_fields": sorted(missing_conditional_fields),
         "supplemental_gaps": sorted(supplemental_gaps),
         "computed_fields": sorted(computed_fields),
+        "blocked_fields": sorted(blocked_fields),
+        "blocked_computed_fields": sorted(blocked_computed_fields),
         "inferred_fields": sorted(inferred_fields),
         "workcell_logged_gaps": sorted(workcell_logged_gaps),
         "source_summary": {
@@ -271,6 +279,8 @@ def build_weld_procedure_validation_report(
         not_ready_reasons.append("blocked_by_missing_conditional_procedure_fields")
     if workcell_logged_gaps:
         not_ready_reasons.append("blocked_by_missing_workcell_logged_fields")
+    if parameter_set.get("blocked_computed_fields"):
+        not_ready_reasons.append("blocked_by_missing_real_process_inputs")
 
     return {
         "validation_status": not_ready_reasons[0]
@@ -280,10 +290,19 @@ def build_weld_procedure_validation_report(
         "ready_for_expert_review": not not_ready_reasons,
         "ready_for_simulation_replay_package_design": True,
         "ready_for_training_design_review": True,
+        "readiness_scope": "design/review draft readiness only",
+        "readiness_notes": [
+            "not_formal_WPS_PQR",
+            "not_expert_approved",
+            "not_isaac_runtime_replay_ready",
+            "not_policy_training_ready",
+        ],
         "not_ready_reasons": not_ready_reasons,
         "field_coverage": _field_coverage(parameter_set, contract),
         "human_required_gaps": sorted(human_required_gaps),
         "computed_fields": parameter_set["computed_fields"],
+        "blocked_fields": parameter_set.get("blocked_fields", []),
+        "blocked_computed_fields": parameter_set.get("blocked_computed_fields", []),
         "inferred_fields": parameter_set["inferred_fields"],
         "workcell_logged_gaps": sorted(workcell_logged_gaps),
         "wps_pqr_boundary": "not_formal_WPS_PQR",
@@ -434,7 +453,9 @@ def _field_coverage(
         "covered_field_count": sum(
             count
             for status, count in statuses.items()
-            if status not in {"missing_required", "missing_conditional", "supplemental_gap"}
+            if status
+            not in {"missing_required", "missing_conditional", "supplemental_gap"}
+            and not status.startswith("blocked_")
         ),
     }
 

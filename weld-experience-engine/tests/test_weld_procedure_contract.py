@@ -185,6 +185,8 @@ def test_parameter_set_marks_missing_human_and_workcell_fields():
     assert "wps_number" in parameter_set["missing_required_fields"]
     assert "welding_current_a" in parameter_set["missing_required_fields"]
     assert "heat_input_kj_per_mm" in parameter_set["computed_fields"]
+    assert "heat_input_kj_per_mm" in parameter_set["blocked_computed_fields"]
+    assert "heat_input_kj_per_mm" in parameter_set["blocked_fields"]
     assert parameter_set["values"]["heat_input_kj_per_mm"]["value"] is None
     assert (
         parameter_set["values"]["heat_input_kj_per_mm"]["coverage_status"]
@@ -212,6 +214,21 @@ def test_validation_report_separates_contract_review_from_expert_review():
     assert report["validation_status"] == "blocked_by_missing_human_required_fields"
     assert "wps_number" in report["human_required_gaps"]
     assert "welding_current_a" in report["workcell_logged_gaps"]
+    assert "heat_input_kj_per_mm" in report["blocked_computed_fields"]
+    assert "blocked_by_missing_real_process_inputs" in report["not_ready_reasons"]
+    assert (
+        report["field_coverage"]["covered_field_count"]
+        == 47
+        - len(parameter_set["missing_required_fields"])
+        - len(parameter_set["missing_conditional_fields"])
+        - len(parameter_set["supplemental_gaps"])
+        - len(parameter_set["blocked_fields"])
+    )
+    assert "blocked_missing_real_process_inputs" in report["field_coverage"]["by_status"]
+    assert "design/review draft readiness" in report["readiness_scope"]
+    assert "not_formal_WPS_PQR" in report["readiness_notes"]
+    assert "not_isaac_runtime_replay_ready" in report["readiness_notes"]
+    assert "not_policy_training_ready" in report["readiness_notes"]
     assert report["wps_pqr_boundary"] == "not_formal_WPS_PQR"
 
 
