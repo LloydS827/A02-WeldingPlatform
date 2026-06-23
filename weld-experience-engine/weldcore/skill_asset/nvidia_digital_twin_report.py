@@ -43,8 +43,13 @@ def run_nvidia_digital_twin_report(
 ) -> dict[str, Any]:
     output_dir = Path(outdir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    generated_artifacts: list[str] = []
 
-    source_dir = _ensure_source_demo_pack(output_dir, source_demo_dir)
+    source_dir, source_generated_artifacts = _ensure_source_demo_pack(
+        output_dir,
+        source_demo_dir,
+    )
+    generated_artifacts.extend(source_generated_artifacts)
     demo_summary = load_demo_pack(source_dir)
     contract = build_weld_procedure_knowledge_contract(
         procedure_workbook_path or DEFAULT_PROCEDURE_WORKBOOK_PATH
@@ -55,23 +60,31 @@ def run_nvidia_digital_twin_report(
         contract,
     )
 
-    _write_json(output_dir / "weld_procedure_knowledge_contract.json", contract)
-    for payload_name, filename in TOP_LEVEL_PAYLOAD_FILES.items():
-        _write_json(output_dir / filename, payloads[payload_name])
-    _write_task_payloads(output_dir, payloads["task_payloads"])
-
-    summary = _build_summary(demo_summary, payloads, [])
-    _write_text(output_dir / "nv01_summary.md", _render_markdown(summary))
-
-    generated_artifacts = sorted(
-        [
-            *_generated_artifacts(output_dir, exclude={"nv01_summary.json"}),
-            "nv01_summary.json",
-        ]
+    _write_json_artifact(
+        output_dir,
+        "weld_procedure_knowledge_contract.json",
+        contract,
+        generated_artifacts,
     )
-    summary = _build_summary(demo_summary, payloads, generated_artifacts)
-    _write_text(output_dir / "nv01_summary.md", _render_markdown(summary))
-    _write_json(output_dir / "nv01_summary.json", summary)
+    for payload_name, filename in TOP_LEVEL_PAYLOAD_FILES.items():
+        _write_json_artifact(
+            output_dir,
+            filename,
+            payloads[payload_name],
+            generated_artifacts,
+        )
+    _write_task_payloads(output_dir, payloads["task_payloads"], generated_artifacts)
+
+    _record_generated_artifact("nv01_summary.md", generated_artifacts)
+    _record_generated_artifact("nv01_summary.json", generated_artifacts)
+    summary = _build_summary(demo_summary, payloads, sorted(generated_artifacts))
+    _write_text_artifact(
+        output_dir,
+        "nv01_summary.md",
+        _render_markdown(summary),
+        generated_artifacts,
+    )
+    _write_json_artifact(output_dir, "nv01_summary.json", summary, generated_artifacts)
     return summary
 
 
@@ -96,27 +109,36 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
 def _ensure_source_demo_pack(
     output_dir: Path,
     source_demo_dir: str | Path | None,
-) -> Path:
+) -> tuple[Path, list[str]]:
     if source_demo_dir is None:
         source_dir = output_dir / "_source_demo_evidence"
-        run_demo_evidence_pack(source_dir)
-        return source_dir
+        source_summary = run_demo_evidence_pack(source_dir)
+        return source_dir, [
+            f"_source_demo_evidence/{artifact}"
+            for artifact in source_summary["generated_artifacts"]
+        ]
 
     source_dir = Path(source_demo_dir)
     if not source_dir.exists():
         raise FileNotFoundError(source_dir)
-    return source_dir
+    return source_dir, []
 
 
 def _write_task_payloads(
     output_dir: Path,
     task_payloads: dict[str, dict[str, Any]],
+    generated_artifacts: list[str],
 ) -> None:
     for task_id, task_payload in task_payloads.items():
-        task_dir = output_dir / _task_output_dir_name(task_id)
-        task_dir.mkdir(parents=True, exist_ok=True)
+        task_dir_name = _task_output_dir_name(task_id)
+        (output_dir / task_dir_name).mkdir(parents=True, exist_ok=True)
         for payload_name, filename in TASK_PAYLOAD_FILES.items():
-            _write_json(task_dir / filename, task_payload[payload_name])
+            _write_json_artifact(
+                output_dir,
+                f"{task_dir_name}/{filename}",
+                task_payload[payload_name],
+                generated_artifacts,
+            )
 
 
 def _build_summary(
@@ -208,15 +230,32 @@ def _render_markdown(summary: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _generated_artifacts(output_dir: Path, exclude: set[str] | None = None) -> list[str]:
-    excluded = exclude or set()
-    return sorted(
-        relative_path
-        for path in output_dir.rglob("*")
-        if path.is_file()
-        for relative_path in (str(path.relative_to(output_dir)),)
-        if relative_path not in excluded
-    )
+def _write_json_artifact(
+    output_dir: Path,
+    relative_path: str,
+    data: Any,
+    generated_artifacts: list[str],
+) -> None:
+    _write_json(output_dir / relative_path, data)
+    _record_generated_artifact(relative_path, generated_artifacts)
+
+
+def _write_text_artifact(
+    output_dir: Path,
+    relative_path: str,
+    text: str,
+    generated_artifacts: list[str],
+) -> None:
+    _write_text(output_dir / relative_path, text)
+    _record_generated_artifact(relative_path, generated_artifacts)
+
+
+def _record_generated_artifact(
+    relative_path: str,
+    generated_artifacts: list[str],
+) -> None:
+    if relative_path not in generated_artifacts:
+        generated_artifacts.append(relative_path)
 
 
 def _write_json(path: Path, data: Any) -> None:

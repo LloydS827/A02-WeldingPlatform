@@ -40,6 +40,14 @@ EXPECTED_TASK_ARTIFACTS = {
 }
 
 
+def _relative_files(root):
+    return sorted(
+        str(path.relative_to(root))
+        for path in root.rglob("*")
+        if path.is_file()
+    )
+
+
 def test_nvidia_payloads_bind_procedure_contract_to_canonical_demo(tmp_path):
     source_dir = tmp_path / "source"
     demo = run_demo_evidence_pack(source_dir)
@@ -164,12 +172,7 @@ def test_nvidia_report_writes_top_level_and_per_task_artifacts(tmp_path):
     assert "ready_for_procedure_contract_review" in summary["readiness_states"]
     assert "not_ready_for_policy_training" in summary["readiness_states"]
     assert "not_formal_WPS_PQR" in summary["readiness_boundary"]
-    actual_files = sorted(
-        str(path.relative_to(outdir))
-        for path in outdir.rglob("*")
-        if path.is_file()
-    )
-    assert sorted(summary["generated_artifacts"]) == actual_files
+    assert sorted(summary["generated_artifacts"]) == _relative_files(outdir)
 
     for filename in EXPECTED_TOP_LEVEL_ARTIFACTS:
         assert (outdir / filename).exists()
@@ -187,6 +190,23 @@ def test_nvidia_report_writes_top_level_and_per_task_artifacts(tmp_path):
 
     restored = json.loads((outdir / "nv01_summary.json").read_text(encoding="utf-8"))
     assert restored == summary
+
+
+def test_nvidia_report_generated_artifacts_exclude_preexisting_files(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    outdir = tmp_path / "nv01"
+    outdir.mkdir()
+    (outdir / "user_note.txt").write_text("do not claim this as generated\n")
+
+    summary = run_nvidia_digital_twin_report(outdir=outdir)
+
+    assert "user_note.txt" not in summary["generated_artifacts"]
+    assert sorted(summary["generated_artifacts"]) == [
+        filename for filename in _relative_files(outdir) if filename != "user_note.txt"
+    ]
 
 
 def test_nvidia_report_main_prints_json(tmp_path, capsys):
