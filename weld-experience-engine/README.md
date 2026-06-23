@@ -18,7 +18,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 其中 `ManipulationSkillAsset` 是当前 canonical 技能资产实例；`RobotBodyAsset` 是机器人身体上下文；`RobotContextSpec` 和 `SceneContextAsset` 是迁移预检的上下文对象；`RobotFeasibilityResult` 是轻量预检结果；`SkillTransferAssessment` 和 `ExpertReviewRecord` 用于进入专家审查候选。既有 `SkillDataset -> WeldSkillPackage -> evaluation / evidence` 仍保留为历史兼容和 facade，不再是默认主线。
 
-下一阶段路线是 NV01 NVIDIA-Native Weld Skill Digital Twin Foundation：以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 将优先生成面向这些重底座的 manifest/report，而不是自研通用物理引擎、3D 场景标准或训练框架。
+下一阶段路线是 K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation：以 `docs/焊接工艺数据库主要参数表.xlsx` 作为焊接工艺知识合同源，以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 将优先生成面向这些重底座的 procedure contract、manifest/report，而不是自研通用物理引擎、3D 场景标准或训练框架。
 
 ## 运行
 
@@ -106,6 +106,7 @@ uv run python -m weldcore.report.scenario_report
 - 不把 `SyntheticSkillDataset v2` 输入规范 gate 写成批量样本已经生成。
 - 不把仿真输出接入 gate 写成完整 ManiSkill / Isaac / ROS 集成。
 - 不把公开资料、仿真假设或报告结论写成 WPS/PQR。
+- 不把 Excel 字段表、K01 参数集、系统计算字段或仿真推导字段写成正式 WPS/PQR。
 - 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
 - 不把 OpenUSD / Isaac Sim / Isaac Lab 写成已接入的默认 runtime；它们是下一阶段主底座方向和输出合同目标。
 - 不把 `ready_for_contextual_precheck` 写成 `ready_for_robot_execution`。

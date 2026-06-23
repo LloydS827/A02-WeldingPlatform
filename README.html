@@ -38,11 +38,11 @@ li { margin: 0.35em 0; }
     <h2>项目定位</h2>
     <p>A02 是公司机器人技能大师能力的焊接技能资产底座项目，目标是把焊接操作中的动作、意图、轨迹、姿态、工艺约束、证据边界、迁移契约和质量反馈沉淀为 <code>ManipulationSkillAsset</code>。项目通过仿真、真实机器人日志、人工示教、专家标注和智能焊接工站回采数据，形成可学习、可迁移、可评测、可审计的技能资产，为 A01 智能焊接工站和后续机器人执行验证提供能力底座。</p>
     <p>本项目对应公司 MAS 中的 M，也就是机器人技能大师能力。它不是一个独立对外讲述的平台概念，而是公司长期积累机器人操作能力的技术底座。当前第一场景是焊接，后续可以承接打磨、喷涂、切割、装配、检测等工业操作技能。</p>
-    <p>经过 NVIDIA 物理 AI 技术框架调研，本项目的未来重底座选型调整为：以 OpenUSD 作为数字孪生交换层，以 Isaac Sim 作为默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 自己负责焊接技能资产语义、工艺知识、证据治理、专家审查和 A01/IP handoff。</p>
+    <p>经过 NVIDIA 物理 AI 技术框架调研，本项目的未来重底座选型调整为：以 OpenUSD 作为数字孪生交换层，以 Isaac Sim 作为默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。与此同时，<code>docs/焊接工艺数据库主要参数表.xlsx</code> 被提升为焊接工艺知识合同源。A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 自己负责焊接技能资产语义、工艺知识合同、证据治理、专家审查和 A01/IP handoff。</p>
     <h2>文件入口</h2>
     <ul>
-      <li><a href="README.html">README HTML 阅读版</a></li>
-      <li><a href="details.html">项目进展记录 HTML 阅读版</a></li>
+    <li><a href="README.html">README HTML 阅读版</a></li>
+    <li><a href="details.html">项目进展记录 HTML 阅读版</a></li>
     </ul>
     <p><code>README.md</code> 是项目入口，说明项目定位、当前主链路、核心对象、接口关系、可运行能力、边界和验证方式。</p>
     <p><code>details.md</code> 是阶段更新记录，说明每轮完成内容、下一步计划和风险判断。更新根目录 Markdown 时，需要同步刷新对应 HTML 阅读副本。</p>
@@ -65,89 +65,97 @@ li { margin: 0.35em 0; }
 -&gt; future OpenUSD / Isaac Sim / Isaac Lab digital twin and training package</code></pre>
     <p>这条链路的含义是：</p>
     <ul>
-      <li><code>ManipulationSkillAsset</code> 是当前 canonical 技能资产本体，描述技能意图、TCP 轨迹、工具姿态、约束、证据来源、质量边界和迁移契约。</li>
-      <li>仿真样本、真实 URDF、robot precheck、modeled task specs 和 1000 next-batch 样本都应写成技能资产 evidence，而不是各自形成平行主线。</li>
-      <li><code>ready_for_expert_review</code> 表示资产、机器人上下文、场景上下文和轻量预检足以进入专家审查候选；它不是 <code>ready_for_robot_execution</code>。</li>
+    <li><code>ManipulationSkillAsset</code> 是当前 canonical 技能资产本体，描述技能意图、TCP 轨迹、工具姿态、约束、证据来源、质量边界和迁移契约。</li>
+    <li>仿真样本、真实 URDF、robot precheck、modeled task specs 和 1000 next-batch 样本都应写成技能资产 evidence，而不是各自形成平行主线。</li>
+    <li><code>ready_for_expert_review</code> 表示资产、机器人上下文、场景上下文和轻量预检足以进入专家审查候选；它不是 <code>ready_for_robot_execution</code>。</li>
     </ul>
     <h2>核心对象</h2>
     <ul>
-      <li><code>ManipulationSkillAsset</code>：技能资产本体，承载意图、运动、约束、证据、质量边界和迁移契约。</li>
-      <li><code>SkillAssetEvidence</code>：记录 evidence source、artifact refs、metrics、review status 和 evidence boundary。</li>
-      <li><code>RobotBodyAsset</code>：由真实 URDF 和 mesh 解析出的机器人身体资产。</li>
-      <li><code>RobotContextSpec</code>：机器人型号、base/TCP/tool/workpiece frame、关节限制来源和真实标定边界。</li>
-      <li><code>SceneContextAsset</code>：工件坐标系、焊缝路径、夹具/障碍、安全边界和场景证据边界。</li>
-      <li><code>RobotFeasibilityResult</code>：lightweight reachability / collision-assumed / joint-limit / path-continuity / orientation 预检结果。</li>
-      <li><code>SkillTransferAssessment</code>：把技能资产、机器人身体、机器人上下文、场景上下文和 feasibility result 汇总成迁移评估。</li>
-      <li><code>ExpertReviewRecord</code>：绑定技能资产、机器人上下文、场景上下文、预检结果、人工结论、阻塞原因和下一步动作。</li>
-      <li><code>A01B06SkillAssetMapping</code>：把 A01 H300 工站回采和 B06 Physical AI Package 字段映射到 <code>ManipulationSkillAsset</code>。</li>
-      <li><code>A02ToA01ProductValidationHandoff</code>：A02 反哺 A01 的候选技能包、轨迹候选、姿态/参数建议和失败边界。</li>
-      <li><code>IPDisclosureSupportMatrix</code>：把 P0-02、P0-03、P0-04 对应到支撑对象、报告和缺失真实证据。</li>
+    <li><code>ManipulationSkillAsset</code>：技能资产本体，承载意图、运动、约束、证据、质量边界和迁移契约。</li>
+    <li><code>SkillAssetEvidence</code>：记录 evidence source、artifact refs、metrics、review status 和 evidence boundary。</li>
+    <li><code>RobotBodyAsset</code>：由真实 URDF 和 mesh 解析出的机器人身体资产。</li>
+    <li><code>RobotContextSpec</code>：机器人型号、base/TCP/tool/workpiece frame、关节限制来源和真实标定边界。</li>
+    <li><code>SceneContextAsset</code>：工件坐标系、焊缝路径、夹具/障碍、安全边界和场景证据边界。</li>
+    <li><code>RobotFeasibilityResult</code>：lightweight reachability / collision-assumed / joint-limit / path-continuity / orientation 预检结果。</li>
+    <li><code>SkillTransferAssessment</code>：把技能资产、机器人身体、机器人上下文、场景上下文和 feasibility result 汇总成迁移评估。</li>
+    <li><code>ExpertReviewRecord</code>：绑定技能资产、机器人上下文、场景上下文、预检结果、人工结论、阻塞原因和下一步动作。</li>
+    <li><code>WeldProcedureKnowledgeContract</code>：由焊接工艺参数 Excel 生成的字段合同，记录字段类别、必要性、来源模式、目标对象路径、NV01 用途和证据边界。</li>
+    <li><code>WeldProcedureParameterSet</code>：某个技能任务当前已有和缺失的工艺参数集合，区分人填、系统计算、仿真推导、工站回采和资料库引用。</li>
+    <li><code>WeldProcedureValidationReport</code>：检查必填、条件必填和补充字段覆盖情况，明确是否阻塞专家审查、仿真 replay 设计或训练设计。</li>
+    <li><code>A01B06SkillAssetMapping</code>：把 A01 H300 工站回采和 B06 Physical AI Package 字段映射到 <code>ManipulationSkillAsset</code>。</li>
+    <li><code>A02ToA01ProductValidationHandoff</code>：A02 反哺 A01 的候选技能包、轨迹候选、姿态/参数建议和失败边界。</li>
+    <li><code>IPDisclosureSupportMatrix</code>：把 P0-02、P0-03、P0-04 对应到支撑对象、报告和缺失真实证据。</li>
     </ul>
     <h2>NVIDIA-native 物理 AI 底座路线</h2>
-    <p>下一阶段的路线主题是 <strong>NV01 NVIDIA-Native Weld Skill Digital Twin Foundation</strong>。它把 A02 从“仅能解释技能资产 demo”推进为“能产出面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。</p>
+    <p>下一阶段的路线主题是 <strong>K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation</strong>。它把 A02 从“仅能解释技能资产 demo”推进为“能产出由焊接工艺字段合同约束、面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。</p>
     <p>推荐的职责边界是：</p>
     <ul>
-      <li>OpenUSD：未来统一表达机器人、工件、工装、焊缝、传感器、坐标系、语义标签和工艺 metadata。</li>
-      <li>Isaac Sim：未来默认目标仿真运行时，用于机器人导入、replay、传感器仿真、Replicator 合成数据、可达性/碰撞/视野验证。</li>
-      <li>Isaac Lab：未来训练闭环目标层，用于 seam tracking、局部位姿修正、受约束策略评估和 sim-to-real 训练设计。</li>
-      <li>A02：继续以 <code>ManipulationSkillAsset</code> 为 canonical truth，负责焊接领域语义、证据来源、审查状态、失败边界、专家 gate、A02-&gt;A01 handoff 和 IP 支撑。</li>
+    <li>OpenUSD：未来统一表达机器人、工件、工装、焊缝、传感器、坐标系、语义标签和工艺 metadata。</li>
+    <li>Isaac Sim：未来默认目标仿真运行时，用于机器人导入、replay、传感器仿真、Replicator 合成数据、可达性/碰撞/视野验证。</li>
+    <li>Isaac Lab：未来训练闭环目标层，用于 seam tracking、局部位姿修正、受约束策略评估和 sim-to-real 训练设计。</li>
+    <li>K01 焊接工艺知识合同：从 Excel 中 47 个字段生成字段定义、必填/条件必填/补充分类、人填/计算/仿真推导/工站回采/资料库引用来源分类、字段覆盖和缺口报告。</li>
+    <li>A02：继续以 <code>ManipulationSkillAsset</code> 为 canonical truth，负责焊接领域语义、工艺知识合同、证据来源、审查状态、失败边界、专家 gate、A02-&gt;A01 handoff 和 IP 支撑。</li>
     </ul>
-    <p>NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 <code>WeldSkillDigitalTwinPackage</code>、<code>openusd_scene_manifest</code>、<code>isaac_sim_replay_config</code>、<code>domain_randomization_recipe</code> 和 <code>training_readiness_report</code>。这些 artifact 的目标是把当前 A02 evidence pack 编译成 NVIDIA physical AI 工作流可理解的输入合同。</p>
+    <p>K01 + NV01 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 <code>weld_procedure_knowledge_contract</code>、<code>weld_procedure_parameter_set</code>、<code>weld_procedure_validation_report</code>、<code>WeldSkillDigitalTwinPackage</code>、<code>openusd_scene_manifest</code>、<code>isaac_sim_replay_config</code>、<code>domain_randomization_recipe</code> 和 <code>training_readiness_report</code>。这些 artifact 的目标是把当前 A02 evidence pack 编译成带焊接工艺知识约束的 NVIDIA physical AI 工作流输入合同。</p>
     <h2>A01/B06/A02 接口</h2>
     <p><code>A01 -&gt; A02</code>：</p>
     <ul>
-      <li>从智能焊接工站的真实或脱敏作业数据生成技能资产 evidence。</li>
-      <li>重点字段包括 task、weld seam、workpiece、path points、robot pose、torch pose、process parameters、manual correction、execution log、anomaly 和 quality result。</li>
-      <li>默认 evidence source type 为 <code>h300_workcell_run</code>。</li>
+    <li>从智能焊接工站的真实或脱敏作业数据生成技能资产 evidence。</li>
+    <li>重点字段包括 task、weld seam、workpiece、path points、robot pose、torch pose、process parameters、manual correction、execution log、anomaly 和 quality result。</li>
+    <li>默认 evidence source type 为 <code>h300_workcell_run</code>。</li>
     </ul>
     <p><code>B06 -&gt; A02</code>：</p>
     <ul>
-      <li>从 Physical AI Package 读取 task context、coordinate frames、frames、events、labels、trajectory、human correction、metrics、quality labels 和 rerun replay ref。</li>
-      <li>B06 不作为本仓库 runtime 依赖；本轮只定义字段合同和报告 artifact。</li>
+    <li>从 Physical AI Package 读取 task context、coordinate frames、frames、events、labels、trajectory、human correction、metrics、quality labels 和 rerun replay ref。</li>
+    <li>B06 不作为本仓库 runtime 依赖；本轮只定义字段合同和报告 artifact。</li>
     </ul>
     <p><code>A02 -&gt; A01</code>：</p>
     <ul>
-      <li>输出可供 H300 产品验证或提示的 skill package candidate、trajectory candidate、torch posture suggestion、process parameter hint 和 failure boundary summary。</li>
-      <li>输出不是控制器可下载程序，不是生产派发包，不是 <code>ready_for_robot_execution</code>。</li>
+    <li>输出可供 H300 产品验证或提示的 skill package candidate、trajectory candidate、torch posture suggestion、process parameter hint 和 failure boundary summary。</li>
+    <li>输出不是控制器可下载程序，不是生产派发包，不是 <code>ready_for_robot_execution</code>。</li>
     </ul>
     <p><code>A02 -&gt; IP</code>：</p>
     <ul>
-      <li>P0-02“焊接技能包”由 <code>ManipulationSkillAsset</code>、<code>SkillAssetEvidence</code>、<code>ExpertReviewRecord</code> 和 evidence writeback report 支撑。</li>
-      <li>P0-03“焊接轨迹结构化转换”由 <code>motion.tcp_trajectory</code>、tool orientation、A01/B06 mapping 和 manual correction 字段支撑。</li>
-      <li>P0-04“仿真优先焊接技能数据集”由 <code>SimulationEvidenceBundle</code>、modeled task specs、100/500/1000 requested samples 和 evidence source catalog 支撑。</li>
+    <li>P0-02“焊接技能包”由 <code>ManipulationSkillAsset</code>、<code>SkillAssetEvidence</code>、<code>ExpertReviewRecord</code> 和 evidence writeback report 支撑。</li>
+    <li>P0-03“焊接轨迹结构化转换”由 <code>motion.tcp_trajectory</code>、tool orientation、A01/B06 mapping 和 manual correction 字段支撑。</li>
+    <li>P0-04“仿真优先焊接技能数据集”由 <code>SimulationEvidenceBundle</code>、modeled task specs、100/500/1000 requested samples 和 evidence source catalog 支撑。</li>
     </ul>
     <h2>当前可运行能力</h2>
     <ul>
-      <li>可运行的 <code>weldcore</code> 引擎，详见 <a href="weld-experience-engine/README.md">weld-experience-engine/README.md</a>。</li>
-      <li>从 <code>SimulationEvidenceBundle</code> 构建 <code>ManipulationSkillAsset</code>，canonical evidence source type 为 <code>simulation_only</code>。</li>
-      <li>从 <code>docs/real-urdf/robot.urdf</code> 解析 <code>RobotBodyAsset</code>，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。</li>
-      <li>从 <code>RobotBodyAsset</code> 构建 nominal <code>RobotContextSpec</code>，保留 <code>nominal_from_asset_not_calibrated</code>、<code>not_tcp_calibrated</code>、<code>not_vendor_validated</code> 和 <code>not_ready_for_robot_execution</code> 边界。</li>
-      <li>构建默认 <code>SceneContextAsset</code>，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。</li>
-      <li>构建 lightweight <code>RobotFeasibilityResult</code>，当前只做结构性 reachability、collision assumed、joint-limit source、path continuity 和 orientation 预检。</li>
-      <li><code>SkillTransferAssessment</code> 在默认上下文齐备时推进到 <code>ready_for_expert_review</code>。</li>
-      <li><code>ExpertReviewRecord</code> 记录四项从 nominal context 走向真实上下文的必填项：真实 TCP 标定、工件坐标系测量、机器人型号身份确认和关节限制来源确认。</li>
-      <li><code>SkillAssetEvidenceWritebackSummary</code> 把 8 个 modeled task specs 和 1000 next-batch samples 记录为技能资产 evidence candidates。</li>
-      <li><code>weldcore.skill_asset.asset_report</code> 默认生成 12 份 JSON artifact，服务 A01 产品验证和 IP 交底准备。</li>
+    <li>可运行的 <code>weldcore</code> 引擎，详见 <a href="weld-experience-engine/README.md">weld-experience-engine/README.md</a>。</li>
+    <li>从 <code>SimulationEvidenceBundle</code> 构建 <code>ManipulationSkillAsset</code>，canonical evidence source type 为 <code>simulation_only</code>。</li>
+    <li>已纳入 <code>docs/焊接工艺数据库主要参数表.xlsx</code>，其中包含 47 个焊接工艺字段、8 个参数类别、21 个必填字段、12 个条件必填字段和 14 个补充字段；下一阶段将从它生成 K01 工艺知识合同。</li>
+    <li>从 <code>docs/real-urdf/robot.urdf</code> 解析 <code>RobotBodyAsset</code>，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。</li>
+    <li>从 <code>RobotBodyAsset</code> 构建 nominal <code>RobotContextSpec</code>，保留 <code>nominal_from_asset_not_calibrated</code>、<code>not_tcp_calibrated</code>、<code>not_vendor_validated</code> 和 <code>not_ready_for_robot_execution</code> 边界。</li>
+    <li>构建默认 <code>SceneContextAsset</code>，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。</li>
+    <li>构建 lightweight <code>RobotFeasibilityResult</code>，当前只做结构性 reachability、collision assumed、joint-limit source、path continuity 和 orientation 预检。</li>
+    <li><code>SkillTransferAssessment</code> 在默认上下文齐备时推进到 <code>ready_for_expert_review</code>。</li>
+    <li><code>ExpertReviewRecord</code> 记录四项从 nominal context 走向真实上下文的必填项：真实 TCP 标定、工件坐标系测量、机器人型号身份确认和关节限制来源确认。</li>
+    <li><code>SkillAssetEvidenceWritebackSummary</code> 把 8 个 modeled task specs 和 1000 next-batch samples 记录为技能资产 evidence candidates。</li>
+    <li><code>weldcore.skill_asset.asset_report</code> 默认生成 12 份 JSON artifact，服务 A01 产品验证和 IP 交底准备。</li>
     </ul>
     <h2>下一阶段任务</h2>
     <ol>
-      <li>完成 NV01 设计和实现：从当前 demo evidence pack 生成 NVIDIA-native 焊接技能数字孪生与训练准备包。</li>
-      <li>定义 <code>openusd_scene_manifest</code>，把 <code>RobotBodyAsset</code>、<code>RobotContextSpec</code>、<code>SceneContextAsset</code>、焊缝路径、TCP 轨迹和 evidence binding 映射到未来 USD stage 结构。</li>
-      <li>定义 <code>isaac_sim_replay_config</code>，说明 Isaac Sim replay、机器人导入、传感器、Replicator、验证检查和缺失 runtime 边界。</li>
-      <li>定义 <code>domain_randomization_recipe</code>，覆盖坡口/间隙/反光/烟尘/弧光/TCP 偏差/传感器外参/工艺参数窗口等焊接有效扰动。</li>
-      <li>定义 <code>training_readiness_report</code>，为 Isaac Lab 的 observation、action、reward、termination、curriculum、dataset 和 expert gate 预留合同。</li>
-      <li>保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package 和专家审查结论作为 NV01 之后的真实闭环输入。</li>
-      <li>暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。</li>
+    <li>完成 K01 + NV01 设计和实现：从焊接工艺 Excel 和当前 demo evidence pack 生成带工艺知识约束的 NVIDIA-native 焊接技能数字孪生与训练准备包。</li>
+    <li>定义 <code>weld_procedure_knowledge_contract</code>，把 47 个字段按必填、条件必填、补充字段，以及人填、系统计算、仿真推导、工站回采、资料库引用来源分类。</li>
+    <li>定义 <code>weld_procedure_parameter_set</code> 和 <code>weld_procedure_validation_report</code>，说明当前任务哪些字段已填、缺哪些人填字段、哪些字段可计算或仿真推导、哪些阻塞专家审查或训练设计。</li>
+    <li>定义 <code>openusd_scene_manifest</code>，把 <code>RobotBodyAsset</code>、<code>RobotContextSpec</code>、<code>SceneContextAsset</code>、焊缝路径、TCP 轨迹、procedure metadata 和 evidence binding 映射到未来 USD stage 结构。</li>
+    <li>定义 <code>isaac_sim_replay_config</code>，说明 Isaac Sim replay、机器人导入、工艺参数输入、传感器、Replicator、验证检查和缺失 runtime 边界。</li>
+    <li>定义 <code>domain_randomization_recipe</code>，覆盖坡口/间隙/反光/烟尘/弧光/TCP 偏差/传感器外参/工艺参数窗口等焊接有效扰动，并追溯到 K01 字段。</li>
+    <li>定义 <code>training_readiness_report</code>，为 Isaac Lab 的 observation、action、reward、termination、curriculum、dataset、procedure gate 和 expert gate 预留合同。</li>
+    <li>保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package、工艺人员确认和专家审查结论作为 K01 + NV01 之后的真实闭环输入。</li>
+    <li>暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。</li>
     </ol>
     <h2>边界</h2>
     <ul>
-      <li>当前不宣称真实机器人可执行。</li>
-      <li>当前不宣称真实焊接质量验证。</li>
-      <li>当前不宣称正式 WPS/PQR。</li>
-      <li>当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向，但不宣称已经完成 Isaac Sim 集成、OpenUSD stage authoring、Isaac Lab 训练或真实 sim-to-real 验证。</li>
-      <li><code>ready_for_expert_review</code> 不是 <code>ready_for_robot_execution</code>。</li>
-      <li><code>RobotFeasibilityResult</code> 不是完整 IK solver，不是真实 collision validation，不是真机日志验证。</li>
-      <li>ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源，不再作为未来重底座的平行默认候选。</li>
+    <li>当前不宣称真实机器人可执行。</li>
+    <li>当前不宣称真实焊接质量验证。</li>
+    <li>当前不宣称正式 WPS/PQR。</li>
+    <li>当前不把 Excel 字段表、K01 参数集或系统计算结果写成正式 WPS/PQR。</li>
+    <li>当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向，但不宣称已经完成 Isaac Sim 集成、OpenUSD stage authoring、Isaac Lab 训练或真实 sim-to-real 验证。</li>
+    <li><code>ready_for_expert_review</code> 不是 <code>ready_for_robot_execution</code>。</li>
+    <li><code>RobotFeasibilityResult</code> 不是完整 IK solver，不是真实 collision validation，不是真机日志验证。</li>
+    <li>ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源，不再作为未来重底座的平行默认候选。</li>
     </ul>
     <h2>验证命令</h2>
     <p>默认验证路径：</p>
@@ -159,18 +167,18 @@ uv run pytest -q</code></pre>
   --outdir artifacts/skill-assets/canonical</code></pre>
     <p>该命令生成 12 份 JSON：</p>
     <ul>
-      <li><code>skill_asset_report.json</code></li>
-      <li><code>robot_body_asset_report.json</code></li>
-      <li><code>robot_context_spec.json</code></li>
-      <li><code>scene_context_asset_report.json</code></li>
-      <li><code>skill_transfer_assessment.json</code></li>
-      <li><code>robot_feasibility_result.json</code></li>
-      <li><code>skill_asset_evidence_writeback_summary.json</code></li>
-      <li><code>skill_asset_evidence_source_catalog.json</code></li>
-      <li><code>a01_b06_skill_asset_mapping.json</code></li>
-      <li><code>expert_review_record.json</code></li>
-      <li><code>a02_to_a01_product_validation_handoff.json</code></li>
-      <li><code>ip_disclosure_support_matrix.json</code></li>
+    <li><code>skill_asset_report.json</code></li>
+    <li><code>robot_body_asset_report.json</code></li>
+    <li><code>robot_context_spec.json</code></li>
+    <li><code>scene_context_asset_report.json</code></li>
+    <li><code>skill_transfer_assessment.json</code></li>
+    <li><code>robot_feasibility_result.json</code></li>
+    <li><code>skill_asset_evidence_writeback_summary.json</code></li>
+    <li><code>skill_asset_evidence_source_catalog.json</code></li>
+    <li><code>a01_b06_skill_asset_mapping.json</code></li>
+    <li><code>expert_review_record.json</code></li>
+    <li><code>a02_to_a01_product_validation_handoff.json</code></li>
+    <li><code>ip_disclosure_support_matrix.json</code></li>
     </ul>
     <p>默认结果中，<code>transfer_assessment.status</code> 为 <code>ready_for_expert_review</code>，<code>expert_review_record.review_status</code> 为 <code>pending_expert_review</code>，<code>robot_feasibility_result.status</code> 为 <code>passed</code>，但 evidence boundary 仍包含 <code>not_ready_for_robot_execution</code>、<code>not_full_ik_solver</code>、<code>not_collision_validated</code> 和相关真实上下文缺口。</p>
     <h2>默认 Demo Evidence Pack</h2>
@@ -180,36 +188,40 @@ uv run python -m weldcore.skill_asset.demo_report \
   --outdir artifacts/demo/skill-asset-evidence</code></pre>
     <p>该命令运行 2 个默认仿真任务。每个任务目录输出 12 份 canonical artifact 原始文件名和 1 份 <code>simulation_evidence_bundle.json</code>；顶层输出 <code>demo_summary.md</code>、<code>demo_summary.json</code> 和 <code>demo_summary.html</code>。</p>
     <p>该 evidence pack 用来把 <code>ManipulationSkillAsset</code>、仿真证据、A02-&gt;A01 handoff、专家审查候选和 IP support matrix 放在同一组可审查材料里。默认状态是 <code>ready_for_expert_review</code> evidence pack / <code>ready_for_expert_review_candidate_pack</code>，边界仍是 <code>not_ready_for_robot_execution</code>、<code>simulation_only</code>、<code>not_full_ik_solver</code>、<code>not_real_collision_validation</code> 和 <code>not_real_welding_quality_validation</code>；它不是控制器可下载程序，不是生产派发包，也不是真实机器人执行结论。</p>
-    <h2>下一阶段 NV01 输出目标</h2>
-    <p>NV01 的目标命令暂定为：</p>
+    <h2>下一阶段 K01 + NV01 输出目标</h2>
+    <p>K01 + NV01 的目标命令暂定为：</p>
     <pre><code>cd weld-experience-engine
 uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
   --source-demo-dir artifacts/demo/skill-asset-evidence \
   --outdir artifacts/demo/nvidia-digital-twin-foundation</code></pre>
     <p>预期输出包括：</p>
     <ul>
-      <li><code>nv01_summary.md/json</code></li>
-      <li><code>weld_skill_digital_twin_package.json</code></li>
-      <li><code>openusd_scene_manifest.json</code></li>
-      <li><code>isaac_sim_replay_config.json</code></li>
-      <li><code>domain_randomization_recipe.json</code></li>
-      <li><code>training_readiness_report.json</code></li>
-      <li><code>nvidia_stack_alignment_matrix.json</code></li>
+    <li><code>nv01_summary.md/json</code></li>
+    <li><code>weld_procedure_knowledge_contract.json</code></li>
+    <li><code>weld_procedure_parameter_set.json</code></li>
+    <li><code>weld_procedure_validation_report.json</code></li>
+    <li><code>procedure_to_nv01_mapping_matrix.json</code></li>
+    <li><code>weld_skill_digital_twin_package.json</code></li>
+    <li><code>openusd_scene_manifest.json</code></li>
+    <li><code>isaac_sim_replay_config.json</code></li>
+    <li><code>domain_randomization_recipe.json</code></li>
+    <li><code>training_readiness_report.json</code></li>
+    <li><code>nvidia_stack_alignment_matrix.json</code></li>
     </ul>
-    <p>这些 artifact 的第一版目标是 <code>ready_for_simulation_replay_package_design</code> 和 <code>not_ready_for_policy_training</code>。它们是面向 OpenUSD/Isaac 的输入合同和审查材料，不是已完成的 Isaac Sim runtime 结果。</p>
+    <p>这些 artifact 的第一版目标是 <code>ready_for_procedure_contract_review</code>、<code>ready_for_simulation_replay_package_design</code> 和 <code>not_ready_for_policy_training</code>。它们是面向工艺/专家审查和 OpenUSD/Isaac 的输入合同，不是正式 WPS/PQR，也不是已完成的 Isaac Sim runtime 结果。</p>
     <h2>历史能力索引</h2>
     <p>以下能力仍可作为 evidence source、历史支撑或反证来源，不再作为默认项目主线：</p>
     <ul>
-      <li>经验结构化 POC、技能迁移 MVP、资料底座 gate、<code>SyntheticSkillDataset v2</code> 输入规范 gate 和仿真输出接入 gate。</li>
-      <li><code>SkillDataset</code>、<code>WeldSkillPackage</code>、<code>WeldSkillUnit</code>、迁移评测和旧 evidence 输出结构。</li>
-      <li>simlite/mock bundle 作为 L0 稳定仿真和测试基线。</li>
-      <li>ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation、Phase 2 sharded accumulation、1000 requested samples next-batch。</li>
-      <li>批量焊接任务建模与验证闭环，默认 8 个 modeled task specs。</li>
-      <li>Gazebo/MoveIt 候选路线失败边界记录。</li>
-      <li>从 <code>SimulationEvidenceBundle</code> 到 <code>RobotProcessPackageDraft</code> 的机器人候选草案转换。</li>
-      <li>Rerun 证据回放兼容处理。</li>
-      <li>焊接工艺参数 Excel 表格；它是工程师参数参考，不是正式 WPS/PQR。</li>
-      <li>前期 POC、MVP、gate、白皮书和旧计划材料，统一保留在 <code>docs/archive/</code>。</li>
+    <li>经验结构化 POC、技能迁移 MVP、资料底座 gate、<code>SyntheticSkillDataset v2</code> 输入规范 gate 和仿真输出接入 gate。</li>
+    <li><code>SkillDataset</code>、<code>WeldSkillPackage</code>、<code>WeldSkillUnit</code>、迁移评测和旧 evidence 输出结构。</li>
+    <li>simlite/mock bundle 作为 L0 稳定仿真和测试基线。</li>
+    <li>ManiSkill/SAPIEN 小批量默认仿真入口、Phase 1 accumulation、Phase 2 sharded accumulation、1000 requested samples next-batch。</li>
+    <li>批量焊接任务建模与验证闭环，默认 8 个 modeled task specs。</li>
+    <li>Gazebo/MoveIt 候选路线失败边界记录。</li>
+    <li>从 <code>SimulationEvidenceBundle</code> 到 <code>RobotProcessPackageDraft</code> 的机器人候选草案转换。</li>
+    <li>Rerun 证据回放兼容处理。</li>
+    <li>焊接工艺参数 Excel 表格；它已被提升为下一阶段 K01 工艺知识合同源，但仍不是正式 WPS/PQR。</li>
+    <li>前期 POC、MVP、gate、白皮书和旧计划材料，统一保留在 <code>docs/archive/</code>。</li>
     </ul>
     <h2>当前目录结构</h2>
     <pre><code>.
@@ -225,6 +237,7 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 │   ├── evidence/
 │   ├── real-urdf/
 │   ├── archive/
+│   ├── 焊接工艺数据库主要参数表.xlsx
 │   └── superpowers/
 └── weld-experience-engine/
     ├── README.md
@@ -235,11 +248,11 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
     <p>后续推进本项目时，应先判断是否需要同步更新 <a href="details.md">details.md</a>。</p>
     <p>需要更新 <code>details.md</code> 的情况包括：</p>
     <ul>
-      <li>项目阶段、范围或默认主线发生变化。</li>
-      <li><code>ManipulationSkillAsset</code>、A01/B06 mapping、专家审查、IP 支撑矩阵、仿真路线、证据边界或 adapter 边界发生变化。</li>
-      <li>新增或移除重要基础能力、报告命令、验证路径或交付物。</li>
-      <li>下一步计划、风险判断或阶段优先级发生变化。</li>
-      <li>真实焊接质量验证、WPS/PQR、最终仿真器选择等边界判断发生变化。</li>
+    <li>项目阶段、范围或默认主线发生变化。</li>
+    <li><code>ManipulationSkillAsset</code>、A01/B06 mapping、专家审查、IP 支撑矩阵、仿真路线、证据边界或 adapter 边界发生变化。</li>
+    <li>新增或移除重要基础能力、报告命令、验证路径或交付物。</li>
+    <li>下一步计划、风险判断或阶段优先级发生变化。</li>
+    <li>真实焊接质量验证、WPS/PQR、最终仿真器选择等边界判断发生变化。</li>
     </ul>
     <p>更新入口文档、阶段说明或路线说明时，必须同步刷新同目录 HTML 阅读版。尤其是根目录 <code>README.md</code> 和 <code>details.md</code>：Markdown 是维护源，HTML 是面向项目负责人、业务人员、工艺人员和非技术读者的阅读副本。</p>
   </main>

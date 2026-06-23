@@ -13,16 +13,17 @@
 
 ## 当前一句话状态
 
-项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研，下一阶段路线调整为 NV01：以 OpenUSD / Isaac Sim / Isaac Lab 作为未来真实仿真训练闭环主底座，A02 专注焊接技能数字孪生包、工艺知识、证据治理和专家审查。这个状态只表示进入专家审查候选、数字孪生包设计和训练准备合同阶段，不表示真实机器人可执行。
+项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研和焊接工艺参数 Excel，下一阶段路线调整为 K01 + NV01：以 Excel 字段表形成焊接工艺知识合同，以 OpenUSD / Isaac Sim / Isaac Lab 作为未来真实仿真训练闭环主底座。这个状态只表示进入专家审查候选、工艺知识合同设计、数字孪生包设计和训练准备合同阶段，不表示真实机器人可执行。
 
 ## 当前主线判断
 
-现在不适合跳到真实机器人控制，也不应继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac 等作为长期平行候选反复 bake-off。更合理的节奏是承认重底座不应重复造轮子：OpenUSD 负责未来世界模型交换，Isaac Sim 负责未来真实仿真、传感器和合成数据，Isaac Lab 负责后续训练闭环；A02 负责把焊接技能资产、工艺知识、证据链、专家审查和 A01/IP handoff 编译成这些重底座能消费的数字孪生包。
+现在不适合跳到真实机器人控制，也不应继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac 等作为长期平行候选反复 bake-off。更合理的节奏是承认重底座不应重复造轮子：OpenUSD 负责未来世界模型交换，Isaac Sim 负责未来真实仿真、传感器和合成数据，Isaac Lab 负责后续训练闭环；A02 负责把焊接工艺字段合同、技能资产、证据链、专家审查和 A01/IP handoff 编译成这些重底座能消费的数字孪生包。
 
-更合理的主线是：
+更合理的下一阶段目标主线是：
 
 ```text
 SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell run
+-> WeldProcedureKnowledgeContract / WeldProcedureParameterSet
 -> ManipulationSkillAsset
 + RobotBodyAsset(URDF)
 -> RobotContextSpec
@@ -34,7 +35,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 -> future OpenUSD / Isaac Sim / Isaac Lab digital twin and training package
 ```
 
-这一段必须先稳定下来。只有当 skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界、A01/B06 字段映射、专家审查记录和 OpenUSD/Isaac-oriented manifest 都可复跑、可比较、可审查之后，项目才适合继续进入 Isaac Sim runtime、Replicator 合成数据、Isaac Lab 训练环境或真实机器人迁移验证。
+这一段必须先稳定下来。只有当 procedure knowledge contract、skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界、A01/B06 字段映射、专家审查记录和 OpenUSD/Isaac-oriented manifest 都可复跑、可比较、可审查之后，项目才适合继续进入 Isaac Sim runtime、Replicator 合成数据、Isaac Lab 训练环境或真实机器人迁移验证。
 
 这里的“反证工作”仍然重要，但口径发生变化：OpenUSD/Isaac 被提升为未来主底座，其他工具不再作为同等默认主线候选，而是作为历史支撑、轻量测试、对照 adapter 或失败边界反证来源。OpenUSD/Isaac 自身也不能凭品牌直接越过 evidence gate，必须通过 A02 的 canonical schema、manifest、review record 和 readiness report 证明可接入。
 
@@ -48,6 +49,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 明确 A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 继续掌握 `ManipulationSkillAsset`、工艺知识、证据治理、专家审查、A02->A01 handoff 和 IP support。
 - 同步修订 README、仿真路线和模块边界，避免继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac 等写成同等长期候选。
 - 当前仍不引入 Isaac Sim 默认依赖，不写真实 USD stage，不训练 Isaac Lab 策略，不接 Cosmos，不宣称真实机器人可执行。
+- 进一步修订 NV01：保留原有 NVIDIA-native 数字孪生包方向，同时加入 K01 焊接工艺知识合同前置层。`docs/焊接工艺数据库主要参数表.xlsx` 的 47 个字段、8 个类别、21 个必填、12 个条件必填和 14 个补充字段将成为下一阶段字段合同源。
+- 明确 K01 字段需要按必要性和来源双轴分类：必填、条件必填、补充；人必须填写/确认、系统计算、仿真推导、工站回采、资料库引用。
 
 ### 2026-06-22
 
@@ -94,7 +97,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 新增 `modeled_task_specs` 和 `simulation_task_specs_from_modeling_payload`，保证 `modeled_task_specs.json` 可恢复成 `SimulationTaskSpec` 并进入 `default_maniskill_batch_spec`。
 - 新增 `weldcore.simulation_bakeoff.modeling_pipeline` CLI，输出 `modeling_spec.json`、`modeled_task_specs.json` 和 `modeling_validation_report.json`。
 - 当前默认兼容口径为 8 个 modeled tasks x 2 samples = 16 requested samples，用于下一阶段小批量 ManiSkill/SAPIEN 验证。
-- 当前仍不做最终仿真器选型、真实焊接质量验证、正式 WPS/PQR 或真实机器人执行结论。
+- 当时阶段仍不做最终仿真器选型、真实焊接质量验证、正式 WPS/PQR 或真实机器人执行结论。
 
 ### 2026-06-10
 
@@ -122,7 +125,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 1000 next-batch 继续保持当前 2 个默认任务族，避免在扩大样本数时同时扩大任务复杂度。
 - report 中 `next_scale_recommendation` 已从 Phase 1 后建议修正为 Phase 2 后的 1000 next-batch 建议。
 - 下一批若出现 failed samples，采用 failure boundary 策略：优先修环境、仿真运行、adapter/data contract、dataset/evidence export 等具体边界，再讨论切换仿真器或移动到真实机器人路线。
-- 当前仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
+- 当时阶段仍不做最终仿真器选型、真实焊接质量验证或真实机器人执行结论。
 - 完成 1000 requested samples next-batch 真实环境运行审查。
 - 首次运行：1000 requested / 1000 completed / 0 failed / 0 skipped；10 个 shard 均为 `completed_new_run`。
 - 复用运行：同命令复跑 10 个 shard 均为 `reused_existing_result`。
@@ -218,6 +221,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 ## 尚未完成
 
 - OpenUSD / Isaac Sim / Isaac Lab 已被确定为未来真实仿真训练闭环主底座方向，但 NV01 数字孪生包合同尚未实现。
+- K01 焊接工艺知识合同尚未实现；Excel 字段尚未生成 `WeldProcedureKnowledgeContract`、`WeldProcedureParameterSet`、`WeldProcedureValidationReport` 或 `ProcedureToNV01MappingMatrix`。
 - OpenUSD scene manifest、Isaac Sim replay config、domain randomization recipe、training readiness report 和 NVIDIA stack alignment matrix 尚未生成。
 - Isaac Sim runtime 尚未接入，尚未完成 robot import、stage authoring、TCP trajectory replay、传感器仿真、Replicator 合成数据或真实 collision validation。
 - Isaac Lab training environment 尚未设计和运行，尚未定义可执行 observation/action/reward/termination/curriculum。
@@ -236,25 +240,30 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 ## 下一步建议
 
-推荐下一阶段任务调整为：**NV01 NVIDIA-Native Weld Skill Digital Twin Foundation**。
+推荐下一阶段任务调整为：**K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation**。
 
-目标是在当前 Demo Evidence Pack 基础上，把 A02 的技能资产证据链编译为未来 OpenUSD / Isaac Sim / Isaac Lab 能消费的焊接技能数字孪生与训练准备包：
+目标是在当前 Demo Evidence Pack 和焊接工艺参数 Excel 基础上，把 A02 的工艺知识字段、技能资产证据链编译为未来 OpenUSD / Isaac Sim / Isaac Lab 能消费的焊接技能数字孪生与训练准备包：
 
-1. 生成 `WeldSkillDigitalTwinPackage`，绑定 demo evidence pack、canonical artifact、任务清单、readiness boundary 和 NVIDIA stack target。
-2. 生成 `openusd_scene_manifest`，明确未来 USD stage 的 root prim、robot/workpiece/weld task/sensor/safety prim、坐标系、语义标签和 evidence binding。
-3. 生成 `isaac_sim_replay_config`，描述 Isaac Sim robot import、trajectory replay、sensor simulation、Replicator dataset、validation checks 和 missing runtime boundary。
-4. 生成 `domain_randomization_recipe`，把坡口、间隙、工装偏置、反光、烟尘、弧光、TCP 偏差、传感器外参、工艺参数窗口等焊接有效扰动结构化。
-5. 生成 `training_readiness_report`，面向 Isaac Lab 说明 observation、action、reward、termination、curriculum、dataset、evaluation 和 expert gate。
-6. 生成 `nvidia_stack_alignment_matrix`，把 `RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、`ManipulationSkillAsset`、`RobotFeasibilityResult` 和 `ExpertReviewRecord` 映射到 OpenUSD/Isaac/Isaac Lab 层。
-7. 保留真实 TCP/tool/workpiece/sensor 标定、A01 H300 回采、B06 Physical AI Package、专家审查结论和真实焊接质量反馈作为 NV01 之后的真实闭环输入。
+1. 生成 `WeldProcedureKnowledgeContract`，把 Excel 47 个字段转成字段合同。
+2. 生成 `WeldProcedureParameterSet`，表达每个 demo task 当前已有、缺失、可计算、可推导和需要人确认的工艺字段。
+3. 生成 `WeldProcedureValidationReport`，明确必填、条件必填、补充字段覆盖和阻塞状态。
+4. 生成 `ProcedureToNV01MappingMatrix`，把工艺字段映射到 `ManipulationSkillAsset`、OpenUSD process metadata、Isaac replay、domain randomization、training readiness 和 expert gate。
+5. 生成 `WeldSkillDigitalTwinPackage`，绑定 demo evidence pack、procedure contract、canonical artifact、任务清单、readiness boundary 和 NVIDIA stack target。
+6. 生成 `openusd_scene_manifest`，明确未来 USD stage 的 root prim、robot/workpiece/weld task/sensor/safety prim、坐标系、语义标签、procedure metadata 和 evidence binding。
+7. 生成 `isaac_sim_replay_config`，描述 Isaac Sim robot import、trajectory replay、工艺参数输入、sensor simulation、Replicator dataset、validation checks 和 missing runtime boundary。
+8. 生成 `domain_randomization_recipe`，把坡口、间隙、工装偏置、反光、烟尘、弧光、TCP 偏差、传感器外参、工艺参数窗口等焊接有效扰动结构化，并追溯到 K01 字段。
+9. 生成 `training_readiness_report`，面向 Isaac Lab 说明 observation、action、reward、termination、curriculum、dataset、procedure gate、evaluation 和 expert gate。
+10. 生成 `nvidia_stack_alignment_matrix`，把 `WeldProcedureKnowledgeContract`、`RobotBodyAsset`、`RobotContextSpec`、`SceneContextAsset`、`ManipulationSkillAsset`、`RobotFeasibilityResult` 和 `ExpertReviewRecord` 映射到 OpenUSD/Isaac/Isaac Lab 层。
+11. 保留真实 TCP/tool/workpiece/sensor 标定、A01 H300 回采、B06 Physical AI Package、工艺人员确认、专家审查结论和真实焊接质量反馈作为 K01 + NV01 之后的真实闭环输入。
 
-这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把 `ready_for_simulation_replay_package_design` 写成已经完成 Isaac Sim runtime 验证。
+这一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把 Excel/K01 输出写成正式 WPS/PQR，或把 `ready_for_simulation_replay_package_design` 写成已经完成 Isaac Sim runtime 验证。
 
 ## 暂缓事项
 
 - 暂缓新增更多任务族或第三个 `WeldSkillUnit` 作为默认积累对象，避免在 scale shard 未稳定前同时扩大任务复杂度。
 - 暂缓完整 Gazebo/MoveIt 侧集成；它们后续只作为对照 adapter 或反证来源，不再优先于 OpenUSD/Isaac 主底座。
 - 暂缓 Isaac Sim 默认依赖、OpenUSD SDK 强依赖、Isaac Lab 训练、Cosmos 接入、Nucleus 服务化、Isaac ROS/Jetson 部署。
+- 暂缓完整工艺数据库、录入 UI、权限系统和 WPS/PQR 审批系统；本阶段只做字段合同和缺口报告。
 - 暂缓专家审核系统化产品录入；下一阶段先运行最小 `ExpertReviewRecord` 工作流和真实标定记录替换，而不是直接建设审核系统。
 - 暂缓真实机器人执行结论，当前只做候选草案和审查前置条件。
 
@@ -279,7 +288,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - `weldcore.simulation_bakeoff.maniskill_accumulation_pipeline --shards 10 --samples-per-task 50`：10 shards x 100 requested samples，共 1000 requested samples 的 next-batch 积累入口。
 - `weldcore.simulation_bakeoff.modeling_pipeline`：批量焊接任务建模入口，默认生成 8 个 modeled task specs 和 validation report。
 - `docs/evidence/simulation-runs/2026-06-10-next-batch-1000-maniskill-sapien-review.md`：1000 requested samples 真实环境运行审查记录。
-- `docs/焊接工艺数据库主要参数表.xlsx`：工程师参数参考表格。
+- `docs/焊接工艺数据库主要参数表.xlsx`：K01 焊接工艺知识合同源，不是正式 WPS/PQR。
 - `weld-experience-engine/`：可运行的焊接技能资产引擎、测试和报告命令。
 
 ## 最近一次验证方式
@@ -371,12 +380,12 @@ uv run python -m weldcore.simulation_bakeoff.modeling_pipeline \
 ## 风险提醒
 
 - 不要把当前仿真结果写成真实焊接质量验证。
-- 不要把候选仿真软件写成已经完成选型。
+- 不要把历史候选或对照 adapter 写成与 OpenUSD/Isaac 同等优先的长期主线。
 - 不要把 adapter 失败边界写成项目失败；它是当前反证工作的一部分。
 - 不要把 simlite 写成最终仿真器。
 - 不要把 Rerun 写成仿真器、机器人控制总线或生产数据库。
 - 不要把 `RobotProcessPackageDraft` 写成正式机器人工艺包。
 - 不要把 lightweight `RobotFeasibilityResult` 写成完整 IK、真实碰撞检测或真实机器人执行验证。
 - 不要把 `ready_for_expert_review` 写成 `ready_for_robot_execution`。
-- 不要把工程师参数参考表格写成当前主流程数据源或正式 WPS/PQR。
+- 不要把 Excel/K01 字段合同、参数集、系统计算结果或仿真推导结果写成正式 WPS/PQR。
 - 不要删除历史成果；历史材料应继续保留在归档目录中。
