@@ -226,6 +226,45 @@ def test_nvidia_report_generated_artifacts_exclude_preexisting_source_files(tmp_
     assert "_source_demo_evidence/user_note.txt" not in summary["generated_artifacts"]
 
 
+def test_nvidia_report_artifacts_keep_boundaries_and_refs(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+
+    outdir = tmp_path / "nv01"
+
+    summary = run_nvidia_digital_twin_report(outdir=outdir)
+
+    package = json.loads(
+        (outdir / "weld_skill_digital_twin_package.json").read_text(encoding="utf-8")
+    )
+    assert package["source_demo_pack_ref"].endswith("demo_summary.json")
+    assert package["procedure_contract_ref"] == "weld_procedure_knowledge_contract.json"
+    assert "not_ready_for_robot_execution" in package["readiness_boundary"]
+    assert "not_formal_WPS_PQR" in package["readiness_boundary"]
+
+    validation = json.loads(
+        (outdir / "weld_procedure_validation_report.json").read_text(encoding="utf-8")
+    )
+    assert validation["ready_for_simulation_replay_package_design"] is True
+    assert validation["ready_for_expert_review"] is False
+    assert (
+        "blocked_by_missing_human_required_fields"
+        in validation["not_ready_reasons"]
+    )
+
+    isaac = json.loads(
+        (outdir / "isaac_sim_replay_config.json").read_text(encoding="utf-8")
+    )
+    assert "blocked_by_missing_isaac_runtime" in isaac["not_ready_reasons"]
+    assert "ready_for_simulation_replay" not in summary["readiness_states"]
+
+    markdown = (outdir / "nv01_summary.md").read_text(encoding="utf-8")
+    assert "不是正式 WPS/PQR" in markdown
+    assert "不是 ready_for_robot_execution" in markdown
+    assert "Isaac Sim runtime" in markdown
+
+
 def test_nvidia_report_main_prints_json(tmp_path, capsys):
     from weldcore.skill_asset import nvidia_digital_twin_report
 
