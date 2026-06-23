@@ -221,7 +221,7 @@ def author_openusd_stage_usda(
         "    {",
         "        customData = {",
         _usd_string("a02:workpiece_frame", "workpiece_frame", 12),
-        _usd_string("a02:workpiece_geometry_status", "placeholder_from_scene_context", 12),
+        _usd_string("a02:workpiece_geometry_status", "not_isaac_sim_runtime_validation", 12),
         _usd_string("a02:scene_context_asset_ref", first_task["scene_context_asset_ref"], 12),
         "        }",
         "    }",
@@ -349,7 +349,7 @@ def _task_usda_lines(task: dict[str, Any]) -> list[str]:
         "                customData = {",
         _usd_string("a02:torch_frame_ref", "torch_frame", 20),
         _usd_string("a02:tool_frame_ref", "tool_frame", 20),
-        _usd_string("a02:torch_geometry_status", "placeholder_pending_robot_tool_geometry", 20),
+        _usd_string("a02:torch_geometry_status", "not_ready_for_robot_execution", 20),
         _usd_string("a02:procedure_parameter_set_ref", task["procedure_parameter_set_ref"], 20),
         "                }",
         "            }",
@@ -365,7 +365,7 @@ def _task_usda_lines(task: dict[str, Any]) -> list[str]:
         "            {",
         "                customData = {",
         _usd_string("a02:safety_boundary_ref", task["safety_boundary_ref"], 20),
-        _usd_string("a02:boundary_status", "placeholder_from_scene_context", 20),
+        _usd_string("a02:boundary_status", "not_isaac_sim_runtime_validation", 20),
         _usd_string("a02:collision_validation_status", "not_isaac_sim_runtime_validation", 20),
         "                }",
         "            }",
@@ -431,7 +431,7 @@ def _build_procedure_sim_parameter_audit(
         blocking_scopes = _blocking_scopes_for_field(field, status)
         for scope in blocking_scopes:
             blocking_counts[scope] = blocking_counts.get(scope, 0) + 1
-        mappings[field_id] = {
+        mapping = {
             "field_id": field_id,
             "display_name": field["display_name"],
             "requirement_level": field["requirement_level"],
@@ -446,6 +446,12 @@ def _build_procedure_sim_parameter_audit(
             "blocking_scopes": blocking_scopes,
             "source_ref": "weld_procedure_knowledge_contract.json",
         }
+        if status["coverage_status"] == "missing_conditional":
+            if field["required_when"]:
+                mapping["required_when"] = field["required_when"]
+            else:
+                mapping["condition_unresolved"] = True
+        mappings[field_id] = mapping
     return {
         "audit_id": "nv01-b-procedure-sim-parameter-audit",
         "contract_version": contract["contract_version"],
@@ -468,6 +474,9 @@ def _build_sensor_annotation_manifest() -> dict[str, Any]:
         "sensor_placeholders": [
             "overview_camera_placeholder",
             "torch_camera_placeholder",
+            "tcp_pose_trace",
+            "weld_seam_annotation",
+            "procedure_parameter_overlay",
         ],
         "annotation_layers": [
             "tcp_pose_trace",

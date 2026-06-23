@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from weldcore.skill_asset.nvidia_digital_twin_report import (
@@ -16,6 +18,21 @@ def _source_nv01a(tmp_path):
     source_dir = tmp_path / "nv01a"
     run_nvidia_digital_twin_report(outdir=source_dir)
     return source_dir
+
+
+def _stage_status_values(stage):
+    status_keys = {
+        "a02:workpiece_geometry_status",
+        "a02:torch_geometry_status",
+        "a02:sensor_layout_status",
+        "a02:boundary_status",
+        "a02:collision_validation_status",
+    }
+    values = {}
+    for key, value in re.findall(r'string "(a02:[^"]*status)" = "([^"]+)"', stage):
+        if key in status_keys:
+            values.setdefault(key, set()).add(value)
+    return values
 
 
 def test_load_nv01a_artifacts_requires_complete_source(tmp_path):
@@ -93,6 +110,14 @@ def test_build_nv01_b_payloads_create_stage_fixture_and_blocking_reports(tmp_pat
         == "procedure_parameter_inputs.travel_speed_mm_per_min"
     )
     assert "domain_randomization_recipe" in mapping["domain_randomization_usage"]
+    missing_conditional_mappings = [
+        mapping
+        for mapping in audit["mappings"].values()
+        if mapping["coverage_status"] == "missing_conditional"
+    ]
+    assert missing_conditional_mappings
+    for mapping in missing_conditional_mappings:
+        assert mapping.get("required_when") or mapping.get("condition_unresolved")
 
     stage = payloads["openusd_stage_usda"]
     for required in (
@@ -182,6 +207,9 @@ def test_build_nv01_b_payloads_create_stage_fixture_and_blocking_reports(tmp_pat
     assert sensor["sensor_placeholders"] == [
         "overview_camera_placeholder",
         "torch_camera_placeholder",
+        "tcp_pose_trace",
+        "weld_seam_annotation",
+        "procedure_parameter_overlay",
     ]
     assert sensor["annotation_layers"] == [
         "tcp_pose_trace",
@@ -220,6 +248,17 @@ def test_build_nv01_b_payloads_create_stage_fixture_and_blocking_reports(tmp_pat
     ):
         assert key in repro
     assert "no_isaac_sim_default_dependency" in repro["default_dependency_boundary"]
+
+
+def test_openusd_stage_status_custom_data_uses_canonical_nv01_b_statuses(tmp_path):
+    artifacts = load_nv01a_artifacts(_source_nv01a(tmp_path))
+    payloads = build_nv01_b_experiment_payloads(artifacts)
+
+    values_by_key = _stage_status_values(payloads["openusd_stage_usda"])
+
+    assert values_by_key
+    for values in values_by_key.values():
+        assert values <= CANONICAL_NV01B_STATUS
 
 
 def test_openusd_stage_validation_reports_missing_required_contract_parts(tmp_path):
