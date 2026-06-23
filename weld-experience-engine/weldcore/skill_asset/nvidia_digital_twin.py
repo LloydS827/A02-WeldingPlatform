@@ -83,6 +83,11 @@ def build_nvidia_digital_twin_payloads(
 
     first_task_id = demo_summary["tasks"][0]["task_id"]
     mapping_matrix = build_procedure_to_nv01_mapping_matrix(procedure_contract)
+    mapping_matrix = {
+        **mapping_matrix,
+        "procedure_contract_ref": "weld_procedure_knowledge_contract.json",
+        "canonical_artifact_refs_by_task": canonical_refs_by_task,
+    }
     return {
         "weld_procedure_parameter_set": _top_level_parameter_set(
             parameter_sets[first_task_id],
@@ -246,6 +251,7 @@ def _build_package(
         "task_count": demo_summary["task_count"],
         "procedure_contract_ref": "weld_procedure_knowledge_contract.json",
         "source_demo_ref": "demo_summary.json",
+        "source_demo_pack_ref": "demo_summary.json",
         "canonical_artifact_refs_by_task": canonical_refs_by_task,
         "readiness_boundary": [
             "ready_for_simulation_replay_package_design",
