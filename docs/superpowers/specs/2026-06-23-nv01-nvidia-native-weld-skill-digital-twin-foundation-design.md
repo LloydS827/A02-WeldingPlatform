@@ -1,4 +1,4 @@
-# NV01 NVIDIA-Native Weld Skill Digital Twin Foundation 设计
+# K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation 设计
 
 日期：2026-06-23
 
@@ -8,35 +8,40 @@ A02 当前已经稳定收束为“机器人技能大师能力的焊接技能资�
 
 上一阶段回答了“技能资产链路能否跑通、能否解释、能否进入专家审查候选”。新的问题是：如果 A02 的长期目标是成为真实仿真、合成数据和训练闭环的技术底座，是否还应继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac 等作为平行候选反复 bake-off？
 
-结合项目现状和 `docs/Nvidia技术框架调研.md` 的判断，本阶段设计结论是：**不应重复造重底座，也不应把所有仿真/训练框架长期平行化。A02 应把 NVIDIA OpenUSD / Isaac Sim / Isaac Lab 作为未来真实仿真与训练闭环的主底座，自己专注焊接领域资产、工艺知识、证据治理和专家审查。**
+结合项目现状、`docs/Nvidia技术框架调研.md` 和 `docs/焊接工艺数据库主要参数表.xlsx` 的判断，本阶段设计结论是：**不应重复造重底座，也不应把所有仿真/训练框架长期平行化。A02 应把 NVIDIA OpenUSD / Isaac Sim / Isaac Lab 作为未来真实仿真与训练闭环的主底座，同时把焊接工艺数据库参数表提升为焊接知识资产合同源。**
 
 这不是把 A02 改造成 Omniverse 应用，也不是马上引入 Isaac Sim 作为默认依赖。更准确的定位是：
 
 ```text
 A02 = Weld Skill Digital Twin & Training Orchestrator
 
+Excel weld procedure parameter dictionary = welding knowledge contract source
 NVIDIA OpenUSD / Isaac Sim / Isaac Lab = future physical AI simulation and training foundation
-A02 canonical schema = welding domain asset, evidence governance, expert review, A01/IP handoff
+A02 canonical schema = welding domain asset, procedure knowledge, evidence governance, expert review, A01/IP handoff
 ```
+
+`docs/焊接工艺数据库主要参数表.xlsx` 当前包含 47 个字段、8 个参数类别，其中 21 个必填、12 个条件必填、14 个可选/补充字段。它表达的是人对焊接工艺参数结构化的具体要求，不能再只作为工程师参考表格存在；它应成为 NV01 之前的 **K01 Weld Procedure Knowledge Contract** 输入。
 
 ## 2. 设计目标
 
 本阶段主题是：
 
 ```text
-NV01 NVIDIA-Native Weld Skill Digital Twin Foundation
+K01 + NV01 Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation
 ```
 
-目标是把下一阶段从“泛泛兼容 NVIDIA 生态”推进为“面向未来真实仿真/训练闭环的 NVIDIA-native 底座准备”。第一轮交付不直接运行 Isaac Sim，而是定义并生成一个可验证的 **Weld Skill Digital Twin Package** 合同，让 A02 当前的技能资产、机器人上下文、场景上下文和证据链可以被明确编译到 OpenUSD/Isaac 工作流。
+目标是把下一阶段从“泛泛兼容 NVIDIA 生态”推进为“由焊接工艺知识合同约束的 NVIDIA-native 底座准备”。第一轮交付不直接运行 Isaac Sim，而是定义并生成一个可验证的 **Weld Procedure Knowledge Contract + Weld Skill Digital Twin Package** 合同，让 A02 当前的技能资产、机器人上下文、场景上下文、工艺字段和证据链可以被明确编译到 OpenUSD/Isaac 工作流。
 
 该包要回答：
 
-1. A02 哪些 canonical 对象映射到 OpenUSD 世界模型。
-2. 一个焊接任务进入 Isaac Sim replay / sensor simulation / synthetic data 前需要哪些 manifest。
-3. 哪些字段已经由当前 Demo Evidence Pack 支撑，哪些字段仍缺真实工位、标定、传感器、机器人模型或质量反馈。
-4. 为什么当前目标是 `ready_for_simulation_replay_package_design` / `ready_for_training_design_review`，不是 `ready_for_robot_execution`。
-5. 后续 Isaac Lab 训练闭环需要哪些 observation、action、reward、randomization、dataset 和 evaluation 契约。
-6. Cosmos、Omniverse/Nucleus、Isaac ROS 等能力应处在什么后续阶段，而不是提前塞进默认路径。
+1. Excel 中 47 个焊接工艺字段如何变成 A02 可审计的字段合同。
+2. 哪些字段是核心必填、条件必填、补充增强；哪些必须由人填写或确认，哪些可由系统计算、仿真推导、工站回采或资料库引用。
+3. A02 哪些 canonical 对象映射到 OpenUSD 世界模型。
+4. 一个焊接任务进入 Isaac Sim replay / sensor simulation / synthetic data 前需要哪些 procedure metadata 和 manifest。
+5. 哪些字段已经由当前 Demo Evidence Pack 支撑，哪些字段仍缺真实工位、标定、传感器、机器人模型、工艺人员确认或质量反馈。
+6. 为什么当前目标是 `ready_for_procedure_contract_review`、`ready_for_simulation_replay_package_design` / `ready_for_training_design_review`，不是 `ready_for_robot_execution` 或正式 WPS/PQR。
+7. 后续 Isaac Lab 训练闭环需要哪些 observation、action、reward、randomization、dataset 和 evaluation 契约。
+8. Cosmos、Omniverse/Nucleus、Isaac ROS 等能力应处在什么后续阶段，而不是提前塞进默认路径。
 
 ## 3. 关键决策
 
@@ -83,6 +88,33 @@ NVIDIA 栈负责或承接：
 - Replicator 合成数据与 domain randomization。
 - Isaac Lab 训练环境和策略评测。
 
+### 3.6 K01 是 NV01 的焊接知识前置合同
+
+NV01 不能只表达机器人、场景和轨迹。它必须先消费 K01 输出的焊接工艺知识合同，否则数字孪生包会退化成“机器人仿真包”，而不是“焊接技能资产包”。
+
+K01 第一版从 `docs/焊接工艺数据库主要参数表.xlsx` 读取字段字典，并生成：
+
+- `WeldProcedureKnowledgeContract`：字段定义、必要性、数据类型、单位、条件必填规则、来源模式、目标对象路径和证据边界。
+- `WeldProcedureParameterSet`：某个 demo task / skill asset 当前已有的工艺参数值、来源、审查状态和缺失项。
+- `WeldProcedureValidationReport`：必填、条件必填和补充字段的覆盖情况，以及是否阻塞 expert review、simulation replay design 或 training design。
+- `ProcedureToNV01MappingMatrix`：每个工艺字段如何进入 `ManipulationSkillAsset`、OpenUSD metadata、Isaac replay config、domain randomization、training readiness 或 expert gate。
+
+字段必须按两轴分类：
+
+| 分类轴 | 建议枚举 | 含义 |
+| --- | --- | --- |
+| `requirement_level` | `required` / `conditional_required` / `supplemental` | 对应 Excel 的必填、条件必填、可选/补充 |
+| `acquisition_mode` | `human_required` / `human_confirmed_or_imported` / `system_computed` / `asset_or_simulation_inferred` / `workcell_logged` / `reference_catalog` | 表示字段由人填、系统算、仿真推导、工站回采或资料库引用 |
+
+默认分类原则：
+
+- `human_required`：WPS/PQR 编号、质量验收要求、无损检测等级、适用设备/产线、标准编号等必须由工艺/质量/项目人员确认的字段。
+- `human_confirmed_or_imported`：母材、焊材、接头、坡口、焊接方法等可从任务资料导入但仍需人确认的字段。
+- `system_computed`：热输入、单位换算、字段覆盖率和缺失状态等可由系统计算的字段。
+- `asset_or_simulation_inferred`：焊接速度、摆弧宽度/频率、焊枪角度、焊枪干伸长、焊道布置等可由技能资产或仿真候选推导但仍需审查的字段。
+- `workcell_logged`：实际电流、电压、送丝速度、机器人轨迹、执行异常和质量反馈等来自真实工站或设备日志的字段。
+- `reference_catalog`：材料牌号、焊材型号、焊接方法编码、标准/检测术语等来自资料库或标准库的字段。
+
 ## 4. 非目标
 
 本阶段不做以下事情：
@@ -94,6 +126,8 @@ NVIDIA 栈负责或承接：
 - 不接入 Cosmos API 或模型。
 - 不接入 Isaac ROS、Jetson、真实机器人控制器、PLC 或安全回路。
 - 不替换 `ManipulationSkillAsset` canonical schema。
+- 不建设完整工艺数据库、录入 UI、权限系统或 WPS/PQR 审批系统。
+- 不把 Excel 字段表、K01 参数集或任何计算结果写成正式 WPS/PQR。
 - 不把 lightweight `RobotFeasibilityResult` 升级成完整 IK、真实碰撞检测或真实机器人执行验证。
 - 不宣称真实焊接质量验证、正式 WPS/PQR、熔池/热过程物理仿真或机器人可执行。
 
@@ -109,11 +143,11 @@ NVIDIA 栈负责或承接：
 
 ### 方案 B：NVIDIA-native 数字孪生包
 
-新增 Weld Skill Digital Twin Package 合同，让 demo evidence pack 产出的技能资产可以被编译成 OpenUSD/Isaac-oriented manifest、replay config、randomization recipe 和 training readiness report。
+新增 K01 + NV01 合同，让 Excel 工艺字段、demo evidence pack 和技能资产一起编译成 OpenUSD/Isaac-oriented manifest、replay config、randomization recipe 和 training readiness report。
 
-优点：把 OpenUSD/Isaac 提升为一等目标，路线足够激进；同时不把重依赖塞进默认测试，保持项目可运行。
+优点：把 OpenUSD/Isaac 提升为一等目标，同时用焊接工艺知识合同守住 A02 的领域资产核心；不把重依赖塞进默认测试，保持项目可运行。
 
-缺点：第一版还不能证明 Isaac Sim 内部真实运行，只能证明 A02 的输出合同已经为它准备好。
+缺点：第一版还不能证明 Isaac Sim 内部真实运行，也不能生成正式 WPS/PQR；它只能证明 A02 的知识合同和输出合同已经为 NVIDIA workflow 准备好。
 
 ### 方案 C：完整 Isaac Sim/Isaac Lab 集成
 
@@ -143,6 +177,10 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 artifacts/demo/nvidia-digital-twin-foundation/
 ├── nv01_summary.md
 ├── nv01_summary.json
+├── weld_procedure_knowledge_contract.json
+├── weld_procedure_parameter_set.json
+├── weld_procedure_validation_report.json
+├── procedure_to_nv01_mapping_matrix.json
 ├── weld_skill_digital_twin_package.json
 ├── openusd_scene_manifest.json
 ├── isaac_sim_replay_config.json
@@ -151,11 +189,85 @@ artifacts/demo/nvidia-digital-twin-foundation/
 ├── nvidia_stack_alignment_matrix.json
 └── task-<unit-id>/
     ├── skill_asset_ref.json
+    ├── weld_procedure_parameter_set.json
+    ├── weld_procedure_validation_report.json
     ├── openusd_task_manifest.json
     ├── isaac_replay_task_config.json
     ├── sensor_and_annotation_manifest.json
     └── training_task_readiness.json
 ```
+
+### 6.0 K01 工艺知识合同 artifact
+
+`weld_procedure_knowledge_contract.json` 必须从 `docs/焊接工艺数据库主要参数表.xlsx` 生成，且至少包含：
+
+- `source_workbook_ref`
+- `contract_version`
+- `field_count`，默认应为 `47`
+- `category_count`，默认应为 `8`
+- `requirement_summary`，默认应包含 `required=21`、`conditional_required=12`、`supplemental=14`
+- `categories`
+- `fields`
+- `a02_target_paths`
+- `nv01_usage_tags`
+- `evidence_boundary`
+
+每个字段定义至少包含：
+
+- `field_id`
+- `category`
+- `display_name`
+- `description`
+- `data_type`
+- `unit`
+- `requirement_level`
+- `required_when`
+- `acquisition_mode`
+- `human_role`
+- `a02_target_path`
+- `nv01_usage`
+- `blocks`
+- `evidence_boundary`
+
+`weld_procedure_parameter_set.json` 表达某个 demo pack 或 task 当前已有的工艺参数值，至少包含：
+
+- `parameter_set_id`
+- `skill_asset_id`
+- `contract_version`
+- `values`
+- `missing_required_fields`
+- `missing_conditional_fields`
+- `supplemental_gaps`
+- `source_summary`
+- `review_boundary`
+
+`weld_procedure_validation_report.json` 至少包含：
+
+- `validation_status`
+- `ready_for_procedure_contract_review`
+- `ready_for_expert_review`
+- `ready_for_simulation_replay_package_design`
+- `ready_for_training_design_review`
+- `not_ready_reasons`
+- `field_coverage`
+- `human_required_gaps`
+- `computed_fields`
+- `inferred_fields`
+- `workcell_logged_gaps`
+- `wps_pqr_boundary`
+
+默认允许 `ready_for_simulation_replay_package_design=true` 同时 `ready_for_expert_review=false`，前提是缺失项已清楚写入 validation report。原因是 Isaac manifest 可以先形成设计包，但正式专家审查必须等待人填/确认字段。
+
+`procedure_to_nv01_mapping_matrix.json` 必须说明每个字段如何进入：
+
+- `ManipulationSkillAsset.constraints`
+- `ManipulationSkillAsset.context_requirements`
+- `ExpertReviewRecord.required_real_context`
+- `OpenUSD process_metadata`
+- `Isaac Sim replay config`
+- `domain_randomization_recipe`
+- `training_readiness_report`
+- `A02ToA01ProductValidationHandoff`
 
 ### 6.1 `weld_skill_digital_twin_package.json`
 
@@ -164,6 +276,9 @@ artifacts/demo/nvidia-digital-twin-foundation/
 - `package_id`
 - `package_version`
 - `source_demo_pack_ref`
+- `procedure_contract_ref`
+- `procedure_parameter_set_refs`
+- `procedure_validation_report_refs`
 - `canonical_object_refs`
 - `task_count`
 - `tasks`
@@ -197,6 +312,7 @@ ready_for_simulation_replay_package_design
 - `fixture_and_obstacle_prims`
 - `sensor_prims`
 - `process_metadata`
+- `procedure_parameter_bindings`
 - `a02_evidence_bindings`
 - `missing_usd_authoring_inputs`
 
@@ -224,6 +340,7 @@ ready_for_simulation_replay_package_design
 - `robot_import_requirements`
 - `task_replay_plan`
 - `physics_assumptions`
+- `procedure_parameter_inputs`
 - `sensor_simulation_plan`
 - `replicator_dataset_plan`
 - `validation_checks`
@@ -242,7 +359,7 @@ ready_for_simulation_replay_package_design
 
 ### 6.4 `domain_randomization_recipe.json`
 
-必须围绕焊接有效扰动，不只随机灯光和材质：
+必须围绕焊接有效扰动，不只随机灯光和材质。扰动项应优先来自 K01 字段合同和当前 task 的 parameter set：
 
 - groove gap / bevel / root face / plate thickness
 - workpiece and fixture offset
@@ -260,7 +377,9 @@ ready_for_simulation_replay_package_design
 - `range_or_distribution`
 - `source_assumption`
 - `linked_a02_fields`
+- `linked_procedure_fields`
 - `requires_real_calibration`
+- `requires_human_confirmation`
 - `training_use`
 
 ### 6.5 `training_readiness_report.json`
@@ -277,6 +396,7 @@ ready_for_simulation_replay_package_design
 - `dataset_requirements`
 - `sim_to_real_gap`
 - `expert_review_gates`
+- `procedure_contract_gates`
 - `blocked_by`
 
 默认 `training_status` 建议为：
@@ -294,6 +414,8 @@ not_ready_for_policy_training
 | A02 对象 | NVIDIA 层 | 当前状态 |
 | --- | --- | --- |
 | `RobotBodyAsset` | OpenUSD robot prim / Isaac robot import | URDF 可解析，但未 vendor validated |
+| `WeldProcedureKnowledgeContract` | OpenUSD process metadata / Isaac task context / Isaac Lab env config | Excel 字段可生成合同，但尚未实现 |
+| `WeldProcedureParameterSet` | per-task process inputs / randomization anchors / expert gate | 当前缺人填字段和真实工站确认 |
 | `RobotContextSpec` | frames, TCP, joint limits, robot metadata | nominal context，未真实标定 |
 | `SceneContextAsset` | workpiece, seam, fixtures, safety zones | 默认场景，可生成 manifest |
 | `ManipulationSkillAsset.motion` | TCP trajectory / replay path | simulation-only evidence |
@@ -304,12 +426,16 @@ not_ready_for_policy_training
 
 ## 7. 数据流
 
-NV01 默认数据流：
+K01 + NV01 默认数据流：
 
 ```text
+docs/焊接工艺数据库主要参数表.xlsx
+-> WeldProcedureKnowledgeContract
 Demo Evidence Pack
 -> per-task SimulationEvidenceBundle
 -> ManipulationSkillAsset
+-> WeldProcedureParameterSet
+-> WeldProcedureValidationReport
 -> RobotBodyAsset / RobotContextSpec / SceneContextAsset
 -> SkillTransferAssessment / ExpertReviewRecord
 -> WeldSkillDigitalTwinPackage
@@ -323,7 +449,10 @@ Demo Evidence Pack
 关键约束：
 
 - 所有 NVIDIA-oriented artifact 必须能追溯到 A02 canonical artifact。
+- 所有 procedure metadata 必须能追溯到 `WeldProcedureKnowledgeContract` 或 `WeldProcedureParameterSet`。
 - 任何缺失字段必须进入 `missing_*` 或 `blocked_by`，不能被默认值掩盖。
+- 人必须填写或确认的字段不得被仿真值、默认值或计算值自动降级为“已满足”。
+- Excel 字段表是 WPS/PQR-ready 字段合同，不是正式 WPS/PQR。
 - `ready_for_simulation_replay_package_design` 不能升级成 `ready_for_simulation_replay`，除非真实 Isaac Sim runtime 完成运行。
 - `not_ready_for_policy_training` 是训练准备报告的正常初始状态，不是失败。
 
@@ -338,6 +467,8 @@ weldcore.skill_asset.nvidia_digital_twin_report
 职责：
 
 - 读取或生成 Demo Evidence Pack。
+- 从 `docs/焊接工艺数据库主要参数表.xlsx` 构建 K01 procedure contract payload。
+- 为每个 demo task 构建 procedure parameter set 和 validation report。
 - 构建 NVIDIA-oriented manifest/report。
 - 写出 NV01 summary 和 JSON artifacts。
 - 验证 artifact 之间的引用完整性。
@@ -351,6 +482,7 @@ weldcore.skill_asset.nvidia_digital_twin
 职责：
 
 - 从 canonical artifact 生成 `WeldSkillDigitalTwinPackage` payload。
+- 生成 `WeldProcedureKnowledgeContract`、`WeldProcedureParameterSet`、`WeldProcedureValidationReport` 和 procedure mapping payload。
 - 构建 OpenUSD manifest payload。
 - 构建 Isaac Sim replay config payload。
 - 构建 domain randomization recipe payload。
@@ -362,6 +494,8 @@ weldcore.skill_asset.nvidia_digital_twin
 - 写真实 USD stage。
 - 训练模型。
 - 生成机器人程序。
+- 生成、审批或替代正式 WPS/PQR。
+- 建设完整工艺数据库、录入 UI 或权限系统。
 - 修改 A02 canonical schema 的含义。
 
 ## 9. 状态与门控
@@ -369,6 +503,10 @@ weldcore.skill_asset.nvidia_digital_twin
 新增状态建议：
 
 - `ready_for_simulation_replay_package_design`：manifest 和 config 可审查，但未在 Isaac Sim 运行。
+- `ready_for_procedure_contract_review`：K01 字段合同和缺口报告可供工艺/质量人员审查。
+- `blocked_by_missing_human_required_fields`：缺少必须由人填写或确认的字段，不能进入专家审查结论。
+- `blocked_by_missing_conditional_procedure_fields`：场景触发了条件必填字段，但参数集未覆盖。
+- `computed_not_wps_validated`：字段由系统计算得到，可用于设计审查，但不能作为 WPS/PQR 结论。
 - `blocked_by_missing_openusd_scene_inputs`：缺 USD stage 必需的机器人/场景/坐标系输入。
 - `blocked_by_missing_isaac_runtime`：缺 Isaac Sim 环境，不影响默认结构验证。
 - `not_ready_for_policy_training`：训练闭环合同已描述，但缺训练数据、环境、reward validation 或专家 gate。
@@ -379,6 +517,7 @@ weldcore.skill_asset.nvidia_digital_twin
 禁止状态升级：
 
 - 不得从 NV01 artifact 直接得出 `ready_for_robot_execution`。
+- 不得从 K01 artifact 直接得出正式 WPS/PQR 或真实焊接质量结论。
 - 不得从 `ready_for_simulation_replay_package_design` 直接得出 `ready_for_policy_training`。
 - 不得把 `blocked_by_missing_isaac_runtime` 写成项目失败；它只是当前本地没有重运行时。
 
@@ -386,36 +525,42 @@ weldcore.skill_asset.nvidia_digital_twin
 
 第一版错误处理应保持简单：
 
-1. 缺少 source demo pack 时，命令可以自动生成默认 demo pack，或给出明确错误提示。
-2. 某个任务缺 canonical artifact 时，该任务进入 blocked 状态，整体 summary 保留其他任务结果。
-3. 缺真实 URDF、真实 TCP 标定、工件坐标系测量、传感器标定或质量反馈时，不抛异常；写入 readiness boundary。
-4. artifact 引用不一致时应失败，因为这会破坏证据可审计性。
-5. Isaac Sim 未安装不应导致失败，因为 NV01 第一版不运行 Isaac Sim。
+1. 缺少 source demo pack 时，命令默认自动生成默认 demo pack。
+2. 缺少 `docs/焊接工艺数据库主要参数表.xlsx` 时应失败，因为 K01 是 NV01 的前置知识合同源。
+3. Excel 字段表结构无法解析、字段数不符合预期或缺少关键列时应失败，避免生成不可信合同。
+4. 某个任务缺 canonical artifact 时，该任务进入 blocked 状态，整体 summary 保留其他任务结果。
+5. 缺人填字段、真实 URDF、真实 TCP 标定、工件坐标系测量、传感器标定或质量反馈时，不抛异常；写入 validation report 和 readiness boundary。
+6. artifact 引用不一致时应失败，因为这会破坏证据可审计性。
+7. Isaac Sim 未安装不应导致失败，因为 NV01 第一版不运行 Isaac Sim。
 
 ## 11. 测试策略
 
 新增测试应覆盖：
 
-1. NV01 命令能生成顶层 8 份 JSON/Markdown artifact。
-2. 输出能覆盖默认 2 个 demo task。
-3. `openusd_scene_manifest.json` 包含 root prim、robot/workpiece/weld task/sensor/safety prim plan。
-4. `isaac_sim_replay_config.json` 明确写出 `blocked_by_missing_isaac_runtime` 或等价 runtime boundary。
-5. `domain_randomization_recipe.json` 包含焊接有效扰动，而不只是通用视觉扰动。
-6. `training_readiness_report.json` 默认状态为 `not_ready_for_policy_training`，并列出缺失项。
-7. 所有 NVIDIA-oriented artifact 都能追溯到 `ManipulationSkillAsset` 或 Demo Evidence Pack artifact。
-8. 每个 `task-<unit-id>/` 目录都包含 `skill_asset_ref.json`、`openusd_task_manifest.json`、`isaac_replay_task_config.json`、`sensor_and_annotation_manifest.json` 和 `training_task_readiness.json`。
-9. README/details/仿真路线文档中的路线表述与 NV01 一致。
-10. 现有 `asset_report` 和 `demo_report` 测试继续通过。
+1. NV01 命令能生成顶层 K01 + NV01 JSON/Markdown artifact。
+2. `weld_procedure_knowledge_contract.json` 从 Excel 生成，字段数为 47，类别数为 8，requirement summary 为 21 必填、12 条件必填、14 补充/可选。
+3. 字段定义包含 `requirement_level`、`acquisition_mode`、`a02_target_path`、`nv01_usage` 和 `blocks`。
+4. `weld_procedure_validation_report.json` 能区分人填缺口、条件必填缺口、系统计算字段、仿真推导字段和真实工站回采缺口。
+5. `procedure_to_nv01_mapping_matrix.json` 能把工艺字段映射到 `ManipulationSkillAsset`、OpenUSD process metadata、Isaac replay、domain randomization 和 training readiness。
+6. 输出能覆盖默认 2 个 demo task。
+7. `openusd_scene_manifest.json` 包含 root prim、robot/workpiece/weld task/sensor/safety prim plan 和 procedure parameter bindings。
+8. `isaac_sim_replay_config.json` 明确写出 `blocked_by_missing_isaac_runtime` 或等价 runtime boundary。
+9. `domain_randomization_recipe.json` 包含焊接有效扰动，且扰动项能追溯到 K01 procedure fields。
+10. `training_readiness_report.json` 默认状态为 `not_ready_for_policy_training`，并列出 procedure contract gates。
+11. 所有 NVIDIA-oriented artifact 都能追溯到 `ManipulationSkillAsset` 或 Demo Evidence Pack artifact。
+12. 每个 `task-<unit-id>/` 目录都包含 `skill_asset_ref.json`、`weld_procedure_parameter_set.json`、`weld_procedure_validation_report.json`、`openusd_task_manifest.json`、`isaac_replay_task_config.json`、`sensor_and_annotation_manifest.json` 和 `training_task_readiness.json`。
+13. README/details/仿真路线文档中的路线表述与 K01 + NV01 一致。
+14. 现有 `asset_report` 和 `demo_report` 测试继续通过。
 
 ## 12. 文档更新
 
 本阶段需要同步更新：
 
-- `README.md`：增加 NVIDIA-native physical AI 底座路线和下一阶段 NV01。
-- `details.md`：记录 2026-06-23 路线判断变化，并把下一步建议改为 NV01。
+- `README.md`：增加 K01 焊接工艺知识合同与 NVIDIA-native physical AI 底座路线。
+- `details.md`：记录 2026-06-23 路线判断变化，并把下一步建议改为 K01 + NV01。
 - `docs/simulation/README.md`：从旧的候选仿真路线更新为 OpenUSD/Isaac 主底座路线。
 - `docs/simulation/robot-like-simulation-route.md`：更新 R 层角色、决策矩阵和第一轮验证建议。
-- `docs/architecture/module-boundaries.md`：补充 NVIDIA adapter 边界，明确 OpenUSD/Isaac 不能替代 `ManipulationSkillAsset`。
+- `docs/architecture/module-boundaries.md`：补充 K01 和 NVIDIA adapter 边界，明确 Excel/K01/OpenUSD/Isaac 都不能替代 `ManipulationSkillAsset`。
 - `weld-experience-engine/README.md`：说明 NV01 是下一阶段目标，不是当前默认 runtime。
 - `README.html`、`details.html`：从 Markdown 同步刷新阅读副本。
 
@@ -423,33 +568,27 @@ weldcore.skill_asset.nvidia_digital_twin
 
 本阶段完成时应满足：
 
-1. NV01 spec 已写入 `docs/superpowers/specs/` 并通过 spec review。
-2. README、details、simulation docs、module boundary docs 和 engine README 已同步到 NVIDIA-native 路线。
-3. 文档明确表达 OpenUSD/Isaac Sim/Isaac Lab 是未来真实仿真训练闭环主底座。
-4. 文档同时明确 A02 canonical truth 仍是 `ManipulationSkillAsset` 和证据链。
-5. 文档明确当前不引入 Isaac Sim 默认依赖、不训练模型、不宣称真实机器人执行。
-6. 下一阶段 implementation plan 可以直接围绕 `nvidia_digital_twin_report`、manifest/report payload、测试和文档展开。
+1. NV01 spec 已修订为 K01 + NV01，并通过 spec review。
+2. README、details、simulation docs、module boundary docs 和 engine README 已同步到 K01 + NVIDIA-native 路线。
+3. 文档明确表达 Excel 字段表是焊接工艺知识合同源，OpenUSD/Isaac Sim/Isaac Lab 是未来真实仿真训练闭环主底座。
+4. 文档同时明确 A02 canonical truth 仍是 `ManipulationSkillAsset`、工艺知识合同和证据链。
+5. 文档明确当前不生成正式 WPS/PQR、不引入 Isaac Sim 默认依赖、不训练模型、不宣称真实机器人执行。
+6. 下一阶段 implementation plan 可以直接围绕 `nvidia_digital_twin_report`、K01 procedure payload、NV01 manifest/report payload、测试和文档展开。
 
 ## 14. 后续阶段路线
 
 NV01 之后建议按以下顺序推进：
 
-1. **NV01-A：Manifest Evidence Pack**  
-   生成 OpenUSD/Isaac-oriented manifest、randomization recipe 和 training readiness report。
+1. **K01 + NV01-A：Procedure-Constrained Manifest Evidence Pack**：从 Excel 生成 procedure knowledge contract、parameter set、validation report，再生成 OpenUSD/Isaac-oriented manifest、randomization recipe 和 training readiness report。
 
-2. **NV01-B：OpenUSD Authoring Spike**  
-   在可选依赖下尝试写出最小 `.usda` stage，优先保证 frames、prim path、semantic label 和 evidence binding 正确。
+2. **NV01-B：OpenUSD Authoring Spike**：在可选依赖下尝试写出最小 `.usda` stage，优先保证 frames、prim path、semantic label 和 evidence binding 正确。
 
-3. **NV01-C：Isaac Sim Replay Spike**  
-   在外部 Isaac Sim 环境中导入 stage/manifest，跑 1 个任务的 TCP trajectory replay、基础 collision/reachability 检查和传感器视野检查。
+3. **NV01-C：Isaac Sim Replay Spike**：在外部 Isaac Sim 环境中导入 stage/manifest，跑 1 个任务的 TCP trajectory replay、基础 collision/reachability 检查和传感器视野检查。
 
-4. **NV02：Replicator Synthetic Welding Perception Dataset**  
-   使用 Isaac Sim/Replicator 生成焊缝检测、轮廓、关键点和遮挡/烟尘/反光增强数据。
+4. **NV02：Replicator Synthetic Welding Perception Dataset**：使用 Isaac Sim/Replicator 生成焊缝检测、轮廓、关键点和遮挡/烟尘/反光增强数据。
 
-5. **NV03：Isaac Lab Training Environment Design Review**  
-   基于 observation/action/reward/randomization 合同，设计受约束局部位姿修正或 seam tracking 策略训练环境。
+5. **NV03：Isaac Lab Training Environment Design Review**：基于 observation/action/reward/randomization 合同，设计受约束局部位姿修正或 seam tracking 策略训练环境。
 
-6. **NV04：Real Calibration and Expert-Gated Sim-to-Real Loop**  
-   接入真实 TCP/tool/workpiece/sensor 标定、真实或脱敏工站回放和专家审查结论，让训练闭环开始面对真实误差。
+6. **NV04：Real Calibration and Expert-Gated Sim-to-Real Loop**：接入真实 TCP/tool/workpiece/sensor 标定、真实或脱敏工站回放和专家审查结论，让训练闭环开始面对真实误差。
 
 Cosmos、Nucleus、Isaac ROS 和 Jetson/边缘部署应分别进入更后续阶段：前者用于长尾数据增强，Nucleus 用于企业资产协同，Isaac ROS/Jetson 用于真实工位推理部署。它们都不应抢在 NV01 的数字孪生包合同之前成为默认主线。
