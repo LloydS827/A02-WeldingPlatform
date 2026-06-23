@@ -193,6 +193,123 @@ def build_weld_procedure_knowledge_contract(
     }
 
 
+def build_weld_procedure_parameter_set(
+    skill_asset: Any,
+    contract: dict[str, Any],
+    artifact_refs: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    values: dict[str, dict[str, Any]] = {}
+    missing_required_fields: list[str] = []
+    missing_conditional_fields: list[str] = []
+    supplemental_gaps: list[str] = []
+    computed_fields: list[str] = []
+    inferred_fields: list[str] = []
+    workcell_logged_gaps: list[str] = []
+
+    for field in contract["fields"]:
+        field_id = field["field_id"]
+        status = _parameter_status_for_field(field, skill_asset)
+        values[field_id] = status
+
+        if status["coverage_status"] == "missing_required":
+            missing_required_fields.append(field_id)
+        if status["coverage_status"] == "missing_conditional":
+            missing_conditional_fields.append(field_id)
+        if status["coverage_status"] == "supplemental_gap":
+            supplemental_gaps.append(field_id)
+        if field["acquisition_mode"] == "system_computed":
+            computed_fields.append(field_id)
+        if field["acquisition_mode"] == "asset_or_simulation_inferred":
+            inferred_fields.append(field_id)
+        if field["acquisition_mode"] == "workcell_logged" and status["value"] is None:
+            workcell_logged_gaps.append(field_id)
+
+    return {
+        "parameter_set_id": f"procedure-params-{skill_asset.asset_id}",
+        "skill_asset_id": skill_asset.asset_id,
+        "contract_version": contract["contract_version"],
+        "values": values,
+        "missing_required_fields": sorted(missing_required_fields),
+        "missing_conditional_fields": sorted(missing_conditional_fields),
+        "supplemental_gaps": sorted(supplemental_gaps),
+        "computed_fields": sorted(computed_fields),
+        "inferred_fields": sorted(inferred_fields),
+        "workcell_logged_gaps": sorted(workcell_logged_gaps),
+        "source_summary": {
+            "skill_asset_source_type": skill_asset.source_type,
+            "skill_asset_id": skill_asset.asset_id,
+            "artifact_refs": artifact_refs or {},
+        },
+        "review_boundary": [
+            "not_formal_WPS_PQR",
+            "missing_human_required_fields",
+            "simulation_only_values_require_expert_review",
+        ],
+    }
+
+
+def build_weld_procedure_validation_report(
+    parameter_set: dict[str, Any],
+    contract: dict[str, Any],
+) -> dict[str, Any]:
+    human_required_modes = {"human_required", "human_confirmed_or_imported"}
+    human_required_gaps = [
+        field_id
+        for field_id in parameter_set["missing_required_fields"]
+        if _field_by_id(contract, field_id)["acquisition_mode"] in human_required_modes
+    ]
+    workcell_logged_gaps = [
+        field_id
+        for field_id in parameter_set["missing_required_fields"]
+        if _field_by_id(contract, field_id)["acquisition_mode"] == "workcell_logged"
+    ]
+
+    not_ready_reasons: list[str] = []
+    if human_required_gaps:
+        not_ready_reasons.append("blocked_by_missing_human_required_fields")
+    if parameter_set["missing_conditional_fields"]:
+        not_ready_reasons.append("blocked_by_missing_conditional_procedure_fields")
+    if workcell_logged_gaps:
+        not_ready_reasons.append("blocked_by_missing_workcell_logged_fields")
+
+    return {
+        "validation_status": not_ready_reasons[0]
+        if not_ready_reasons
+        else "ready_for_procedure_contract_review",
+        "ready_for_procedure_contract_review": True,
+        "ready_for_expert_review": not not_ready_reasons,
+        "ready_for_simulation_replay_package_design": True,
+        "ready_for_training_design_review": True,
+        "not_ready_reasons": not_ready_reasons,
+        "field_coverage": _field_coverage(parameter_set, contract),
+        "human_required_gaps": sorted(human_required_gaps),
+        "computed_fields": parameter_set["computed_fields"],
+        "inferred_fields": parameter_set["inferred_fields"],
+        "workcell_logged_gaps": sorted(workcell_logged_gaps),
+        "wps_pqr_boundary": "not_formal_WPS_PQR",
+    }
+
+
+def build_procedure_to_nv01_mapping_matrix(contract: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "matrix_id": f"procedure-to-nv01-{contract['contract_version']}",
+        "contract_version": contract["contract_version"],
+        "field_count": contract["field_count"],
+        "field_mappings": {
+            field["field_id"]: {
+                "display_name": field["display_name"],
+                "requirement_level": field["requirement_level"],
+                "acquisition_mode": field["acquisition_mode"],
+                "a02_targets": _a02_targets_for_field(field),
+                "nv01_targets": _nv01_targets_for_field(field),
+                "blocks": field["blocks"],
+                "evidence_boundary": field["evidence_boundary"],
+            }
+            for field in contract["fields"]
+        },
+    }
+
+
 def _build_field(
     *,
     index: int,
@@ -223,6 +340,125 @@ def _build_field(
     }
     field.update(override)
     return field
+
+
+def _parameter_status_for_field(field: dict[str, Any], skill_asset: Any) -> dict[str, Any]:
+    acquisition_mode = field["acquisition_mode"]
+    value = None
+    source = None
+    evidence_boundary = ["not_formal_WPS_PQR"]
+    coverage_status = _missing_status_for_requirement(field)
+
+    if field["field_id"] == "travel_speed_mm_per_min":
+        value = _infer_travel_speed_mm_per_min(skill_asset)
+        source = "ManipulationSkillAsset.motion.tcp_trajectory"
+        evidence_boundary = [
+            "simulation_inferred_not_wps_validated",
+            "not_workcell_logged",
+            "not_formal_WPS_PQR",
+        ]
+        coverage_status = (
+            "simulation_inferred_candidate" if value is not None else coverage_status
+        )
+    elif acquisition_mode == "system_computed":
+        coverage_status = "blocked_missing_real_process_inputs"
+        source = (
+            "requires_real_welding_current_a_welding_voltage_v_"
+            "and_travel_speed_mm_per_min"
+        )
+        evidence_boundary = [
+            "computed_value_blocked_until_real_process_inputs",
+            "not_formal_WPS_PQR",
+        ]
+
+    return {
+        "field_id": field["field_id"],
+        "display_name": field["display_name"],
+        "value": value,
+        "coverage_status": coverage_status,
+        "acquisition_mode": acquisition_mode,
+        "source": source,
+        "evidence_boundary": evidence_boundary,
+    }
+
+
+def _missing_status_for_requirement(field: dict[str, Any]) -> str:
+    if field["requirement_level"] == "required":
+        return "missing_required"
+    if field["requirement_level"] == "conditional_required":
+        return "missing_conditional"
+    return "supplemental_gap"
+
+
+def _infer_travel_speed_mm_per_min(skill_asset: Any) -> float | None:
+    trajectory = list(getattr(skill_asset, "motion", {}).get("tcp_trajectory") or [])
+    if len(trajectory) < 2:
+        return None
+
+    first = trajectory[0]
+    last = trajectory[-1]
+    duration_s = float(last["t"]) - float(first["t"])
+    if duration_s <= 0:
+        return None
+
+    path_length = 0.0
+    previous = first
+    for point in trajectory[1:]:
+        dx = float(point["x"]) - float(previous["x"])
+        dy = float(point["y"]) - float(previous["y"])
+        dz = float(point["z"]) - float(previous["z"])
+        path_length += (dx * dx + dy * dy + dz * dz) ** 0.5
+        previous = point
+
+    return round(path_length * 1000.0 * 60.0 / duration_s, 3)
+
+
+def _field_by_id(contract: dict[str, Any], field_id: str) -> dict[str, Any]:
+    for field in contract["fields"]:
+        if field["field_id"] == field_id:
+            return field
+    raise KeyError(field_id)
+
+
+def _field_coverage(
+    parameter_set: dict[str, Any],
+    contract: dict[str, Any],
+) -> dict[str, Any]:
+    statuses = Counter(
+        parameter_set["values"][field["field_id"]]["coverage_status"]
+        for field in contract["fields"]
+    )
+    return {
+        "field_count": contract["field_count"],
+        "by_status": dict(sorted(statuses.items())),
+        "covered_field_count": sum(
+            count
+            for status, count in statuses.items()
+            if status not in {"missing_required", "missing_conditional", "supplemental_gap"}
+        ),
+    }
+
+
+def _a02_targets_for_field(field: dict[str, Any]) -> list[str]:
+    return [field["a02_target_path"]] if field["a02_target_path"] else []
+
+
+def _nv01_targets_for_field(field: dict[str, Any]) -> list[str]:
+    targets = [_human_readable_nv01_target(tag) for tag in field["nv01_usage"]]
+    return sorted({target for target in targets if target})
+
+
+def _human_readable_nv01_target(tag: str) -> str:
+    target_by_tag = {
+        "isaac_replay_config": "Isaac Sim replay config",
+        "procedure_parameter_inputs": "Isaac Sim replay config",
+        "procedure_gate": "procedure contract gate",
+        "expert_gate": "ExpertReviewRecord.required_real_context",
+        "OpenUSD process_metadata": "OpenUSD process_metadata",
+        "domain_randomization_recipe": "domain_randomization_recipe",
+        "training_readiness_report": "training_readiness_report",
+    }
+    return target_by_tag.get(tag, tag)
 
 
 def _validate_baseline(

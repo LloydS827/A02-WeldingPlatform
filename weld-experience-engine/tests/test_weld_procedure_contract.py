@@ -3,9 +3,20 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 import pytest
 
+from weldcore.simulation_bakeoff import (
+    build_simulation_evidence_bundle,
+    default_simulation_task_specs,
+    run_simlite_reference,
+)
+from weldcore.skill_asset.builders import (
+    build_manipulation_skill_asset_from_simulation_bundle,
+)
 from weldcore.skill_asset.procedure_contract import (
     DEFAULT_PROCEDURE_WORKBOOK_PATH,
+    build_procedure_to_nv01_mapping_matrix,
     build_weld_procedure_knowledge_contract,
+    build_weld_procedure_parameter_set,
+    build_weld_procedure_validation_report,
 )
 
 
@@ -13,6 +24,12 @@ def _field_by_name(contract, display_name):
     return next(
         field for field in contract["fields"] if field["display_name"] == display_name
     )
+
+
+def _default_skill_asset():
+    task = default_simulation_task_specs()[0]
+    bundle = build_simulation_evidence_bundle(task, run_simlite_reference(task))
+    return build_manipulation_skill_asset_from_simulation_bundle(bundle)
 
 
 def test_build_weld_procedure_contract_summarizes_excel_contract():
@@ -153,3 +170,63 @@ def test_default_procedure_workbook_path_points_to_repo_docs_workbook():
         / "焊接工艺数据库主要参数表.xlsx"
     )
     assert DEFAULT_PROCEDURE_WORKBOOK_PATH.exists()
+
+
+def test_parameter_set_marks_missing_human_and_workcell_fields():
+    contract = build_weld_procedure_knowledge_contract()
+    skill_asset = _default_skill_asset()
+
+    parameter_set = build_weld_procedure_parameter_set(skill_asset, contract)
+
+    assert parameter_set["skill_asset_id"] == skill_asset.asset_id
+    assert parameter_set["contract_version"] == contract["contract_version"]
+    assert parameter_set["parameter_set_id"].startswith("procedure-params-")
+    assert len(parameter_set["values"]) == 47
+    assert "wps_number" in parameter_set["missing_required_fields"]
+    assert "welding_current_a" in parameter_set["missing_required_fields"]
+    assert "heat_input_kj_per_mm" in parameter_set["computed_fields"]
+    assert parameter_set["values"]["heat_input_kj_per_mm"]["value"] is None
+    assert (
+        parameter_set["values"]["heat_input_kj_per_mm"]["coverage_status"]
+        == "blocked_missing_real_process_inputs"
+    )
+    assert "travel_speed_mm_per_min" in parameter_set["inferred_fields"]
+    travel_speed = parameter_set["values"]["travel_speed_mm_per_min"]
+    assert travel_speed["value"] is not None
+    assert (
+        "simulation_inferred_not_wps_validated"
+        in travel_speed["evidence_boundary"]
+    )
+    assert "not_formal_WPS_PQR" in parameter_set["review_boundary"]
+
+
+def test_validation_report_separates_contract_review_from_expert_review():
+    contract = build_weld_procedure_knowledge_contract()
+    parameter_set = build_weld_procedure_parameter_set(_default_skill_asset(), contract)
+
+    report = build_weld_procedure_validation_report(parameter_set, contract)
+
+    assert report["ready_for_procedure_contract_review"] is True
+    assert report["ready_for_simulation_replay_package_design"] is True
+    assert report["ready_for_expert_review"] is False
+    assert report["validation_status"] == "blocked_by_missing_human_required_fields"
+    assert "wps_number" in report["human_required_gaps"]
+    assert "welding_current_a" in report["workcell_logged_gaps"]
+    assert report["wps_pqr_boundary"] == "not_formal_WPS_PQR"
+
+
+def test_procedure_to_nv01_mapping_matrix_covers_all_fields():
+    contract = build_weld_procedure_knowledge_contract()
+
+    matrix = build_procedure_to_nv01_mapping_matrix(contract)
+
+    assert matrix["contract_version"] == contract["contract_version"]
+    assert matrix["field_count"] == 47
+    assert len(matrix["field_mappings"]) == 47
+    speed = matrix["field_mappings"]["travel_speed_mm_per_min"]
+    assert "Isaac Sim replay config" in speed["nv01_targets"]
+    assert "domain_randomization_recipe" in speed["nv01_targets"]
+    groove = matrix["field_mappings"]["groove_angle_deg"]
+    assert "OpenUSD process_metadata" in groove["nv01_targets"]
+    wps = matrix["field_mappings"]["wps_number"]
+    assert "ExpertReviewRecord.required_real_context" in wps["a02_targets"]
