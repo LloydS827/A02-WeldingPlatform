@@ -300,7 +300,7 @@ uv sync --extra dev --extra viz
 uv run pytest -q
 ```
 
-当前分支最近一次完整验证结果为 `395 passed`。
+当前分支最近一次完整验证结果为 `420 passed`。
 
 当前 canonical skill asset 报告命令：
 

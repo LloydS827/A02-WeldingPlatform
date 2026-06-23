@@ -238,8 +238,12 @@ def test_nvidia_report_artifacts_keep_boundaries_and_refs(tmp_path):
     package = json.loads(
         (outdir / "weld_skill_digital_twin_package.json").read_text(encoding="utf-8")
     )
-    assert package["source_demo_pack_ref"].endswith("demo_summary.json")
+    assert package["source_demo_pack_root_ref"] == "_source_demo_evidence"
+    assert package["source_demo_pack_ref"] == "_source_demo_evidence/demo_summary.json"
     assert package["procedure_contract_ref"] == "weld_procedure_knowledge_contract.json"
+    assert (
+        outdir / package["source_demo_pack_ref"]
+    ).exists()
     assert "not_ready_for_robot_execution" in package["readiness_boundary"]
     assert "not_formal_WPS_PQR" in package["readiness_boundary"]
 
@@ -291,15 +295,20 @@ def test_existing_source_demo_with_missing_canonical_artifact_fails(tmp_path):
         )
 
 
-def test_missing_explicit_source_demo_dir_fails(tmp_path):
+def test_missing_explicit_source_demo_dir_generates_default_source(tmp_path):
     from weldcore.skill_asset.nvidia_digital_twin_report import (
         run_nvidia_digital_twin_report,
     )
 
     missing_source_dir = tmp_path / "missing-source"
 
-    with pytest.raises(FileNotFoundError):
-        run_nvidia_digital_twin_report(
-            source_demo_dir=missing_source_dir,
-            outdir=tmp_path / "nv01",
-        )
+    summary = run_nvidia_digital_twin_report(
+        source_demo_dir=missing_source_dir,
+        outdir=tmp_path / "nv01",
+    )
+
+    assert summary["source_demo"]["source_demo_mode"] == (
+        "generated_default_for_missing_requested_source"
+    )
+    assert summary["source_demo"]["requested_source_demo_dir"] == str(missing_source_dir)
+    assert "_source_demo_evidence/demo_summary.json" in summary["generated_artifacts"]

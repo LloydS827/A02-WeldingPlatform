@@ -45,7 +45,7 @@ def run_nvidia_digital_twin_report(
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_artifacts: list[str] = []
 
-    source_dir, source_generated_artifacts = _ensure_source_demo_pack(
+    source_dir, source_generated_artifacts, source_demo_summary = _ensure_source_demo_pack(
         output_dir,
         source_demo_dir,
     )
@@ -59,6 +59,8 @@ def run_nvidia_digital_twin_report(
         demo_summary,
         contract,
     )
+    source_demo_pack_root_ref = _source_demo_pack_root_ref(output_dir, source_dir)
+    _annotate_source_demo_refs(payloads, source_demo_pack_root_ref)
 
     _write_json_artifact(
         output_dir,
@@ -77,7 +79,12 @@ def run_nvidia_digital_twin_report(
 
     _record_generated_artifact("nv01_summary.md", generated_artifacts)
     _record_generated_artifact("nv01_summary.json", generated_artifacts)
-    summary = _build_summary(demo_summary, payloads, sorted(generated_artifacts))
+    summary = _build_summary(
+        demo_summary,
+        payloads,
+        sorted(generated_artifacts),
+        source_demo_summary,
+    )
     _write_text_artifact(
         output_dir,
         "nv01_summary.md",
@@ -109,16 +116,71 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
 def _ensure_source_demo_pack(
     output_dir: Path,
     source_demo_dir: str | Path | None,
-) -> tuple[Path, list[str]]:
+) -> tuple[Path, list[str], dict[str, Any]]:
     if source_demo_dir is None:
         source_dir = output_dir / "_source_demo_evidence"
         source_summary = run_demo_evidence_pack(source_dir)
-        return source_dir, _source_demo_generated_artifacts(source_summary)
+        return (
+            source_dir,
+            _source_demo_generated_artifacts(source_summary),
+            {
+                "source_demo_mode": "generated_default",
+                "source_demo_pack_root_ref": "_source_demo_evidence",
+            },
+        )
 
     source_dir = Path(source_demo_dir)
     if not source_dir.exists():
-        raise FileNotFoundError(source_dir)
-    return source_dir, []
+        generated_source_dir = output_dir / "_source_demo_evidence"
+        source_summary = run_demo_evidence_pack(generated_source_dir)
+        return (
+            generated_source_dir,
+            _source_demo_generated_artifacts(source_summary),
+            {
+                "source_demo_mode": "generated_default_for_missing_requested_source",
+                "requested_source_demo_dir": str(source_dir),
+                "source_demo_pack_root_ref": "_source_demo_evidence",
+            },
+        )
+    return (
+        source_dir,
+        [],
+        {
+            "source_demo_mode": "external_source_demo",
+            "source_demo_pack_root_ref": str(source_dir.resolve()),
+        },
+    )
+
+
+def _source_demo_pack_root_ref(output_dir: Path, source_dir: Path) -> str:
+    try:
+        return str(source_dir.relative_to(output_dir))
+    except ValueError:
+        return str(source_dir.resolve())
+
+
+def _annotate_source_demo_refs(
+    payloads: dict[str, Any],
+    source_demo_pack_root_ref: str,
+) -> None:
+    source_demo_pack_ref = f"{source_demo_pack_root_ref}/demo_summary.json"
+    for payload_name, payload in payloads.items():
+        if payload_name == "task_payloads" or not isinstance(payload, dict):
+            continue
+        if (
+            "canonical_artifact_refs_by_task" in payload
+            or payload_name == "weld_skill_digital_twin_package"
+        ):
+            payload["source_demo_pack_root_ref"] = source_demo_pack_root_ref
+            payload["canonical_artifact_root_ref"] = source_demo_pack_root_ref
+    package = payloads["weld_skill_digital_twin_package"]
+    package["source_demo_pack_ref"] = source_demo_pack_ref
+
+    for task_payload in payloads["task_payloads"].values():
+        task_payload["canonical_artifact_root_ref"] = source_demo_pack_root_ref
+        task_payload["skill_asset_ref"]["canonical_artifact_root_ref"] = (
+            source_demo_pack_root_ref
+        )
 
 
 def _source_demo_generated_artifacts(source_summary: dict[str, Any]) -> list[str]:
@@ -156,6 +218,7 @@ def _build_summary(
     demo_summary: dict[str, Any],
     payloads: dict[str, Any],
     generated_artifacts: list[str],
+    source_demo_summary: dict[str, Any],
 ) -> dict[str, Any]:
     task_payloads = payloads["task_payloads"]
     return {
@@ -174,6 +237,7 @@ def _build_summary(
             "not_isaac_sim_runtime_validation",
             "not_policy_training_result",
         ],
+        "source_demo": source_demo_summary,
         "generated_artifacts": generated_artifacts,
         "tasks": _task_summaries(task_payloads),
         "next_step_recommendation": (
