@@ -250,7 +250,6 @@ def _build_package(
         "overall_status": "ready_for_simulation_replay_package_design",
         "task_count": demo_summary["task_count"],
         "procedure_contract_ref": "weld_procedure_knowledge_contract.json",
-        "source_demo_ref": "demo_summary.json",
         "source_demo_pack_ref": "demo_summary.json",
         "canonical_artifact_refs_by_task": canonical_refs_by_task,
         "readiness_boundary": [

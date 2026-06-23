@@ -181,6 +181,10 @@ def _annotate_source_demo_refs(
         task_payload["skill_asset_ref"]["canonical_artifact_root_ref"] = (
             source_demo_pack_root_ref
         )
+        for payload_name in TASK_PAYLOAD_FILES:
+            task_payload[payload_name]["canonical_artifact_root_ref"] = (
+                source_demo_pack_root_ref
+            )
 
 
 def _source_demo_generated_artifacts(source_summary: dict[str, Any]) -> list[str]:

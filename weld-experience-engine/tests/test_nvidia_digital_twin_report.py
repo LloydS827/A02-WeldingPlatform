@@ -239,6 +239,7 @@ def test_nvidia_report_artifacts_keep_boundaries_and_refs(tmp_path):
         (outdir / "weld_skill_digital_twin_package.json").read_text(encoding="utf-8")
     )
     assert package["source_demo_pack_root_ref"] == "_source_demo_evidence"
+    assert "source_demo_ref" not in package
     assert package["source_demo_pack_ref"] == "_source_demo_evidence/demo_summary.json"
     assert package["procedure_contract_ref"] == "weld_procedure_knowledge_contract.json"
     assert (
@@ -262,6 +263,21 @@ def test_nvidia_report_artifacts_keep_boundaries_and_refs(tmp_path):
     )
     assert "blocked_by_missing_isaac_runtime" in isaac["not_ready_reasons"]
     assert "ready_for_simulation_replay" not in summary["readiness_states"]
+
+    for task in summary["tasks"]:
+        task_dir = outdir / task["task_id"].replace("/", "_")
+        for filename in (
+            "openusd_task_manifest.json",
+            "isaac_replay_task_config.json",
+            "sensor_and_annotation_manifest.json",
+            "training_task_readiness.json",
+        ):
+            task_artifact = json.loads(
+                (task_dir / filename).read_text(encoding="utf-8")
+            )
+            assert task_artifact["canonical_artifact_root_ref"] == (
+                "_source_demo_evidence"
+            )
 
     markdown = (outdir / "nv01_summary.md").read_text(encoding="utf-8")
     assert "不是正式 WPS/PQR" in markdown
