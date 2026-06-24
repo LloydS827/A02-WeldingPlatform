@@ -38,25 +38,24 @@ def run_nv01_b_experiment_base_report(
 ) -> dict[str, Any]:
     output_dir = Path(outdir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    preexisting_files = set(_relative_files(output_dir))
 
-    source_dir, source_summary = _ensure_source_nv01a(output_dir, source_nv01a_dir)
+    source_dir, source_summary, source_generated_artifacts = _ensure_source_nv01a(
+        output_dir,
+        source_nv01a_dir,
+    )
     artifacts = load_nv01a_artifacts(source_dir)
     payloads = build_nv01_b_experiment_payloads(artifacts)
-    generated_artifacts = _new_files(output_dir, preexisting_files)
 
     _write_text_artifact(output_dir, "openusd_stage.usda", payloads["openusd_stage_usda"])
     _write_task_payloads(output_dir, payloads)
 
-    anticipated_artifacts = _anticipated_generated_artifacts(
-        output_dir,
-        preexisting_files,
-        generated_artifacts,
+    managed_artifacts = _managed_generated_artifacts(
+        source_generated_artifacts,
         payloads["task_payloads"],
     )
-    summary = _build_summary(source_summary, payloads, anticipated_artifacts)
+    summary = _build_summary(source_summary, payloads, managed_artifacts)
     payloads["experiment_reproducibility_manifest"] = (
-        _build_reproducibility_manifest(payloads, source_summary, anticipated_artifacts)
+        _build_reproducibility_manifest(payloads, source_summary, managed_artifacts)
     )
 
     for payload_name, filename in TOP_LEVEL_PAYLOAD_FILES.items():
@@ -87,24 +86,29 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
 def _ensure_source_nv01a(
     output_dir: Path,
     source_nv01a_dir: str | Path | None,
-) -> tuple[Path, dict[str, str]]:
+) -> tuple[Path, dict[str, str], list[str]]:
     if source_nv01a_dir is None:
         source_dir = output_dir / "_source_nv01a"
-        run_nvidia_digital_twin_report(outdir=source_dir)
+        source_report = run_nvidia_digital_twin_report(outdir=source_dir)
         return (
             source_dir,
             {
                 "source_mode": "generated_default",
                 "source_nv01a_root_ref": "_source_nv01a",
             },
+            [
+                f"_source_nv01a/{artifact}"
+                for artifact in source_report["generated_artifacts"]
+            ],
         )
 
     return (
         Path(source_nv01a_dir),
         {
             "source_mode": "external_source_nv01a",
-            "source_nv01a_root_ref": "external_source_nv01a",
+            "source_nv01a_root_ref": "<source-nv01a-dir>",
         },
+        [],
     )
 
 
@@ -149,13 +153,11 @@ def _write_task_payloads(output_dir: Path, payloads: dict[str, Any]) -> None:
                 _write_json_artifact(task_dir, filename, task_artifacts[payload_name])
 
 
-def _anticipated_generated_artifacts(
-    output_dir: Path,
-    preexisting_files: set[str],
-    generated_artifacts: list[str],
+def _managed_generated_artifacts(
+    source_generated_artifacts: list[str],
     task_payloads: dict[str, dict[str, Any]],
 ) -> list[str]:
-    relative_paths = set(generated_artifacts)
+    relative_paths = set(source_generated_artifacts)
     relative_paths.update(
         {
             "nv01_b_summary.md",
@@ -169,9 +171,7 @@ def _anticipated_generated_artifacts(
         relative_paths.update(
             f"{task_dir_name}/{filename}" for filename in TASK_PAYLOAD_FILES.values()
         )
-    return sorted(
-        path for path in relative_paths if path not in preexisting_files and (output_dir / path)
-    )
+    return sorted(relative_paths)
 
 
 def _build_summary(
@@ -211,6 +211,11 @@ def _build_reproducibility_manifest(
 ) -> dict[str, Any]:
     manifest = dict(payloads["experiment_reproducibility_manifest"])
     source_root_ref = source_summary["source_nv01a_root_ref"]
+    source_arg = (
+        " --source-nv01a-dir <source-nv01a-dir>"
+        if source_summary["source_mode"] == "external_source_nv01a"
+        else ""
+    )
     manifest.update(
         {
             "source_nv01a_root_ref": source_root_ref,
@@ -218,7 +223,7 @@ def _build_reproducibility_manifest(
             "generated_artifacts": generated_artifacts,
             "command": (
                 "python -m weldcore.skill_asset.nv01_b_experiment_base_report "
-                "--outdir <output-dir>"
+                f"--outdir <output-dir>{source_arg}"
             ),
             "report_cli_status": "implemented",
             "validation_commands": [
@@ -280,17 +285,16 @@ def _render_task_stage_fragment(task: dict[str, Any]) -> str:
 def _write_json_artifact(output_dir: Path, relative_path: str, data: Any) -> None:
     path = output_dir / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _write_text_artifact(output_dir: Path, relative_path: str, text: str) -> None:
     path = output_dir / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
-
-
-def _new_files(output_dir: Path, preexisting_files: set[str]) -> list[str]:
-    return sorted(path for path in _relative_files(output_dir) if path not in preexisting_files)
 
 
 def _relative_files(root: Path) -> list[str]:

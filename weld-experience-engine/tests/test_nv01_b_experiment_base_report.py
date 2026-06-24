@@ -41,7 +41,9 @@ def test_nv01_b_report_writes_default_artifacts(tmp_path):
     assert summary["openusd_authoring_status"] == "ready_for_static_openusd_review"
     assert summary["source_nv01a"]["source_mode"] == "generated_default"
     assert "not_isaac_sim_runtime_validation" in summary["readiness_boundary"]
+    assert "not_policy_training_result" in summary["readiness_boundary"]
     assert "not_formal_WPS_PQR" in summary["readiness_boundary"]
+    assert "not_ready_for_robot_execution" in summary["readiness_boundary"]
     assert sorted(summary["generated_artifacts"]) == _relative_files(outdir)
 
     for filename in EXPECTED_TOP_LEVEL:
@@ -111,6 +113,64 @@ def test_nv01_b_report_excludes_preexisting_user_files(tmp_path):
     assert sorted(summary["generated_artifacts"]) == [
         path for path in _relative_files(outdir) if path != "user_note.txt"
     ]
+
+
+def test_nv01_b_report_rerun_keeps_managed_artifacts_in_generated_list(tmp_path):
+    from weldcore.skill_asset.nv01_b_experiment_base_report import (
+        run_nv01_b_experiment_base_report,
+    )
+
+    outdir = tmp_path / "nv01b"
+    first_summary = run_nv01_b_experiment_base_report(outdir=outdir)
+    (outdir / "user_note.txt").write_text("keep\n", encoding="utf-8")
+
+    second_summary = run_nv01_b_experiment_base_report(outdir=outdir)
+
+    assert second_summary["generated_artifacts"] == first_summary["generated_artifacts"]
+    assert "user_note.txt" not in second_summary["generated_artifacts"]
+    assert "openusd_stage.usda" in second_summary["generated_artifacts"]
+    assert "nv01_b_summary.json" in second_summary["generated_artifacts"]
+    assert "experiment_reproducibility_manifest.json" in second_summary["generated_artifacts"]
+    for task in second_summary["tasks"]:
+        assert (
+            f"{task['task_output_dir']}/openusd_task_stage_fragment.usda"
+            in second_summary["generated_artifacts"]
+        )
+
+
+def test_nv01_b_report_explicit_source_uses_stable_refs(tmp_path):
+    from weldcore.skill_asset.nvidia_digital_twin_report import (
+        run_nvidia_digital_twin_report,
+    )
+    from weldcore.skill_asset.nv01_b_experiment_base_report import (
+        run_nv01_b_experiment_base_report,
+    )
+
+    source = tmp_path / "source"
+    outdir = tmp_path / "out"
+    run_nvidia_digital_twin_report(outdir=source)
+
+    summary = run_nv01_b_experiment_base_report(
+        outdir=outdir,
+        source_nv01a_dir=source,
+    )
+    manifest = json.loads(
+        (outdir / "experiment_reproducibility_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert summary["source_nv01a"]["source_mode"] == "external_source_nv01a"
+    assert summary["source_nv01a"]["source_nv01a_root_ref"] == "<source-nv01a-dir>"
+    assert not any(path.startswith("_source_nv01a/") for path in summary["generated_artifacts"])
+    assert "openusd_stage.usda" in summary["generated_artifacts"]
+    assert manifest["source_nv01a_root_ref"] == "<source-nv01a-dir>"
+    assert manifest["source_nv01a_summary_ref"] == "<source-nv01a-dir>/nv01_summary.json"
+    assert "--source-nv01a-dir <source-nv01a-dir>" in manifest["command"]
+
+    serialized = json.dumps({"summary": summary, "manifest": manifest}, ensure_ascii=False)
+    assert str(source) not in serialized
+    assert str(tmp_path) not in serialized
 
 
 def test_nv01_b_report_main_prints_json(tmp_path, capsys):
