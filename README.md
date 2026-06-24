@@ -110,6 +110,7 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 - 从 `SimulationEvidenceBundle` 构建 `ManipulationSkillAsset`，canonical evidence source type 为 `simulation_only`。
 - 已从 `docs/焊接工艺数据库主要参数表.xlsx` 生成 K01 工艺知识合同，覆盖 47 个焊接工艺字段、8 个参数类别、21 个必填字段、12 个条件必填字段和 14 个补充字段，并显式标注人填/确认、系统计算、仿真推导和工站回采边界。
 - `weldcore.skill_asset.nvidia_digital_twin_report` 默认生成 K01 + NV01-A evidence pack：procedure contract、parameter set、validation report、procedure-to-NV01 mapping、OpenUSD/Isaac-oriented manifest/report、training readiness 和 stack alignment matrix。
+- `weldcore.skill_asset.nv01_b_experiment_base_report` 默认生成 NV01-B 可复现实验底座：最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、K01 参数到仿真参数审计、sensor/annotation manifest、simulation blocking report 和 reproducibility manifest。
 - 从 `docs/real-urdf/robot.urdf` 解析 `RobotBodyAsset`，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。
 - 从 `RobotBodyAsset` 构建 nominal `RobotContextSpec`，保留 `nominal_from_asset_not_calibrated`、`not_tcp_calibrated`、`not_vendor_validated` 和 `not_ready_for_robot_execution` 边界。
 - 构建默认 `SceneContextAsset`，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。
@@ -121,10 +122,10 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 
 ## 下一阶段任务
 
-1. NV01-B OpenUSD Authoring Spike：把当前 `openusd_scene_manifest` 推进为最小 `.usda` stage authoring 原型，优先覆盖 root prim、robot/workpiece/weld task prim、坐标系、语义标签和 procedure metadata。
-2. 建立 USD artifact validation gate：检查 stage 是否可解析、关键 prim 是否存在、K01 字段 metadata 是否可追溯、canonical demo refs 是否保留。
-3. 继续不把 NV01-B 写成 Isaac Sim runtime 集成；Isaac Sim robot import、replay、sensor/Replicator 和 collision validation 进入 NV01-C。
-4. 保留真实 TCP calibration、tool frame calibration、workpiece frame measurement、A01 H300 回采、B06 Physical AI Package、工艺人员确认和专家审查结论作为 K01 + NV01 后续真实闭环输入。
+1. NV01-C Isaac Sim Runtime Import and Static Replay Validation：在真实 Isaac Sim 环境中导入 NV01-B `openusd_stage.usda` 和 replay fixture，验证 robot/workpiece/task prim 可加载，并做静态或低速 trajectory replay。
+2. 进入 NV01-C 前至少准备 Isaac Sim runtime、robot asset 导入路径、TCP/tool/workpiece 标定样例、最小 sensor layout 和关键工艺输入。
+3. 继续不把 NV01-C 写成 policy training、正式 WPS/PQR 或 robot execution；Isaac Lab policy training、真实碰撞验证和真实焊接质量验证仍需后续证据 gate。
+4. 保留 A01 H300 回采、B06 Physical AI Package、工艺人员确认、专家审查结论和真实质量反馈作为 K01 + NV01 后续真实闭环输入。
 5. 暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。
 
 ## 边界
@@ -133,7 +134,7 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 - 当前不宣称真实焊接质量验证。
 - 当前不宣称正式 WPS/PQR。
 - 当前不把 Excel 字段表、K01 参数集或系统计算结果写成正式 WPS/PQR。
-- 当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向，但不宣称已经完成 Isaac Sim 集成、OpenUSD stage authoring、Isaac Lab 训练或真实 sim-to-real 验证。
+- 当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向；NV01-B 已写出静态 `openusd_stage.usda` 原型和 validation gate，但仍是 `not_isaac_sim_runtime_validation`，不宣称已经完成 Isaac Sim runtime replay、Isaac Lab 训练或真实 sim-to-real 验证。
 - `ready_for_expert_review` 不是 `ready_for_robot_execution`。
 - `RobotFeasibilityResult` 不是完整 IK solver，不是真实 collision validation，不是真机日志验证。
 - ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源，不再作为未来重底座的平行默认候选。
@@ -211,6 +212,18 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 - `nvidia_stack_alignment_matrix.json`
 
 这些 artifact 的第一版目标是 `ready_for_procedure_contract_review`、`ready_for_simulation_replay_package_design`、`ready_for_training_design_review` 和 `not_ready_for_policy_training`。它们是面向工艺/专家审查和 OpenUSD/Isaac 的输入合同，不是正式 WPS/PQR，也不是已完成的 Isaac Sim runtime、policy training 或 robot execution 结果。
+
+## NV01-B 可复现实验底座
+
+NV01-B 默认 report 入口：
+
+```bash
+cd weld-experience-engine
+uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report \
+  --outdir artifacts/demo/nv01-b-experiment-base
+```
+
+预期输出包括最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、procedure simulation parameter audit、sensor annotation manifest、simulation blocking report、reproducibility manifest 和 `_source_nv01a/` 源 artifact。该命令不需要 Isaac Sim、OpenUSD SDK、GPU 或 `pxr`；默认状态仍保留 `blocked_for_real_isaac_sim_replay` 和 `not_isaac_sim_runtime_validation`，不是 Isaac Sim runtime replay、policy training、正式 WPS/PQR 或真实机器人执行验证。
 
 ## 历史能力索引
 
