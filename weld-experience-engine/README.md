@@ -18,7 +18,7 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 其中 `ManipulationSkillAsset` 是当前 canonical 技能资产实例；`RobotBodyAsset` 是机器人身体上下文；`RobotContextSpec` 和 `SceneContextAsset` 是迁移预检的上下文对象；`RobotFeasibilityResult` 是轻量预检结果；`SkillTransferAssessment` 和 `ExpertReviewRecord` 用于进入专家审查候选。既有 `SkillDataset -> WeldSkillPackage -> evaluation / evidence` 仍保留为历史兼容和 facade，不再是默认主线。
 
-当前已实现 K01 + NV01-A Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation：以 `docs/焊接工艺数据库主要参数表.xlsx` 作为焊接工艺知识合同源，以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 当前生成面向这些重底座的 procedure contract、manifest/report，而不是自研通用物理引擎、3D 场景标准或训练框架。
+当前已实现 K01 + NV01-A Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation，并完成 NV01-B OpenUSD / Isaac Sim 可复现实验底座：以 `docs/焊接工艺数据库主要参数表.xlsx` 作为焊接工艺知识合同源，以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 当前生成面向这些重底座的 procedure contract、manifest/report 和静态 `.usda` 实验底座，而不是自研通用物理引擎、3D 场景标准或训练框架。
 
 ## 运行
 
@@ -75,6 +75,15 @@ uv run python -m weldcore.skill_asset.nvidia_digital_twin_report \
 
 这个命令是合同和报告生成器，不需要 Isaac Sim。默认状态是 `ready_for_simulation_replay_package_design` / `ready_for_training_design_review`，同时保留 `not_formal_WPS_PQR`、`not_ready_for_robot_execution`、`not_isaac_sim_runtime_validation` 和 `not_policy_training_result` 边界。
 
+## NV01-B 可复现实验底座
+
+```bash
+uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report \
+  --outdir artifacts/demo/nv01-b-experiment-base
+```
+
+`nv01_b_experiment_base_report` 默认生成 `_source_nv01a`，再输出最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、procedure simulation parameter audit、sensor annotation manifest、simulation blocking report 和 reproducibility manifest。它不需要 Isaac Sim 或 OpenUSD SDK；默认状态仍是 `blocked_for_real_isaac_sim_replay`，不是 runtime replay、policy training、正式 WPS/PQR 或真实机器人执行验证。
+
 ## 证据与历史支撑命令
 
 既有 POC / MVP / report 命令仍可用，但它们用于技能资产 evidence、证据边界、仿真接入证据或历史支撑，不是默认研发主线本身。
@@ -119,7 +128,7 @@ uv run python -m weldcore.report.scenario_report
 - 不把公开资料、仿真假设或报告结论写成 WPS/PQR。
 - 不把 Excel 字段表、K01 参数集、系统计算字段或仿真推导字段写成正式 WPS/PQR。
 - 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
-- 不把 OpenUSD / Isaac Sim / Isaac Lab 写成已接入的默认 runtime；当前只生成面向这些底座的 K01 + NV01-A manifest/report 合同。
+- 不把 OpenUSD / Isaac Sim / Isaac Lab 写成已接入的默认 runtime；当前只生成面向这些底座的 K01 + NV01-A manifest/report 合同和 NV01-B 静态 `.usda` 实验底座。
 - 不把 `ready_for_contextual_precheck` 写成 `ready_for_robot_execution`。
 - 不把 `ready_for_expert_review` 写成 `ready_for_robot_execution`。
 - 不把 lightweight `RobotFeasibilityResult` 写成完整 IK、真实碰撞检测或真实机器人执行验证。

@@ -8,6 +8,7 @@ venv/
 *.rrd
 artifacts/simulation/
 artifacts/skill-assets/
+artifacts/demo/
 report_out/
 weld-experience-engine/report_out/
 mvp_report_out/
@@ -24,4 +25,6 @@ simulation_bakeoff_report_out/
 weld-experience-engine/simulation_bakeoff_report_out/
 weld-experience-engine/artifacts/simulation/
 weld-experience-engine/artifacts/skill-assets/
+weld-experience-engine/artifacts/demo/
+weld-experience-engine/uv.lock
 weld-experience-engine/weldcore.egg-info/
