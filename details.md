@@ -1,6 +1,6 @@
 # A02 机器人技能大师焊接技能资产底座项目进展记录
 
-更新时间：2026-06-23
+更新时间：2026-06-26
 
 这份文件用于记录 A02「机器人技能大师能力的焊接技能资产底座」每一阶段完成了什么、下一步准备做什么、哪些判断发生了变化。它不是项目入口说明；项目入口请看 [README.md](README.md)。
 
@@ -13,11 +13,11 @@
 
 ## 当前一句话状态
 
-项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研和焊接工艺参数 Excel，K01 + NV01-A 已实现为可运行 report：以 Excel 字段表形成焊接工艺知识合同，并把当前 demo evidence pack 编译为 OpenUSD / Isaac Sim / Isaac Lab oriented 的数字孪生与训练准备合同。NV01-B 已进一步形成可复现实验底座，可默认写出静态 `openusd_stage.usda` 原型、validation gate、Isaac replay fixture 和 blocking report。这个状态只表示进入专家审查候选、工艺知识合同审查、静态 OpenUSD 审查、数字孪生包设计和训练设计审查阶段，不表示正式 WPS/PQR、Isaac Sim runtime、Isaac Lab policy training 或真实机器人可执行。
+项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研和焊接工艺参数 Excel，K01 + NV01-A 已实现为可运行 report：以 Excel 字段表形成焊接工艺知识合同，并把当前 demo evidence pack 编译为 OpenUSD / Isaac Sim / Isaac Lab oriented 的数字孪生与训练准备合同。NV01-B 已进一步形成可复现实验底座，可默认写出静态 `openusd_stage.usda` 原型、validation gate、Isaac replay fixture 和 blocking report。下一阶段路线修订为“Isaac 重栈主线 + MuJoCo 轻量支线”：NV01-C 负责真实 Isaac Sim runtime import / static replay gate，MJ01 负责 MuJoCo URDF/MJCF lightweight replay feasibility。这个状态只表示进入专家审查候选、工艺知识合同审查、静态 OpenUSD 审查、数字孪生包设计和下一阶段 runtime/replay 设计审查阶段，不表示正式 WPS/PQR、Isaac Sim runtime、MuJoCo dynamics validation、Isaac Lab policy training 或真实机器人可执行。
 
 ## 当前主线判断
 
-现在不适合跳到真实机器人控制，也不应继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac 等作为长期平行候选反复 bake-off。更合理的节奏是承认重底座不应重复造轮子：OpenUSD 负责未来世界模型交换，Isaac Sim 负责未来真实仿真、传感器和合成数据，Isaac Lab 负责后续训练闭环；A02 负责把焊接工艺字段合同、技能资产、证据链、专家审查和 A01/IP handoff 编译成这些重底座能消费的数字孪生包。
+现在不适合跳到真实机器人控制，也不应继续把 ManiSkill/SAPIEN、Gazebo/MoveIt、Isaac、MuJoCo 等作为长期平行候选反复 bake-off。更合理的节奏是承认重底座不应重复造轮子：OpenUSD 负责未来世界模型交换，Isaac Sim 负责未来真实仿真、传感器和合成数据，Isaac Lab 负责后续训练闭环；MuJoCo 作为更轻量、学术化的动力学验证和反证支线，用于快速暴露 URDF/MJCF、轨迹 replay、接触和控制假设问题；A02 负责把焊接工艺字段合同、技能资产、证据链、专家审查和 A01/IP handoff 编译成这些运行时能消费的证据包。
 
 当前 K01 + NV01-A 之后的目标主线是：
 
@@ -33,13 +33,23 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 -> ExpertReviewRecord
 -> A02->A01 product validation handoff / IP evidence support
 -> future OpenUSD / Isaac Sim / Isaac Lab digital twin and training package
+-> lightweight MuJoCo replay feasibility evidence
 ```
 
-这一段必须先稳定下来。只有当 procedure knowledge contract、skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界、A01/B06 字段映射、专家审查记录和 OpenUSD/Isaac-oriented manifest 都可复跑、可比较、可审查之后，项目才适合继续进入 Isaac Sim runtime、Replicator 合成数据、Isaac Lab 训练环境或真实机器人迁移验证。
+这一段必须先稳定下来。只有当 procedure knowledge contract、skill asset 本体、机器人身体资产、场景上下文、输出证据、失败边界、A01/B06 字段映射、专家审查记录、OpenUSD/Isaac-oriented manifest 和 MuJoCo 轻量 replay feasibility 都可复跑、可比较、可审查之后，项目才适合继续进入 Replicator 合成数据、Isaac Lab 训练环境、MuJoCo 策略原型或真实机器人迁移验证。
 
-这里的“反证工作”仍然重要，但口径发生变化：OpenUSD/Isaac 被提升为未来主底座，其他工具不再作为同等默认主线候选，而是作为历史支撑、轻量测试、对照 adapter 或失败边界反证来源。OpenUSD/Isaac 自身也不能凭品牌直接越过 evidence gate，必须通过 A02 的 canonical schema、manifest、review record 和 readiness report 证明可接入。
+这里的“反证工作”仍然重要，但口径发生变化：OpenUSD/Isaac 被提升为未来主底座，MuJoCo 被提升为下一阶段轻量支线，其他工具不再作为同等默认主线候选，而是作为历史支撑、轻量测试、对照 adapter 或失败边界反证来源。OpenUSD/Isaac 和 MuJoCo 都不能凭品牌直接越过 evidence gate，必须通过 A02 的 canonical schema、manifest、review record 和 readiness report 证明可接入。
 
 ## 近期更新
+
+### 2026-06-26
+
+- 根据当前项目状态和同事讨论，后续路线修订为“Isaac 重栈主线 + MuJoCo 轻量支线”。
+- Isaac / OpenUSD / Isaac Lab 继续作为工站级数字孪生、传感器、合成数据和未来训练闭环主线；MuJoCo 作为轻量、学术化、快速动力学验证和反证支线。
+- 下一阶段建议以 NV01-C Isaac Sim Runtime Import and Static Replay Validation 为主线，同时启动 MJ01 MuJoCo Lightweight Replay Feasibility。
+- NV01-C 只验证 NV01-B `openusd_stage.usda` 和 replay fixture 能否在真实 Isaac Sim runtime 中导入、绑定和静态/低速 replay，不进入 policy training 或 robot execution。
+- MJ01 只验证当前真实 URDF / nominal robot context 能否形成 MuJoCo 可消费的 URDF/MJCF 最小模型，并做 TCP trajectory candidate replay，不替代 OpenUSD 场景合同。
+- README 已新增项目粗粒度路线图和重/轻仿真底座分层路线；本阶段仍保留 `not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_ready_for_robot_execution`、`not_formal_WPS_PQR` 和 `not_real_welding_quality_validation` 边界。
 
 ### 2026-06-24
 
@@ -234,8 +244,9 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 ## 尚未完成
 
-- OpenUSD / Isaac Sim / Isaac Lab 已被确定为未来真实仿真训练闭环主底座方向，K01 + NV01-A 已生成 manifest/report 合同；NV01-B 已写出静态 `.usda` 原型和 validation gate，但 Isaac Sim runtime 尚未接入。
+- OpenUSD / Isaac Sim / Isaac Lab 已被确定为未来真实仿真训练闭环主底座方向，MuJoCo 已被确定为下一阶段轻量验证和反证支线；K01 + NV01-A 已生成 manifest/report 合同，NV01-B 已写出静态 `.usda` 原型和 validation gate，但 Isaac Sim runtime 与 MuJoCo dynamics validation 均尚未接入。
 - Isaac Sim runtime 尚未接入，尚未完成 robot import、runtime stage import、TCP trajectory replay、传感器仿真、Replicator 合成数据或真实 collision validation。
+- MuJoCo lightweight replay 尚未接入，尚未完成 URDF/MJCF 可加载性验证、TCP trajectory candidate replay、接触/运动学假设审查或 MuJoCo feasibility report。
 - Isaac Lab training environment 尚未设计和运行，尚未定义可执行 observation/action/reward/termination/curriculum。
 - Cosmos、Nucleus、Isaac ROS、Jetson/边缘推理尚未接入，且不应进入 NV01 默认范围。
 - 规模化持续积累仿真数据的默认入口已完成 500 requested samples 和 1000 requested samples 级真实环境审查，但 modeled task specs 的小批量 ManiSkill/SAPIEN 验证尚未完成。
@@ -252,23 +263,24 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 ## 下一步建议
 
-推荐下一阶段任务调整为：**NV01-C Isaac Sim Runtime Import and Static Replay Validation**。
+推荐下一阶段任务调整为：**NV01-C Isaac Sim Runtime Import and Static Replay Validation + MJ01 MuJoCo Lightweight Replay Feasibility**。
 
-目标是在当前 K01 + NV01-A manifest/report 合同和 NV01-B 可复现实验底座基础上，选择 1-2 个默认焊接任务，把静态 `openusd_stage.usda` 和 replay fixture 推进为 Isaac Sim runtime 可打开、可检查的静态 replay 验证：
+目标是在当前 K01 + NV01-A manifest/report 合同和 NV01-B 可复现实验底座基础上，选择 1-2 个默认焊接任务，把静态 `openusd_stage.usda` 和 replay fixture 推进为 Isaac Sim runtime 可打开、可检查的静态 replay 验证；同时用 MuJoCo 做轻量 URDF/MJCF replay feasibility，快速暴露机器人模型、轨迹、接触和控制假设问题。
 
 1. 记录 Isaac Sim runtime 环境和版本，导入 NV01-B `openusd_stage.usda`。
 2. 验证 robot/workpiece/weld task/seam path/TCP trajectory candidate/sensor placeholder/safety boundary prim 在 runtime 中可加载。
 3. 使用 replay fixture 做静态或低速 trajectory replay，并输出 runtime validation report。
-4. 只有在 robot asset、TCP/tool/workpiece 标定、最小 sensor layout 和关键工艺输入可用时，才推进真实 replay 判断。
-5. 继续不训练策略、不生成正式 WPS/PQR、不宣称 robot execution；Replicator dataset、Isaac Lab policy training、真实 collision validation 和真实焊接质量验证仍放到后续 evidence gate。
+4. 并行启动 MJ01：验证当前真实 URDF / nominal robot context 是否能形成 MuJoCo 可消费的 URDF/MJCF 最小模型，并 replay TCP trajectory candidate。
+5. 只有在 robot asset、MJCF/URDF 模型质量、TCP/tool/workpiece 标定、最小 sensor layout 和关键工艺输入可用时，才推进真实 replay 判断。
+6. 继续不训练策略、不生成正式 WPS/PQR、不宣称 robot execution；Replicator dataset、Isaac Lab policy training、MuJoCo policy training、真实 collision validation 和真实焊接质量验证仍放到后续 evidence gate。
 
-下一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把 Excel/K01 输出写成正式 WPS/PQR，或把 `ready_for_simulation_replay_package_design` 写成已经完成 Isaac Sim runtime 验证。
+下一轮仍不应直接进入真实机器人执行或真实焊接质量判断，也不应把 Excel/K01 输出写成正式 WPS/PQR，或把 `ready_for_simulation_replay_package_design` 写成已经完成 Isaac Sim runtime 验证或 MuJoCo dynamics validation。
 
 ## 暂缓事项
 
 - 暂缓新增更多任务族或第三个 `WeldSkillUnit` 作为默认积累对象，避免在 scale shard 未稳定前同时扩大任务复杂度。
-- 暂缓完整 Gazebo/MoveIt 侧集成；它们后续只作为对照 adapter 或反证来源，不再优先于 OpenUSD/Isaac 主底座。
-- 暂缓 Isaac Sim 默认依赖、OpenUSD SDK 强依赖、Isaac Lab 训练、Cosmos 接入、Nucleus 服务化、Isaac ROS/Jetson 部署。
+- 暂缓完整 Gazebo/MoveIt 侧集成；它们后续只作为对照 adapter 或反证来源，不再优先于 OpenUSD/Isaac 主底座或 MuJoCo 轻量支线。
+- 暂缓 Isaac Sim 默认依赖、OpenUSD SDK 强依赖、MuJoCo 默认依赖、Isaac Lab 训练、MuJoCo 策略训练、Cosmos 接入、Nucleus 服务化、Isaac ROS/Jetson 部署。
 - 暂缓完整工艺数据库、录入 UI、权限系统和 WPS/PQR 审批系统；本阶段只做字段合同和缺口报告。
 - 暂缓专家审核系统化产品录入；下一阶段先运行最小 `ExpertReviewRecord` 工作流和真实标定记录替换，而不是直接建设审核系统。
 - 暂缓真实机器人执行结论，当前只做候选草案和审查前置条件。
