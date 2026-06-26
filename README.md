@@ -6,7 +6,7 @@ A02 是公司机器人技能大师能力的焊接技能资产底座项目，目�
 
 本项目对应公司 MAS 中的 M，也就是机器人技能大师能力。它不是一个独立对外讲述的平台概念，而是公司长期积累机器人操作能力的技术底座。当前第一场景是焊接，后续可以承接打磨、喷涂、切割、装配、检测等工业操作技能。
 
-经过 NVIDIA 物理 AI 技术框架调研，本项目的未来重底座选型调整为：以 OpenUSD 作为数字孪生交换层，以 Isaac Sim 作为默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。与此同时，`docs/焊接工艺数据库主要参数表.xlsx` 被提升为焊接工艺知识合同源。A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 自己负责焊接技能资产语义、工艺知识合同、证据治理、专家审查和 A01/IP handoff。
+经过 NVIDIA 物理 AI 技术框架调研，本项目的未来重底座选型调整为：以 OpenUSD 作为数字孪生交换层，以 Isaac Sim 作为默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。考虑到 Isaac / OpenUSD / Omniverse 技术栈较重，后续同步保留 MuJoCo 作为轻量、学术化、快速动力学验证和反证支线，用于 URDF/MJCF 可加载性、轨迹 replay、接触/运动学假设和小规模策略原型验证。与此同时，`docs/焊接工艺数据库主要参数表.xlsx` 被提升为焊接工艺知识合同源。A02 不重复造通用物理引擎、机器人仿真器、3D 场景标准或训练框架；A02 自己负责焊接技能资产语义、工艺知识合同、证据治理、专家审查和 A01/IP handoff。
 
 ## 文件入口
 
@@ -49,6 +49,27 @@ SimulationEvidenceBundle
 - 仿真样本、真实 URDF、robot precheck、modeled task specs 和 1000 next-batch 样本都应写成技能资产 evidence，而不是各自形成平行主线。
 - `ready_for_expert_review` 表示资产、机器人上下文、场景上下文和轻量预检足以进入专家审查候选；它不是 `ready_for_robot_execution`。
 
+## 项目粗粒度路线图
+
+```mermaid
+flowchart TD
+    A["已完成：POC / MVP / 资料底座归档"] --> B["已完成：ManipulationSkillAsset 主线收束"]
+    B --> C["已完成：真实 URDF / RobotContext / SceneContext / 轻量预检"]
+    C --> D["已完成：A01/B06 mapping / ExpertReview / IP support"]
+    D --> E["已完成：K01 焊接工艺知识合同"]
+    E --> F["已完成：NV01-A OpenUSD / Isaac-oriented manifest 合同"]
+    F --> G["已完成：NV01-B 静态 OpenUSD 可复现实验底座"]
+    G --> H["下一阶段主线：NV01-C Isaac Sim runtime 导入与静态 replay 验证"]
+    G --> M["下一阶段轻量支线：MJ01 MuJoCo URDF/MJCF replay 可行性评估"]
+    M -.轻量验证与反证.-> H
+    H --> I["后续：Replicator / Isaac Lab 训练设计 gate"]
+    I --> J["后续：真实工站回采 / 专家审查 / A01 产品验证闭环"]
+
+    G -.当前边界.-> X["不是 Isaac Sim runtime 验证；不是 MuJoCo 动力学验证；不是 policy training；不是 robot execution"]
+```
+
+当前项目已经完成从“经验结构化 / 仿真样本”到“可审计焊接技能资产 + NVIDIA-native 静态实验底座”的主线收束。下一阶段不应直接进入策略训练或真实机器人执行，而应先验证 NV01-B 生成的 `openusd_stage.usda` 与 replay fixture 能否在真实 Isaac Sim runtime 中被打开、加载和静态 replay。同时，应设置 MJ01 MuJoCo 轻量支线，用更低运行成本验证 URDF/MJCF 模型加载、轨迹 replay、接触/运动学假设和小规模控制原型；MuJoCo 的结论应作为证据支线和反证来源回写 `ManipulationSkillAsset`，而不是替代 OpenUSD / Isaac 的工站级数字孪生主线。
+
 ## 核心对象
 
 - `ManipulationSkillAsset`：技能资产本体，承载意图、运动、约束、证据、质量边界和迁移契约。
@@ -66,7 +87,7 @@ SimulationEvidenceBundle
 - `A02ToA01ProductValidationHandoff`：A02 反哺 A01 的候选技能包、轨迹候选、姿态/参数建议和失败边界。
 - `IPDisclosureSupportMatrix`：把 P0-02、P0-03、P0-04 对应到支撑对象、报告和缺失真实证据。
 
-## NVIDIA-native 物理 AI 底座路线
+## 重/轻仿真底座分层路线
 
 当前已完成的路线主题是 **K01 + NV01-A Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation**。它把 A02 从“仅能解释技能资产 demo”推进为“能产出由焊接工艺字段合同约束、面向 OpenUSD / Isaac Sim / Isaac Lab 的焊接技能数字孪生与训练准备包”。
 
@@ -75,10 +96,13 @@ SimulationEvidenceBundle
 - OpenUSD：未来统一表达机器人、工件、工装、焊缝、传感器、坐标系、语义标签和工艺 metadata。
 - Isaac Sim：未来默认目标仿真运行时，用于机器人导入、replay、传感器仿真、Replicator 合成数据、可达性/碰撞/视野验证。
 - Isaac Lab：未来训练闭环目标层，用于 seam tracking、局部位姿修正、受约束策略评估和 sim-to-real 训练设计。
+- MuJoCo：作为轻量、学术化和快速迭代的支线，用于 URDF/MJCF 模型加载、关节/接触动力学 sanity check、TCP 轨迹 replay、简化控制原型和 Isaac 重栈前的低成本反证。MuJoCo 不承载最终工站级数字孪生表达，不替代 OpenUSD 场景合同，也不直接输出真实机器人执行结论。
 - K01 焊接工艺知识合同：从 Excel 中 47 个字段生成字段定义、必填/条件必填/补充分类、人填/计算/仿真推导/工站回采/资料库引用来源分类、字段覆盖和缺口报告。
 - A02：继续以 `ManipulationSkillAsset` 为 canonical truth，负责焊接领域语义、工艺知识合同、证据来源、审查状态、失败边界、专家 gate、A02->A01 handoff 和 IP 支撑。
 
 K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查的 `weld_procedure_knowledge_contract`、`weld_procedure_parameter_set`、`weld_procedure_validation_report`、`procedure_to_nv01_mapping_matrix`、`WeldSkillDigitalTwinPackage`、`openusd_scene_manifest`、`isaac_sim_replay_config`、`domain_randomization_recipe`、`training_readiness_report` 和 `nvidia_stack_alignment_matrix`。这些 artifact 的目标是把当前 A02 evidence pack 编译成带焊接工艺知识约束的 NVIDIA physical AI 工作流输入合同。
+
+后续路线采用“Isaac 重栈主线 + MuJoCo 轻量支线”的判断：Isaac / OpenUSD 负责工站级场景、传感器、合成数据、复杂可视化和未来 sim-to-real 主验证；MuJoCo 负责更快暴露机器人模型、轨迹、接触和控制假设中的问题。两条路线都必须消费同一个 `ManipulationSkillAsset`、`RobotContextSpec`、`SceneContextAsset` 和 K01 工艺知识合同，并把验证结果写回 evidence / blocking report，避免形成新的平行资产体系。
 
 ## A01/B06/A02 接口
 
@@ -122,11 +146,14 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 
 ## 下一阶段任务
 
-1. NV01-C Isaac Sim Runtime Import and Static Replay Validation：在真实 Isaac Sim 环境中导入 NV01-B `openusd_stage.usda` 和 replay fixture，验证 robot/workpiece/task prim 可加载，并做静态或低速 trajectory replay。
-2. 进入 NV01-C 前至少准备 Isaac Sim runtime、robot asset 导入路径、TCP/tool/workpiece 标定样例、最小 sensor layout 和关键工艺输入。
-3. 继续不把 NV01-C 写成 policy training、正式 WPS/PQR 或 robot execution；Isaac Lab policy training、真实碰撞验证和真实焊接质量验证仍需后续证据 gate。
-4. 保留 A01 H300 回采、B06 Physical AI Package、工艺人员确认、专家审查结论和真实质量反馈作为 K01 + NV01 后续真实闭环输入。
-5. 暂停把 MoveIt/Gazebo 作为同等主线候选扩展；它们后续可作为对照 adapter 或反证来源，但不再优先于 OpenUSD/Isaac 主底座。
+下一阶段建议以 NV01-C Isaac Sim Runtime Import and Static Replay Validation 为主线，同时启动 MJ01 MuJoCo Lightweight Replay Feasibility 作为轻量支线。任务粒度保持在 runtime / replay gate，不进入训练或真机执行：
+
+1. 准备并记录 Isaac Sim runtime 环境、版本、启动方式和失败边界。
+2. 导入 NV01-B `openusd_stage.usda` 与 replay fixture，验证 `/World`、robot、workpiece、weld task、seam path、TCP trajectory candidate、sensor placeholder 和 safety boundary prim 可加载。
+3. 做静态或低速 trajectory replay，输出 runtime validation report，明确 stage import、frame binding、trajectory binding、procedure metadata 和 sensor placeholder 的通过/阻塞项。
+4. 并行做 MJ01：从当前真实 URDF / nominal robot context 生成或校验 MuJoCo 可消费的 URDF/MJCF 最小模型，验证关节、mesh、TCP frame、简化工件/焊缝和 TCP 轨迹 replay 是否可运行。
+5. 自动汇总仍阻塞真实 replay 的输入：robot USD/articulation、MJCF/URDF 模型质量、TCP/tool/workpiece 标定、最小 sensor layout、H300 工站日志、电流/电压/热输入、工艺人员确认和专家审查结论。
+6. 继续把 Isaac Lab policy training、Replicator dataset、MuJoCo 策略训练、真实碰撞验证、真实焊接质量验证和 robot execution 留到后续 evidence gate。
 
 ## 边界
 
@@ -134,10 +161,10 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 - 当前不宣称真实焊接质量验证。
 - 当前不宣称正式 WPS/PQR。
 - 当前不把 Excel 字段表、K01 参数集或系统计算结果写成正式 WPS/PQR。
-- 当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向；NV01-B 已写出静态 `openusd_stage.usda` 原型和 validation gate，但仍是 `not_isaac_sim_runtime_validation`，不宣称已经完成 Isaac Sim runtime replay、Isaac Lab 训练或真实 sim-to-real 验证。
+- 当前确认 OpenUSD / Isaac Sim / Isaac Lab 是未来真实仿真训练闭环的主底座方向，MuJoCo 是轻量验证和反证支线；NV01-B 已写出静态 `openusd_stage.usda` 原型和 validation gate，但仍是 `not_isaac_sim_runtime_validation` 和 `not_mujoco_dynamics_validation`，不宣称已经完成 Isaac Sim runtime replay、MuJoCo 动力学验证、Isaac Lab 训练或真实 sim-to-real 验证。
 - `ready_for_expert_review` 不是 `ready_for_robot_execution`。
 - `RobotFeasibilityResult` 不是完整 IK solver，不是真实 collision validation，不是真机日志验证。
-- ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源，不再作为未来重底座的平行默认候选。
+- MuJoCo、ManiSkill/SAPIEN、Gazebo/MoveIt 和其他 robot adapter 可作为同一技能资产主线下的 evidence source、历史支撑或对照反证来源；其中 MuJoCo 优先作为下一阶段轻量支线，其他 adapter 暂不作为未来主底座的平行默认候选。
 
 ## 验证命令
 
