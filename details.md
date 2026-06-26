@@ -13,7 +13,7 @@
 
 ## 当前一句话状态
 
-项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研和焊接工艺参数 Excel，K01 + NV01-A 已实现为可运行 report：以 Excel 字段表形成焊接工艺知识合同，并把当前 demo evidence pack 编译为 OpenUSD / Isaac Sim / Isaac Lab oriented 的数字孪生与训练准备合同。NV01-B 已进一步形成可复现实验底座，可默认写出静态 `openusd_stage.usda` 原型、validation gate、Isaac replay fixture 和 blocking report。下一阶段路线修订为“Isaac 重栈主线 + MuJoCo 轻量支线”：NV01-C 负责真实 Isaac Sim runtime import / static replay gate，MJ01 负责 MuJoCo URDF/MJCF lightweight replay feasibility。这个状态只表示进入专家审查候选、工艺知识合同审查、静态 OpenUSD 审查、数字孪生包设计和下一阶段 runtime/replay 设计审查阶段，不表示正式 WPS/PQR、Isaac Sim runtime、MuJoCo dynamics validation、Isaac Lab policy training 或真实机器人可执行。
+项目已经按母战略修订为“机器人技能大师能力的焊接技能资产底座”。当前主线以 `ManipulationSkillAsset` 为核心，把仿真、真实机器人日志、人工示教、专家标注和 A01 H300 工站回采数据统一视为技能资产 evidence。默认可运行路径已经能从 `SimulationEvidenceBundle` 构建技能资产，把真实协作臂 URDF 解析为 `RobotBodyAsset`，绑定 nominal `RobotContextSpec` 和默认 `SceneContextAsset`，让 `SkillTransferAssessment` 消费 lightweight `RobotFeasibilityResult` 推进到 `ready_for_expert_review`，并生成 A01/B06 mapping、`ExpertReviewRecord`、A02->A01 handoff、IP support matrix 和 2 个默认仿真任务的 demo evidence pack。基于 NVIDIA 技术框架调研和焊接工艺参数 Excel，K01 + NV01-A 已实现为可运行 report：以 Excel 字段表形成焊接工艺知识合同，并把当前 demo evidence pack 编译为 OpenUSD / Isaac Sim / Isaac Lab oriented 的数字孪生与训练准备合同。NV01-B 已进一步形成可复现实验底座，可默认写出静态 `openusd_stage.usda` 原型、validation gate、Isaac replay fixture 和 blocking report。最新阶段已新增 NV01-C + MJ01 readiness pack：消费 NV01-B artifact，生成 Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report、runtime/replay blocking report 和 per-task runtime/replay 输入清单。这个状态只表示进入专家审查候选、工艺知识合同审查、静态 OpenUSD 审查、数字孪生包设计和下一阶段 runtime/replay 输入审查阶段，不表示正式 WPS/PQR、Isaac Sim runtime、MuJoCo dynamics validation、Isaac Lab policy training 或真实机器人可执行。
 
 ## 当前主线判断
 
@@ -49,6 +49,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 下一阶段建议以 NV01-C Isaac Sim Runtime Import and Static Replay Validation 为主线，同时启动 MJ01 MuJoCo Lightweight Replay Feasibility。
 - NV01-C 只验证 NV01-B `openusd_stage.usda` 和 replay fixture 能否在真实 Isaac Sim runtime 中导入、绑定和静态/低速 replay，不进入 policy training 或 robot execution。
 - MJ01 只验证当前真实 URDF / nominal robot context 能否形成 MuJoCo 可消费的 URDF/MJCF 最小模型，并做 TCP trajectory candidate replay，不替代 OpenUSD 场景合同。
+- 新增 `weldcore.skill_asset.nv01_c_mj01_readiness` 和 `weldcore.skill_asset.nv01_c_mj01_readiness_report`，默认生成 NV01-C + MJ01 readiness pack，输出 Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report、runtime/replay blocking report、readiness reproducibility manifest 和 per-task 输入清单。
+- 该 readiness pack 默认自举 `_source_nv01b/`，不需要 Isaac Sim、MuJoCo、OpenUSD SDK、GPU、`pxr` 或 `mujoco`；默认状态为 `blocked_for_runtime_replay_validation`，并显式保留 `blocked_by_missing_isaac_runtime`、`blocked_by_missing_mujoco_runtime`、`not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_formal_WPS_PQR` 和 `not_ready_for_robot_execution`。
 - README 已新增项目粗粒度路线图和重/轻仿真底座分层路线；本阶段仍保留 `not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_ready_for_robot_execution`、`not_formal_WPS_PQR` 和 `not_real_welding_quality_validation` 边界。
 
 ### 2026-06-24
@@ -239,14 +241,16 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 - 报告命令和历史证据归档。
 - K01 焊接工艺知识合同，可从 Excel 生成 `WeldProcedureKnowledgeContract`、`WeldProcedureParameterSet`、`WeldProcedureValidationReport` 和 `ProcedureToNV01MappingMatrix`。
 - `weldcore.skill_asset.nvidia_digital_twin_report`，可生成 K01 + NV01-A Procedure-Constrained Manifest Evidence Pack，包括 `openusd_scene_manifest`、`isaac_sim_replay_config`、`domain_randomization_recipe`、`training_readiness_report` 和 `nvidia_stack_alignment_matrix`。
+- `weldcore.skill_asset.nv01_b_experiment_base_report`，可生成 NV01-B 静态 OpenUSD / Isaac 可复现实验底座，包括 `openusd_stage.usda`、Isaac replay fixture、sensor/annotation manifest、simulation blocking report 和 reproducibility manifest。
+- `weldcore.skill_asset.nv01_c_mj01_readiness_report`，可生成 NV01-C + MJ01 readiness pack，包括 Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report、runtime/replay blocking report、readiness reproducibility manifest 和 per-task runtime/replay 输入清单。
 
 这些能力仍属于软件结构、仿真接入和证据管理能力，不代表真实焊接质量验证、Isaac Sim runtime 验证、Isaac Lab 训练闭环或真实机器人执行验证。
 
 ## 尚未完成
 
-- OpenUSD / Isaac Sim / Isaac Lab 已被确定为未来真实仿真训练闭环主底座方向，MuJoCo 已被确定为下一阶段轻量验证和反证支线；K01 + NV01-A 已生成 manifest/report 合同，NV01-B 已写出静态 `.usda` 原型和 validation gate，但 Isaac Sim runtime 与 MuJoCo dynamics validation 均尚未接入。
+- OpenUSD / Isaac Sim / Isaac Lab 已被确定为未来真实仿真训练闭环主底座方向，MuJoCo 已被确定为下一阶段轻量验证和反证支线；K01 + NV01-A 已生成 manifest/report 合同，NV01-B 已写出静态 `.usda` 原型和 validation gate，NV01-C + MJ01 readiness pack 已生成 runtime/replay 输入清单，但 Isaac Sim runtime 与 MuJoCo dynamics validation 均尚未接入。
 - Isaac Sim runtime 尚未接入，尚未完成 robot import、runtime stage import、TCP trajectory replay、传感器仿真、Replicator 合成数据或真实 collision validation。
-- MuJoCo lightweight replay 尚未接入，尚未完成 URDF/MJCF 可加载性验证、TCP trajectory candidate replay、接触/运动学假设审查或 MuJoCo feasibility report。
+- MuJoCo lightweight replay runner 尚未接入，尚未完成 URDF/MJCF 可加载性验证、TCP trajectory candidate replay、接触/运动学假设审查或真实 MuJoCo runtime report；当前已有的是 `mujoco_lightweight_replay_feasibility_report.json` 输入审查包。
 - Isaac Lab training environment 尚未设计和运行，尚未定义可执行 observation/action/reward/termination/curriculum。
 - Cosmos、Nucleus、Isaac ROS、Jetson/边缘推理尚未接入，且不应进入 NV01 默认范围。
 - 规模化持续积累仿真数据的默认入口已完成 500 requested samples 和 1000 requested samples 级真实环境审查，但 modeled task specs 的小批量 ManiSkill/SAPIEN 验证尚未完成。
@@ -394,6 +398,16 @@ uv run python -m weldcore.simulation_bakeoff.modeling_pipeline \
 ```
 
 该命令默认从当前 2 个默认任务族生成 8 个 modeled `SimulationTaskSpec`，输出 `modeling_spec.json`、`modeled_task_specs.json` 和 `modeling_validation_report.json`。`modeled_task_specs.json` 可恢复为 `SimulationTaskSpec` 并进入 `default_maniskill_batch_spec`，用于下一阶段小批量 ManiSkill/SAPIEN 验证。
+
+NV01-C + MJ01 readiness pack 入口命令：
+
+```bash
+cd weld-experience-engine
+uv run python -m weldcore.skill_asset.nv01_c_mj01_readiness_report \
+  --outdir artifacts/demo/nv01-c-mj01-readiness-pack
+```
+
+该命令默认生成 `_source_nv01b/`，再输出 `isaac_runtime_validation_input_manifest.json`、`mujoco_lightweight_replay_feasibility_report.json`、`runtime_replay_blocking_report.json`、`readiness_reproducibility_manifest.json` 和 per-task runtime/replay 输入清单。它用于把下一阶段 NV01-C Isaac Sim runner 与 MJ01 MuJoCo runner 的输入、缺口和边界固定下来；它不是 Isaac Sim runtime 验证、不是 MuJoCo dynamics validation、不是 policy training 结果、不是正式 WPS/PQR，也不是 `ready_for_robot_execution`。
 
 报告命令可按需运行，用来生成当前证据或历史支撑材料；它们不是默认研发主线本身。
 
