@@ -22,6 +22,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 当前进一步新增 NV01-C + MJ01 readiness pack：它消费 NV01-B artifact，生成 Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report 和 runtime/replay blocking report。该能力用于准备下一阶段真实 runtime runner，不运行 Isaac Sim 或 MuJoCo，不导入 `pxr` 或 `mujoco`，也不宣称 runtime replay、MuJoCo dynamics validation、正式 WPS/PQR 或真实机器人执行。
 
+本阶段新增 MJ01-A Local MuJoCo Probe + NV01-C0 Remote Isaac Preflight：MuJoCo 被放入可选 extra，用于本地轻量 import / minimal MJCF / 真实 URDF load probe；Isaac Sim 仍不作为本地默认安装项，而是生成服务器或工作站运行前需要审查的远端 preflight 清单。
+
 ## 运行
 
 ```bash
@@ -30,6 +32,12 @@ uv run pytest -q
 ```
 
 如果本机尚未安装 `uv`，先参考 Astral 官方安装方式安装；临时备用方式仍可使用 `pip install -e ".[dev,viz]"`。
+
+本地 MuJoCo 探针是可选能力，需要时再安装：
+
+```bash
+uv sync --extra dev --extra viz --extra mujoco
+```
 
 ## 默认技能资产报告
 
@@ -95,6 +103,17 @@ uv run python -m weldcore.skill_asset.nv01_c_mj01_readiness_report \
 
 `nv01_c_mj01_readiness_report` 默认生成 `_source_nv01b`，再输出 `isaac_runtime_validation_input_manifest.json`、`mujoco_lightweight_replay_feasibility_report.json`、`runtime_replay_blocking_report.json`、`readiness_reproducibility_manifest.json` 和 per-task runtime/replay 输入清单。默认状态是 `blocked_for_runtime_replay_validation`，其中 Isaac 侧保留 `blocked_by_missing_isaac_runtime`，MuJoCo 侧保留 `blocked_by_missing_mujoco_runtime`。该命令不需要 Isaac Sim、MuJoCo、OpenUSD SDK、GPU、`pxr` 或 `mujoco`，边界包含 `not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_policy_training_result`、`not_formal_WPS_PQR` 和 `not_ready_for_robot_execution`。
 
+## MJ01-A Local MuJoCo Probe + NV01-C0 Remote Isaac Preflight
+
+```bash
+uv run python -m weldcore.skill_asset.mj01_mujoco_probe_report \
+  --outdir artifacts/demo/mj01-a-local-mujoco-probe
+```
+
+`mj01_mujoco_probe_report` 默认生成或复用 NV01-C + MJ01 readiness pack，再输出 `mj01_a_summary.md/json`、MuJoCo runtime probe、MuJoCo model input resolution、MuJoCo probe、Isaac remote preflight、reproducibility manifest 和 per-task dry-run/preflight 输入。未安装 MuJoCo 时报告状态为 `skipped_by_missing_mujoco_runtime`；安装 `mujoco` extra 后会尝试 import、minimal MJCF sanity probe 和真实 URDF load probe。Isaac 侧只输出远端 runtime 所需的 stage、fixture、prim、frame、sensor、版本/driver 和启动方式清单，不导入 Isaac Sim。
+
+该命令不是 MuJoCo dynamics validation、不是 Isaac Sim runtime validation、不是 policy training、不是正式 WPS/PQR，也不是 `ready_for_robot_execution`。
+
 ## 证据与历史支撑命令
 
 既有 POC / MVP / report 命令仍可用，但它们用于技能资产 evidence、证据边界、仿真接入证据或历史支撑，不是默认研发主线本身。
@@ -140,6 +159,7 @@ uv run python -m weldcore.report.scenario_report
 - 不把 Excel 字段表、K01 参数集、系统计算字段或仿真推导字段写成正式 WPS/PQR。
 - 不把任何单一仿真器、机器人框架或可视化工具写成项目核心对象。
 - 不把 OpenUSD / Isaac Sim / Isaac Lab 写成已接入的默认 runtime；当前只生成面向这些底座的 K01 + NV01-A manifest/report 合同和 NV01-B 静态 `.usda` 实验底座。
+- 不把 MJ01-A MuJoCo probe 写成完整 replay runner、动力学验证、控制器验证或策略训练。
 - 不把 `ready_for_contextual_precheck` 写成 `ready_for_robot_execution`。
 - 不把 `ready_for_expert_review` 写成 `ready_for_robot_execution`。
 - 不把 lightweight `RobotFeasibilityResult` 写成完整 IK、真实碰撞检测或真实机器人执行验证。

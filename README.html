@@ -77,14 +77,15 @@ li { margin: 0.35em 0; }
     E --&gt; F[&quot;已完成：NV01-A OpenUSD / Isaac-oriented manifest 合同&quot;]
     F --&gt; G[&quot;已完成：NV01-B 静态 OpenUSD 可复现实验底座&quot;]
     G --&gt; R[&quot;已完成：NV01-C + MJ01 runtime/replay readiness pack&quot;]
-    R --&gt; H[&quot;下一阶段主线：NV01-C Isaac Sim runtime runner&quot;]
-    R --&gt; M[&quot;下一阶段轻量支线：MJ01 MuJoCo replay runner&quot;]
+    R --&gt; P[&quot;已完成：MJ01-A 本地 MuJoCo 可选探针 / NV01-C0 远端 Isaac 预检&quot;]
+    P --&gt; H[&quot;下一阶段主线：NV01-C1 Isaac Sim 远端导入 smoke validation&quot;]
+    P --&gt; M[&quot;下一阶段轻量支线：MJ01-B MuJoCo 轨迹 dry-run replay runner&quot;]
     M -.轻量验证与反证.-&gt; H
     H --&gt; I[&quot;后续：Replicator / Isaac Lab 训练设计 gate&quot;]
     I --&gt; J[&quot;后续：真实工站回采 / 专家审查 / A01 产品验证闭环&quot;]
 
     R -.当前边界.-&gt; X[&quot;不是 Isaac Sim runtime 验证；不是 MuJoCo 动力学验证；不是 policy training；不是正式 WPS/PQR；不是 robot execution&quot;]</code></pre>
-<p>当前项目已经完成从“经验结构化 / 仿真样本”到“可审计焊接技能资产 + NVIDIA-native 静态实验底座”的主线收束，并新增 NV01-C + MJ01 readiness pack，把下一阶段真实 Isaac/MuJoCo runner 需要的输入、缺口和边界固化为可复跑 artifact。下一阶段不应直接进入策略训练或真实机器人执行，而应分别实现外部 NV01-C Isaac Sim runtime runner 和 MJ01 MuJoCo replay runner，验证 NV01-B/ready pack 产物能否在真实 runtime 中被打开、绑定和静态/低速 replay。MuJoCo 的结论应作为轻量证据支线和反证来源回写 <code>ManipulationSkillAsset</code>，而不是替代 OpenUSD / Isaac 的工站级数字孪生主线。</p>
+<p>当前项目已经完成从“经验结构化 / 仿真样本”到“可审计焊接技能资产 + NVIDIA-native 静态实验底座”的主线收束，并新增 NV01-C + MJ01 readiness pack，把下一阶段真实 Isaac/MuJoCo runner 需要的输入、缺口和边界固化为可复跑 artifact。本阶段进一步收窄为 MJ01-A 本地 MuJoCo 可选探针和 NV01-C0 远端 Isaac 预检：本机可以安装 MuJoCo extra 做 import / minimal MJCF / 真实 URDF load 的审计报告；Isaac Sim 不建议在本地默认安装，而是先生成远端运行所需的 stage、fixture、prim、frame、sensor 和版本/驱动/启动方式预检清单。下一阶段不应直接进入策略训练或真实机器人执行，而应分别实现 NV01-C1 Isaac Sim 远端导入 smoke validation 和 MJ01-B MuJoCo 轨迹 dry-run replay runner。MuJoCo 的结论应作为轻量证据支线和反证来源回写 <code>ManipulationSkillAsset</code>，而不是替代 OpenUSD / Isaac 的工站级数字孪生主线。</p>
 <h2>核心对象</h2>
 <ul>
 <li><code>ManipulationSkillAsset</code>：技能资产本体，承载意图、运动、约束、证据、质量边界和迁移契约。</li>
@@ -146,6 +147,7 @@ li { margin: 0.35em 0; }
 <li><code>weldcore.skill_asset.nvidia_digital_twin_report</code> 默认生成 K01 + NV01-A evidence pack：procedure contract、parameter set、validation report、procedure-to-NV01 mapping、OpenUSD/Isaac-oriented manifest/report、training readiness 和 stack alignment matrix。</li>
 <li><code>weldcore.skill_asset.nv01_b_experiment_base_report</code> 默认生成 NV01-B 可复现实验底座：最小 <code>openusd_stage.usda</code>、静态 USD validation report、Isaac replay fixture、K01 参数到仿真参数审计、sensor/annotation manifest、simulation blocking report 和 reproducibility manifest。</li>
 <li><code>weldcore.skill_asset.nv01_c_mj01_readiness_report</code> 默认生成 NV01-C + MJ01 readiness pack：Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report、runtime/replay blocking report、readiness reproducibility manifest 和 per-task runtime/replay 输入清单。该入口不需要 Isaac Sim、MuJoCo、OpenUSD SDK、GPU、<code>pxr</code> 或 <code>mujoco</code>；默认状态仍是 <code>blocked_for_runtime_replay_validation</code>，不是 Isaac Sim runtime replay、MuJoCo dynamics validation、policy training、正式 WPS/PQR 或真实机器人执行验证。</li>
+<li><code>weldcore.skill_asset.mj01_mujoco_probe_report</code> 默认生成 MJ01-A 本地 MuJoCo 可选探针和 NV01-C0 远端 Isaac 预检报告。未安装 MuJoCo 时仍会生成完整 skipped report；安装 <code>mujoco</code> extra 后，会尝试 MuJoCo import、minimal MJCF sanity probe 和真实 URDF load probe。该入口仍不是 MuJoCo dynamics validation、不是 Isaac Sim runtime validation、不是 policy training、不是正式 WPS/PQR，也不是 <code>ready_for_robot_execution</code>。</li>
 <li>从 <code>docs/real-urdf/robot.urdf</code> 解析 <code>RobotBodyAsset</code>，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。</li>
 <li>从 <code>RobotBodyAsset</code> 构建 nominal <code>RobotContextSpec</code>，保留 <code>nominal_from_asset_not_calibrated</code>、<code>not_tcp_calibrated</code>、<code>not_vendor_validated</code> 和 <code>not_ready_for_robot_execution</code> 边界。</li>
 <li>构建默认 <code>SceneContextAsset</code>，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。</li>
@@ -156,12 +158,12 @@ li { margin: 0.35em 0; }
 <li><code>weldcore.skill_asset.asset_report</code> 默认生成 12 份 JSON artifact，服务 A01 产品验证和 IP 交底准备。</li>
 </ul>
 <h2>下一阶段任务</h2>
-<p>下一阶段建议以 NV01-C Isaac Sim Runtime Import and Static Replay Validation 为主线，同时启动 MJ01 MuJoCo Lightweight Replay Feasibility 作为轻量支线。任务粒度保持在 runtime / replay gate，不进入训练或真机执行：</p>
+<p>下一阶段建议以 NV01-C1 Isaac Sim Remote Import Smoke Validation 为主线，同时启动 MJ01-B MuJoCo Trajectory Dry-run Replay Runner 作为轻量支线。任务粒度保持在 runtime / replay gate，不进入训练或真机执行：</p>
 <ol>
-<li>准备并记录 Isaac Sim runtime 环境、版本、启动方式和失败边界。</li>
-<li>导入 NV01-B <code>openusd_stage.usda</code> 与 replay fixture，验证 <code>/World</code>、robot、workpiece、weld task、seam path、TCP trajectory candidate、sensor placeholder 和 safety boundary prim 可加载。</li>
-<li>做静态或低速 trajectory replay，输出 runtime validation report，明确 stage import、frame binding、trajectory binding、procedure metadata 和 sensor placeholder 的通过/阻塞项。</li>
-<li>并行做 MJ01：从当前真实 URDF / nominal robot context 生成或校验 MuJoCo 可消费的 URDF/MJCF 最小模型，验证关节、mesh、TCP frame、简化工件/焊缝和 TCP 轨迹 replay 是否可运行。</li>
+<li>在服务器或工作站记录 Isaac Sim runtime 环境、版本、GPU/driver、启动方式和失败边界。</li>
+<li>远端导入 NV01-B <code>openusd_stage.usda</code> 与 replay fixture，验证 <code>/World</code>、robot、workpiece、weld task、seam path、TCP trajectory candidate、sensor placeholder 和 safety boundary prim 可加载。</li>
+<li>输出 NV01-C1 smoke validation report，明确 stage import、fixture load、frame binding、trajectory binding、procedure metadata 和 sensor placeholder 的通过/阻塞项。</li>
+<li>并行做 MJ01-B：在本地 MuJoCo 可用时，把 MJ01-A 的 per-task dry-run 输入推进为最小 trajectory dry-run runner，先做时间序列、frame binding、joint placeholder 和模型加载阻塞报告，不做策略训练。</li>
 <li>自动汇总仍阻塞真实 replay 的输入：robot USD/articulation、MJCF/URDF 模型质量、TCP/tool/workpiece 标定、最小 sensor layout、H300 工站日志、电流/电压/热输入、工艺人员确认和专家审查结论。</li>
 <li>继续把 Isaac Lab policy training、Replicator dataset、MuJoCo 策略训练、真实碰撞验证、真实焊接质量验证和 robot execution 留到后续 evidence gate。</li>
 </ol>
@@ -239,6 +241,15 @@ uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report \
 uv run python -m weldcore.skill_asset.nv01_c_mj01_readiness_report \
   --outdir artifacts/demo/nv01-c-mj01-readiness-pack</code></pre>
 <p>预期输出包括 <code>isaac_runtime_validation_input_manifest.json</code>、<code>mujoco_lightweight_replay_feasibility_report.json</code>、<code>runtime_replay_blocking_report.json</code>、<code>readiness_reproducibility_manifest.json</code> 和 per-task runtime/replay 输入清单。该命令默认自举 <code>_source_nv01b/</code>，不运行 Isaac Sim 或 MuJoCo；默认边界包含 <code>not_isaac_sim_runtime_validation</code>、<code>not_mujoco_dynamics_validation</code>、<code>not_policy_training_result</code>、<code>not_formal_WPS_PQR</code> 和 <code>not_ready_for_robot_execution</code>。</p>
+<h2>MJ01-A Local MuJoCo Probe + NV01-C0 Remote Isaac Preflight</h2>
+<p>默认入口：</p>
+<pre><code>cd weld-experience-engine
+uv run python -m weldcore.skill_asset.mj01_mujoco_probe_report \
+  --outdir artifacts/demo/mj01-a-local-mujoco-probe</code></pre>
+<p>如果只需要生成报告，不需要先安装 MuJoCo；未安装时会输出 <code>skipped_by_missing_mujoco_runtime</code>，并保留可复跑的 blocking report。若要在本机做轻量 probe，可安装可选 extra：</p>
+<pre><code>cd weld-experience-engine
+uv sync --extra dev --extra viz --extra mujoco</code></pre>
+<p>预期输出包括 <code>mj01_a_summary.md/json</code>、<code>mj01_mujoco_runtime_probe_report.json</code>、<code>mj01_mujoco_model_input_resolution_report.json</code>、<code>mj01_mujoco_probe_report.json</code>、<code>nv01_c0_isaac_remote_preflight_report.json</code>、<code>mj01_a_reproducibility_manifest.json</code> 和 per-task <code>mj01_task_trajectory_dry_run_input.json</code> / <code>nv01_c0_task_isaac_remote_preflight_input.json</code>。这一步只回答“本地 MuJoCo 是否可安装、可 import、可加载最小 MJCF、对真实 URDF 的阻塞在哪里，以及远端 Isaac Sim 运行还缺哪些前置条件”；它不是 MuJoCo dynamics validation、不是 Isaac Sim runtime validation、不是 policy training、不是正式 WPS/PQR，也不是机器人执行验证。</p>
 <h2>历史能力索引</h2>
 <p>以下能力仍可作为 evidence source、历史支撑或反证来源，不再作为默认项目主线：</p>
 <ul>
