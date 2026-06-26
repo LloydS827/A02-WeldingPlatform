@@ -59,16 +59,17 @@ flowchart TD
     D --> E["已完成：K01 焊接工艺知识合同"]
     E --> F["已完成：NV01-A OpenUSD / Isaac-oriented manifest 合同"]
     F --> G["已完成：NV01-B 静态 OpenUSD 可复现实验底座"]
-    G --> H["下一阶段主线：NV01-C Isaac Sim runtime 导入与静态 replay 验证"]
-    G --> M["下一阶段轻量支线：MJ01 MuJoCo URDF/MJCF replay 可行性评估"]
+    G --> R["已完成：NV01-C + MJ01 runtime/replay readiness pack"]
+    R --> H["下一阶段主线：NV01-C Isaac Sim runtime runner"]
+    R --> M["下一阶段轻量支线：MJ01 MuJoCo replay runner"]
     M -.轻量验证与反证.-> H
     H --> I["后续：Replicator / Isaac Lab 训练设计 gate"]
     I --> J["后续：真实工站回采 / 专家审查 / A01 产品验证闭环"]
 
-    G -.当前边界.-> X["不是 Isaac Sim runtime 验证；不是 MuJoCo 动力学验证；不是 policy training；不是 robot execution"]
+    R -.当前边界.-> X["不是 Isaac Sim runtime 验证；不是 MuJoCo 动力学验证；不是 policy training；不是正式 WPS/PQR；不是 robot execution"]
 ```
 
-当前项目已经完成从“经验结构化 / 仿真样本”到“可审计焊接技能资产 + NVIDIA-native 静态实验底座”的主线收束。下一阶段不应直接进入策略训练或真实机器人执行，而应先验证 NV01-B 生成的 `openusd_stage.usda` 与 replay fixture 能否在真实 Isaac Sim runtime 中被打开、加载和静态 replay。同时，应设置 MJ01 MuJoCo 轻量支线，用更低运行成本验证 URDF/MJCF 模型加载、轨迹 replay、接触/运动学假设和小规模控制原型；MuJoCo 的结论应作为证据支线和反证来源回写 `ManipulationSkillAsset`，而不是替代 OpenUSD / Isaac 的工站级数字孪生主线。
+当前项目已经完成从“经验结构化 / 仿真样本”到“可审计焊接技能资产 + NVIDIA-native 静态实验底座”的主线收束，并新增 NV01-C + MJ01 readiness pack，把下一阶段真实 Isaac/MuJoCo runner 需要的输入、缺口和边界固化为可复跑 artifact。下一阶段不应直接进入策略训练或真实机器人执行，而应分别实现外部 NV01-C Isaac Sim runtime runner 和 MJ01 MuJoCo replay runner，验证 NV01-B/ready pack 产物能否在真实 runtime 中被打开、绑定和静态/低速 replay。MuJoCo 的结论应作为轻量证据支线和反证来源回写 `ManipulationSkillAsset`，而不是替代 OpenUSD / Isaac 的工站级数字孪生主线。
 
 ## 核心对象
 
@@ -135,6 +136,7 @@ K01 + NV01-A 第一版不直接安装或运行 Isaac Sim，而是生成可审查
 - 已从 `docs/焊接工艺数据库主要参数表.xlsx` 生成 K01 工艺知识合同，覆盖 47 个焊接工艺字段、8 个参数类别、21 个必填字段、12 个条件必填字段和 14 个补充字段，并显式标注人填/确认、系统计算、仿真推导和工站回采边界。
 - `weldcore.skill_asset.nvidia_digital_twin_report` 默认生成 K01 + NV01-A evidence pack：procedure contract、parameter set、validation report、procedure-to-NV01 mapping、OpenUSD/Isaac-oriented manifest/report、training readiness 和 stack alignment matrix。
 - `weldcore.skill_asset.nv01_b_experiment_base_report` 默认生成 NV01-B 可复现实验底座：最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、K01 参数到仿真参数审计、sensor/annotation manifest、simulation blocking report 和 reproducibility manifest。
+- `weldcore.skill_asset.nv01_c_mj01_readiness_report` 默认生成 NV01-C + MJ01 readiness pack：Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report、runtime/replay blocking report、readiness reproducibility manifest 和 per-task runtime/replay 输入清单。该入口不需要 Isaac Sim、MuJoCo、OpenUSD SDK、GPU、`pxr` 或 `mujoco`；默认状态仍是 `blocked_for_runtime_replay_validation`，不是 Isaac Sim runtime replay、MuJoCo dynamics validation、policy training、正式 WPS/PQR 或真实机器人执行验证。
 - 从 `docs/real-urdf/robot.urdf` 解析 `RobotBodyAsset`，当前真实 URDF 可解析为 7 links、6 revolute joints、33 unique mesh files 和 66 mesh references。
 - 从 `RobotBodyAsset` 构建 nominal `RobotContextSpec`，保留 `nominal_from_asset_not_calibrated`、`not_tcp_calibrated`、`not_vendor_validated` 和 `not_ready_for_robot_execution` 边界。
 - 构建默认 `SceneContextAsset`，表达工件坐标系、焊缝路径、安全边界和夹具/障碍占位。
@@ -251,6 +253,18 @@ uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report \
 ```
 
 预期输出包括最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、procedure simulation parameter audit、sensor annotation manifest、simulation blocking report、reproducibility manifest 和 `_source_nv01a/` 源 artifact。该命令不需要 Isaac Sim、OpenUSD SDK、GPU 或 `pxr`；默认状态仍保留 `blocked_for_real_isaac_sim_replay` 和 `not_isaac_sim_runtime_validation`，不是 Isaac Sim runtime replay、policy training、正式 WPS/PQR 或真实机器人执行验证。
+
+## NV01-C + MJ01 Readiness Pack
+
+默认入口：
+
+```bash
+cd weld-experience-engine
+uv run python -m weldcore.skill_asset.nv01_c_mj01_readiness_report \
+  --outdir artifacts/demo/nv01-c-mj01-readiness-pack
+```
+
+预期输出包括 `isaac_runtime_validation_input_manifest.json`、`mujoco_lightweight_replay_feasibility_report.json`、`runtime_replay_blocking_report.json`、`readiness_reproducibility_manifest.json` 和 per-task runtime/replay 输入清单。该命令默认自举 `_source_nv01b/`，不运行 Isaac Sim 或 MuJoCo；默认边界包含 `not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_policy_training_result`、`not_formal_WPS_PQR` 和 `not_ready_for_robot_execution`。
 
 ## 历史能力索引
 

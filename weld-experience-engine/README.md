@@ -20,6 +20,8 @@ SimulationEvidenceBundle / real robot log / human demonstration / H300 workcell 
 
 当前已实现 K01 + NV01-A Weld Procedure Knowledge Contract and NVIDIA-Native Digital Twin Foundation，并完成 NV01-B OpenUSD / Isaac Sim 可复现实验底座：以 `docs/焊接工艺数据库主要参数表.xlsx` 作为焊接工艺知识合同源，以 OpenUSD 作为未来数字孪生交换层，以 Isaac Sim 作为未来默认目标仿真运行时，以 Isaac Lab 作为后续训练闭环目标层。`weldcore` 当前生成面向这些重底座的 procedure contract、manifest/report 和静态 `.usda` 实验底座，而不是自研通用物理引擎、3D 场景标准或训练框架。
 
+当前进一步新增 NV01-C + MJ01 readiness pack：它消费 NV01-B artifact，生成 Isaac runtime validation input manifest、MuJoCo lightweight replay feasibility report 和 runtime/replay blocking report。该能力用于准备下一阶段真实 runtime runner，不运行 Isaac Sim 或 MuJoCo，不导入 `pxr` 或 `mujoco`，也不宣称 runtime replay、MuJoCo dynamics validation、正式 WPS/PQR 或真实机器人执行。
+
 ## 运行
 
 ```bash
@@ -83,6 +85,15 @@ uv run python -m weldcore.skill_asset.nv01_b_experiment_base_report \
 ```
 
 `nv01_b_experiment_base_report` 默认生成 `_source_nv01a`，再输出最小 `openusd_stage.usda`、静态 USD validation report、Isaac replay fixture、procedure simulation parameter audit、sensor annotation manifest、simulation blocking report 和 reproducibility manifest。它不需要 Isaac Sim 或 OpenUSD SDK；默认状态仍是 `blocked_for_real_isaac_sim_replay`，不是 runtime replay、policy training、正式 WPS/PQR 或真实机器人执行验证。
+
+## NV01-C + MJ01 Readiness Pack
+
+```bash
+uv run python -m weldcore.skill_asset.nv01_c_mj01_readiness_report \
+  --outdir artifacts/demo/nv01-c-mj01-readiness-pack
+```
+
+`nv01_c_mj01_readiness_report` 默认生成 `_source_nv01b`，再输出 `isaac_runtime_validation_input_manifest.json`、`mujoco_lightweight_replay_feasibility_report.json`、`runtime_replay_blocking_report.json`、`readiness_reproducibility_manifest.json` 和 per-task runtime/replay 输入清单。默认状态是 `blocked_for_runtime_replay_validation`，其中 Isaac 侧保留 `blocked_by_missing_isaac_runtime`，MuJoCo 侧保留 `blocked_by_missing_mujoco_runtime`。该命令不需要 Isaac Sim、MuJoCo、OpenUSD SDK、GPU、`pxr` 或 `mujoco`，边界包含 `not_isaac_sim_runtime_validation`、`not_mujoco_dynamics_validation`、`not_policy_training_result`、`not_formal_WPS_PQR` 和 `not_ready_for_robot_execution`。
 
 ## 证据与历史支撑命令
 
